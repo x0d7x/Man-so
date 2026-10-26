@@ -45,6 +45,10 @@ Scope {
     readonly property color borderMuted: root.data.outline_variant
     readonly property color error: root.data.error
 
+    function reloadColors() {
+        colorFile.reload();
+    }
+
     function parseColors(text) {
         if (!text || text.trim().length === 0)
             return;
@@ -56,14 +60,17 @@ Scope {
 
             root.data = Object.assign({}, root.data, parsed);
         } catch (error) {
+            console.error("Failed to parse Matugen colors:", error)
         }
     }
 
     FileView {
         id: colorFile
 
-        path: Quickshell.env("HOME") + "/.config/matugen/quickshell.json"
+        path: Quickshell.env("HOME") + "/.cache/matugen/quickshell.json"
         watchChanges: true
-        onTextChanged: root.parseColors(colorFile.text())
+
+        onFileChanged: reload()
+        onLoaded: root.parseColors(text())
     }
 }
