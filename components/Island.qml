@@ -1,4 +1,5 @@
 import Quickshell
+import Quickshell.Services.Notifications
 import Quickshell.Services.SystemTray
 import Quickshell.Widgets
 import QtQuick
@@ -10,6 +11,7 @@ Rectangle {
     property var mango
     property var stats
     property var volume
+    property var notifications
     property var bluetooth
     property var network
     property var power
@@ -115,10 +117,14 @@ Rectangle {
     }
 
     readonly property bool needsKeyboard: island.wifiMenuOpen || island.bluetoothMenuOpen
+        || (island.notifications && island.notifications.centerOpen)
         || (island.pointerHovered && !island.suppressHoverKeyboard)
 
     readonly property string mode: {
-        if (island.pinned || island.pointerHovered || island.wifiMenuOpen || island.bluetoothMenuOpen)
+        if (island.notifications && island.notifications.visible && island.notifications.active)
+            return "notification";
+        if (island.pinned || island.pointerHovered || island.wifiMenuOpen
+            || island.bluetoothMenuOpen || (island.notifications && island.notifications.centerOpen))
             return "expanded";
         if (island.volume && island.volume.visible)
             return "volume";
@@ -128,6 +134,8 @@ Rectangle {
     }
 
     readonly property int targetWidth: {
+        if (island.mode === "notification")
+            return 460;
         if (island.mode === "expanded")
             return 1260;
         if (island.mode === "transient")
@@ -137,7 +145,15 @@ Rectangle {
         return 84;
     }
 
-    readonly property int targetHeight: island.mode === "expanded" ? 38 : (island.mode === "transient" ? 36 : 34)
+    readonly property int targetHeight: {
+        if (island.mode === "notification")
+            return 104;
+        if (island.mode === "expanded")
+            return 38;
+        if (island.mode === "transient")
+            return 36;
+        return 34;
+    }
     readonly property string timeText: island.pad(clock.hours) + ":" + island.pad(clock.minutes)
 
     function pad(value) {
@@ -168,8 +184,31 @@ Rectangle {
         transientTimer.restart();
     }
 
-    function openNotifications() {
-        Quickshell.execDetached(["swaync-client", "-t", "-sw"]);
+    function closeNotificationCenter() {
+        if (!island.notifications)
+            return;
+        notificationCenterDelay.stop();
+        notificationCenterPopup.visible = false;
+        island.notifications.closeCenter();
+        island.releaseHoverKeyboard();
+    }
+
+    function toggleNotificationCenter() {
+        if (!island.notifications)
+            return;
+
+        if (island.notifications.centerOpen) {
+            island.closeNotificationCenter();
+            return;
+        }
+
+        if (island.wifiMenuOpen)
+            island.closeWifiMenu();
+        if (island.bluetoothMenuOpen)
+            island.closeBluetoothMenu();
+
+        island.notifications.openCenter();
+        notificationCenterDelay.restart();
     }
 
     function releaseHoverKeyboard() {
@@ -328,6 +367,8 @@ Rectangle {
                 island.closeWifiMenu();
             if (island.bluetoothMenuOpen)
                 island.closeBluetoothMenu();
+            if (island.notifications && island.notifications.centerOpen)
+                island.closeNotificationCenter();
         }
     }
 
@@ -370,6 +411,17 @@ Rectangle {
         }
     }
 
+    Timer {
+        id: notificationCenterDelay
+        interval: 80
+        onTriggered: {
+            if (island.notifications && island.notifications.centerOpen) {
+                notificationCenterPopup.visible = true;
+                Qt.callLater(() => notificationCenterEscapeFocus.forceActiveFocus());
+            }
+        }
+    }
+
     onWifiPasswordOpenChanged: {
         if (island.wifiPasswordOpen) {
             Qt.callLater(() => passwordInput.forceActiveFocus());
@@ -382,7 +434,7 @@ Rectangle {
     height: island.targetHeight
     radius: 17
     color: Qt.rgba(island.bgColor.r, island.bgColor.g, island.bgColor.b)
-    border.width: 1
+    border.width: island.mode === "notification" ? 0 : 1
     border.color: island.pinned ? island.accentColor : island.borderMutedColor
     clip: true
 
@@ -1449,6 +1501,280 @@ Rectangle {
         }
     }
 
+    PopupWindow {
+        id: notificationCenterPopup
+
+        anchor.window: island.panelWindow
+        anchor.rect.x: {
+            if (!island.panelWindow)
+                return 0;
+            const bell = bellItem.mapToItem(island, 0, 0);
+            const desired = Math.round(island.x + bell.x + bellItem.width / 2 - implicitWidth / 2);
+            return Math.max(16, Math.min(desired, island.panelWindow.width - implicitWidth - 16));
+        }
+        anchor.rect.y: Math.round(island.y + island.height + 8)
+        visible: false
+        grabFocus: true
+        implicitWidth: 360
+        implicitHeight: 420
+        color: "transparent"
+
+        onVisibleChanged: {
+            if (notificationCenterPopup.visible)
+                Qt.callLater(() => notificationCenterEscapeFocus.forceActiveFocus());
+        }
+
+        onClosed: {
+            if (island.notifications && island.notifications.centerOpen)
+                island.closeNotificationCenter();
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            radius: 14
+            color: Qt.rgba(island.bgColor.r, island.bgColor.g, island.bgColor.b, 0.98)
+            border.width: 1
+            border.color: island.borderMutedColor
+            clip: true
+
+            FocusScope {
+                id: notificationCenterEscapeFocus
+
+                anchors.fill: parent
+                focus: island.notifications && island.notifications.centerOpen
+                Keys.onEscapePressed: island.closeNotificationCenter()
+            }
+
+            Shortcut {
+                sequence: "Esc"
+                enabled: island.notifications && island.notifications.centerOpen
+                onActivated: island.closeNotificationCenter()
+            }
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 10
+                spacing: 8
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 6
+
+                    Text {
+                        text: "NOTIFICATIONS"
+                        color: island.mutedColor
+                        font.family: island.monoFont
+                        font.pixelSize: 10
+                        font.weight: Font.DemiBold
+                    }
+
+                    Text {
+                        text: island.notifications ? island.notifications.history.length : "0"
+                        color: island.borderColor
+                        font.family: island.monoFont
+                        font.pixelSize: 9
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                    }
+
+                    Text {
+                        text: "CLEAR"
+                        color: island.mutedColor
+                        font.family: island.monoFont
+                        font.pixelSize: 8
+                        font.weight: Font.DemiBold
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (island.notifications)
+                                    island.notifications.clearAll();
+                                island.releaseHoverKeyboard();
+                            }
+                        }
+                    }
+
+                    Item {
+                        Layout.preferredWidth: 20
+                        Layout.preferredHeight: 20
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰅖"
+                            color: island.mutedColor
+                            font.family: island.monoFont
+                            font.pixelSize: 12
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: island.closeNotificationCenter()
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 1
+                    color: island.borderMutedColor
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+
+                    ListView {
+                        anchors.fill: parent
+                        clip: true
+                        spacing: 3
+                        model: island.notifications ? island.notifications.history : []
+
+                        delegate: Rectangle {
+                            id: historyRow
+
+                            required property var modelData
+
+                            readonly property bool rowHovered: historyHover.hovered
+
+                            width: ListView.view.width
+                            height: 54
+                            radius: 8
+                            color: historyRow.rowHovered ? island.surfaceHighColor : "transparent"
+
+                            HoverHandler {
+                                id: historyHover
+                            }
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.margins: 6
+                                spacing: 8
+
+                                Rectangle {
+                                    Layout.preferredWidth: 36
+                                    Layout.preferredHeight: 36
+                                    radius: 8
+                                    color: island.surfaceHighColor
+                                    clip: true
+
+                                    Image {
+                                        id: historyImage
+                                        anchors.fill: parent
+                                        source: historyRow.modelData.image
+                                        sourceSize.width: 36
+                                        sourceSize.height: 36
+                                        fillMode: Image.PreserveAspectCrop
+                                        asynchronous: true
+                                        cache: true
+                                        visible: historyRow.modelData.image.length > 0
+                                            && status === Image.Ready
+                                    }
+
+                                    IconImage {
+                                        id: historyIcon
+                                        anchors.centerIn: parent
+                                        visible: !historyImage.visible
+                                        source: island.notifications
+                                            ? island.notifications.resolveIcon(historyRow.modelData.appIcon)
+                                            : ""
+                                        implicitSize: 22
+                                    }
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        visible: !historyImage.visible && historyIcon.status !== Image.Ready
+                                        text: "󰂚"
+                                        color: island.mutedColor
+                                        font.family: island.monoFont
+                                        font.pixelSize: 17
+                                    }
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 0
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 5
+
+                                        Text {
+                                            Layout.fillWidth: true
+                                            text: historyRow.modelData.summary.length > 0
+                                                ? historyRow.modelData.summary
+                                                : historyRow.modelData.appName
+                                            color: island.fgColor
+                                            font.family: island.monoFont
+                                            font.pixelSize: 10
+                                            font.weight: Font.DemiBold
+                                            elide: Text.ElideRight
+                                            maximumLineCount: 1
+                                            textFormat: Text.PlainText
+                                        }
+
+                                        Rectangle {
+                                            visible: historyRow.modelData.urgency === NotificationUrgency.Critical
+                                            width: 5
+                                            height: 5
+                                            radius: 3
+                                            color: island.errorColor
+                                        }
+
+                                        Text {
+                                            text: Qt.formatTime(new Date(historyRow.modelData.timestamp), "hh:mm")
+                                            color: island.borderColor
+                                            font.family: island.monoFont
+                                            font.pixelSize: 8
+                                        }
+                                    }
+
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: historyRow.modelData.body
+                                        color: island.mutedColor
+                                        font.family: island.monoFont
+                                        font.pixelSize: 8
+                                        elide: Text.ElideRight
+                                        maximumLineCount: 1
+                                        textFormat: Text.PlainText
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Text {
+                        anchors.centerIn: parent
+                        visible: !island.notifications || island.notifications.history.length === 0
+                        text: "No notifications"
+                        color: island.mutedColor
+                        font.family: island.monoFont
+                        font.pixelSize: 10
+                    }
+                }
+            }
+        }
+    }
+
+    NotificationCard {
+        anchors.fill: parent
+        visible: island.mode === "notification"
+        notifications: island.notifications
+        monoFont: island.monoFont
+        bgColor: island.bgColor
+        surfaceHighColor: island.surfaceHighColor
+        fgColor: island.fgColor
+        mutedColor: island.mutedColor
+        accentColor: island.accentColor
+        onAccentColor: island.onAccentColor
+        errorColor: island.errorColor
+        borderMutedColor: island.borderMutedColor
+    }
+
     Row {
         id: collapsedRow
         anchors.centerIn: parent
@@ -2007,6 +2333,8 @@ Rectangle {
         }
 
         Item {
+            id: bellItem
+
             Layout.preferredWidth: 22
             Layout.preferredHeight: 22
 
@@ -2023,11 +2351,34 @@ Rectangle {
                 font.weight: Font.Medium
             }
 
+            Rectangle {
+                visible: island.notifications && island.notifications.unreadCount > 0
+                width: 14
+                height: 14
+                radius: 7
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.rightMargin: -4
+                anchors.topMargin: -4
+                color: island.errorColor
+
+                Text {
+                    anchors.centerIn: parent
+                    text: island.notifications && island.notifications.unreadCount > 9
+                        ? "9+"
+                        : (island.notifications ? island.notifications.unreadCount : "")
+                    color: island.onAccentColor
+                    font.family: island.monoFont
+                    font.pixelSize: 7
+                    font.weight: Font.Bold
+                }
+            }
+
             MouseArea {
                 anchors.fill: parent
                 acceptedButtons: Qt.LeftButton
                 cursorShape: Qt.PointingHandCursor
-                onClicked: island.openNotifications()
+                onClicked: island.toggleNotificationCenter()
             }
         }
 

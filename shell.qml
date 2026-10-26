@@ -35,6 +35,10 @@ ShellRoot {
         id: volume
     }
 
+    NotificationState {
+        id: notifications
+    }
+
     BluetoothState {
         id: bluetooth
     }
@@ -61,13 +65,13 @@ ShellRoot {
             right: true
         }
         margins {
-            top: 9
+            top: 5
         }
 
-        implicitHeight: 38
+        implicitHeight: 420
         color: "transparent"
-        // exclusiveZone: 1
-        // aboveWindows: true
+        exclusiveZone: 34
+        aboveWindows: true
         focusable: island.needsKeyboard
 
         mask: Region {
@@ -85,6 +89,7 @@ ShellRoot {
             mango: mango
             stats: stats
             volume: volume
+            notifications: notifications
             bluetooth: bluetooth
             network: network
             power: power
@@ -141,5 +146,17 @@ ShellRoot {
         function reloadTheme(): void {
             colors.reloadColors();
         }
+
+        function toggleNotifications(): void {
+            island.toggleNotificationCenter();
+        }
+
+
+
+        function clearNotifications(): void {
+            notifications.clearAll();
+        }
+
+
     }
 }
