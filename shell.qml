@@ -39,6 +39,10 @@ ShellRoot {
         id: notifications
     }
 
+    MediaState {
+        id: media
+    }
+
     BluetoothState {
         id: bluetooth
     }
@@ -90,6 +94,7 @@ ShellRoot {
             stats: stats
             volume: volume
             notifications: notifications
+            media: media
             bluetooth: bluetooth
             network: network
             power: power
@@ -156,6 +161,8 @@ ShellRoot {
         function clearNotifications(): void {
             notifications.clearAll();
         }
+
+
 
 
     }

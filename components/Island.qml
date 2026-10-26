@@ -12,6 +12,7 @@ Rectangle {
     property var stats
     property var volume
     property var notifications
+    property var media
     property var bluetooth
     property var network
     property var power
@@ -123,11 +124,15 @@ Rectangle {
     readonly property string mode: {
         if (island.notifications && island.notifications.visible && island.notifications.active)
             return "notification";
-        if (island.pinned || island.pointerHovered || island.wifiMenuOpen
-            || island.bluetoothMenuOpen || (island.notifications && island.notifications.centerOpen))
+        if (island.pinned)
             return "expanded";
         if (island.volume && island.volume.visible)
             return "volume";
+        if (island.media && island.media.visible)
+            return "media";
+        if (island.pointerHovered || island.wifiMenuOpen
+            || island.bluetoothMenuOpen || (island.notifications && island.notifications.centerOpen))
+            return "expanded";
         if (island.transientActive)
             return "transient";
         return "collapsed";
@@ -135,6 +140,8 @@ Rectangle {
 
     readonly property int targetWidth: {
         if (island.mode === "notification")
+            return 460;
+        if (island.mode === "media")
             return 460;
         if (island.mode === "expanded")
             return 1260;
@@ -147,6 +154,8 @@ Rectangle {
 
     readonly property int targetHeight: {
         if (island.mode === "notification")
+            return 104;
+        if (island.mode === "media")
             return 104;
         if (island.mode === "expanded")
             return 38;
@@ -361,6 +370,11 @@ Rectangle {
         return island.borderColor;
     }
 
+    onPointerHoveredChanged: {
+        if (island.pointerHovered && island.mode === "media" && island.media)
+            island.media.show();
+    }
+
     onModeChanged: {
         if (island.mode !== "expanded") {
             if (island.wifiMenuOpen)
@@ -434,7 +448,7 @@ Rectangle {
     height: island.targetHeight
     radius: 17
     color: Qt.rgba(island.bgColor.r, island.bgColor.g, island.bgColor.b)
-    border.width: island.mode === "notification" ? 0 : 1
+    border.width: island.mode === "notification" || island.mode === "media" ? 0 : 1
     border.color: island.pinned ? island.accentColor : island.borderMutedColor
     clip: true
 
@@ -1758,6 +1772,22 @@ Rectangle {
                 }
             }
         }
+    }
+
+    MediaCard {
+        anchors.fill: parent
+        visible: island.mode === "media"
+        media: island.media
+        monoFont: island.monoFont
+        bgColor: island.bgColor
+        surfaceHighColor: island.surfaceHighColor
+        fgColor: island.fgColor
+        mutedColor: island.mutedColor
+        accentColor: island.accentColor
+        secondaryColor: island.secondaryColor
+        onAccentColor: island.onAccentColor
+        errorColor: island.errorColor
+        borderMutedColor: island.borderMutedColor
     }
 
     NotificationCard {
