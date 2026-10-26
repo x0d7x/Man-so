@@ -7,7 +7,6 @@ Scope {
 
     property var monitors: ({})
     property string focusedMonitor: ""
-    property var focusedClient: null
     property bool connected: false
 
     readonly property var focusedState: root.monitors[root.focusedMonitor] || null
@@ -58,7 +57,17 @@ Scope {
 
         root.monitors = next;
 
-        if (!root.focusedMonitor || !next[root.focusedMonitor]) {
+        let activeMonitor = "";
+        for (let i = 0; i < data.monitors.length; ++i) {
+            if (data.monitors[i] && data.monitors[i].active) {
+                activeMonitor = data.monitors[i].name;
+                break;
+            }
+        }
+
+        if (activeMonitor.length > 0) {
+            root.setFocusedMonitor(activeMonitor);
+        } else if (!root.focusedMonitor || !next[root.focusedMonitor]) {
             const names = Object.keys(next);
             if (names.length > 0)
                 root.setFocusedMonitor(names[0]);
@@ -66,9 +75,6 @@ Scope {
 
         for (let i = 0; i < changes.length; ++i)
             root.workspaceChanged(changes[i].name, changes[i].tags);
-
-        if (changes.length > 0)
-            root.probeFocus();
     }
 
     function setFocusedMonitor(name) {
@@ -82,47 +88,9 @@ Scope {
         root.monitorFocused(name);
     }
 
-    function consumeFocusClient(line) {
-        const data = root.parseJson(line);
-        if (!data || !data.monitor)
-            return;
-
-        root.focusedClient = data;
-        root.setFocusedMonitor(data.monitor);
-
-        const monitor = root.monitors[data.monitor];
-        if (!monitor)
-            return;
-
-        if (monitor.active_client && monitor.active_client.id === data.id)
-            return;
-
-        const update = Object.assign({}, monitor);
-        update.active_client = data;
-
-        const next = Object.assign({}, root.monitors);
-        next[data.monitor] = update;
-        root.monitors = next;
-    }
-
-    function consumeFocusSurface(line) {
-        const data = root.parseJson(line);
-        if (!data || !data.monitor)
-            return;
-
-        root.setFocusedMonitor(data.monitor);
-    }
-
-    function probeFocus() {
-        if (!focusProbe.running)
-            focusProbe.running = true;
-    }
-
     function switchTag(index) {
         Quickshell.execDetached(["mmsg", "dispatch", "view," + index]);
     }
-
-    Component.onCompleted: root.probeFocus()
 
     Process {
         id: allMonitorsProcess
@@ -139,54 +107,10 @@ Scope {
         }
     }
 
-    Process {
-        id: focusClientProcess
-        command: ["mmsg", "watch", "focusing-client"]
-        running: true
-
-        stdout: SplitParser {
-            onRead: data => root.consumeFocusClient(data)
-        }
-
-        onExited: restartFocusClient.restart()
-    }
-
-    Process {
-        id: focusSurfaceProcess
-        command: ["mmsg", "watch", "last_open_surface"]
-        running: true
-
-        stdout: SplitParser {
-            onRead: data => root.consumeFocusSurface(data)
-        }
-
-        onExited: restartFocusSurface.restart()
-    }
-
-    Process {
-        id: focusProbe
-        command: ["mmsg", "get", "last_open_surface"]
-
-        stdout: StdioCollector {
-            onStreamFinished: root.consumeFocusSurface(this.text)
-        }
-    }
-
     Timer {
         id: restartMonitors
         interval: 1000
         onTriggered: allMonitorsProcess.running = true
     }
 
-    Timer {
-        id: restartFocusClient
-        interval: 1000
-        onTriggered: focusClientProcess.running = true
-    }
-
-    Timer {
-        id: restartFocusSurface
-        interval: 1000
-        onTriggered: focusSurfaceProcess.running = true
-    }
 }
