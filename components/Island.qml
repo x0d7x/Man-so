@@ -144,7 +144,7 @@ Rectangle {
         if (island.mode === "media")
             return 460;
         if (island.mode === "expanded")
-            return 1260;
+            return 420;
         if (island.mode === "transient")
             return 380;
         if (island.mode === "volume")
@@ -158,7 +158,7 @@ Rectangle {
         if (island.mode === "media")
             return 104;
         if (island.mode === "expanded")
-            return 38;
+            return 420;
         if (island.mode === "transient")
             return 36;
         return 34;
@@ -1526,7 +1526,10 @@ Rectangle {
             const desired = Math.round(island.x + bell.x + bellItem.width / 2 - implicitWidth / 2);
             return Math.max(16, Math.min(desired, island.panelWindow.width - implicitWidth - 16));
         }
-        anchor.rect.y: Math.round(island.y + island.height + 8)
+        anchor.rect.y: {
+            const bell = bellItem.mapToItem(island, 0, 0);
+            return Math.round(island.y + bell.y + bellItem.height + 8);
+        }
         visible: false
         grabFocus: true
         implicitWidth: 360
@@ -1937,494 +1940,566 @@ Rectangle {
         }
     }
 
-    RowLayout {
-        id: expandedRow
+    ColumnLayout {
+        id: dashboard
         anchors.fill: parent
-        anchors.leftMargin: 14
-        anchors.rightMargin: 14
-        spacing: 8
+        anchors.margins: 14
+        spacing: 10
         visible: island.mode === "expanded"
 
-        Text {
-            text: island.timeText
-            color: island.accentColor
-            font.family: island.monoFont
-            font.pixelSize: 13
-            font.weight: Font.DemiBold
-            font.letterSpacing: 0.4
-        }
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 28
+            spacing: 8
 
-        Row {
-            id: trayRow
-            spacing: 4
-            visible: trayRepeater.count > 0
-
-            Repeater {
-                id: trayRepeater
-                model: SystemTray.items
-
-                delegate: MouseArea {
-                    id: trayItem
-                    required property var modelData
-
-                    width: 18
-                    height: 18
-                    acceptedButtons: Qt.LeftButton
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: trayItem.modelData.activate()
-
-                    Image {
-                        anchors.centerIn: parent
-                        width: 16
-                        height: 16
-                        source: island.trayIconSource(trayItem.modelData)
-                        sourceSize.width: 16
-                        sourceSize.height: 16
-                        fillMode: Image.PreserveAspectFit
-                        smooth: true
-                    }
-                }
+            Text {
+                text: island.timeText
+                color: island.accentColor
+                font.family: island.monoFont
+                font.pixelSize: 12
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.3
             }
-        }
 
-        IslandSeparator {
-            visible: trayRepeater.count > 0
-            color: island.borderMutedColor
-        }
+            Row {
+                spacing: 4
 
-        Row {
-            spacing: 4
-
-            Repeater {
-                model: 5
-
-                Rectangle {
-                    id: tagChip
-                    required property int index
-
-                    readonly property var tag: island.tags.length > tagChip.index ? island.tags[tagChip.index] : null
-                    readonly property bool active: tagChip.tag ? tagChip.tag.is_active : (tagChip.index + 1 === Number(island.workspaceText))
-                    readonly property bool occupied: tagChip.tag ? tagChip.tag.client_count > 0 : false
-                    property bool chipHovered: false
-
-                    width: 22
-                    height: 22
-                    radius: 7
-                    color: tagChip.active ? island.accentColor : (tagChip.chipHovered ? island.surfaceHighColor : "transparent")
-                    border.width: tagChip.active ? 0 : 1
-                    border.color: tagChip.occupied ? island.borderColor : island.borderMutedColor
-
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: 120
-                        }
-                    }
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: tagChip.index + 1
-                        color: tagChip.active ? island.onAccentColor : (tagChip.occupied ? island.fgColor : island.mutedColor)
-                        font.family: island.monoFont
-                        font.pixelSize: 11
-                        font.weight: tagChip.active ? Font.Bold : Font.Medium
-                    }
+                Repeater {
+                    model: 5
 
                     Rectangle {
-                        width: 3
-                        height: 3
-                        radius: 2
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.bottom: parent.bottom
-                        anchors.bottomMargin: 3
-                        color: tagChip.occupied && !tagChip.active ? island.accentColor : "transparent"
-                    }
+                        id: dashboardTag
 
-                    HoverHandler {
-                        onHoveredChanged: tagChip.chipHovered = hovered
-                    }
+                        required property int index
 
-                    MouseArea {
-                        anchors.fill: parent
-                        acceptedButtons: Qt.LeftButton
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: island.mango.switchTag(tagChip.index + 1)
+                        readonly property var tag: island.tags.length > dashboardTag.index ? island.tags[dashboardTag.index] : null
+                        readonly property bool active: dashboardTag.tag ? dashboardTag.tag.is_active : (dashboardTag.index + 1 === Number(island.workspaceText))
+                        readonly property bool occupied: dashboardTag.tag ? dashboardTag.tag.client_count > 0 : false
+                        property bool hovered: false
+
+                        width: 22
+                        height: 22
+                        radius: 7
+                        color: dashboardTag.active ? island.accentColor : (dashboardTag.hovered ? island.surfaceHighColor : "transparent")
+                        border.width: dashboardTag.active ? 0 : 1
+                        border.color: dashboardTag.occupied ? island.borderColor : island.borderMutedColor
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: dashboardTag.index + 1
+                            color: dashboardTag.active ? island.onAccentColor : (dashboardTag.occupied ? island.fgColor : island.mutedColor)
+                            font.family: island.monoFont
+                            font.pixelSize: 10
+                            font.weight: dashboardTag.active ? Font.Bold : Font.Medium
+                        }
+
+                        Rectangle {
+                            width: 3
+                            height: 3
+                            radius: 2
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.bottom: parent.bottom
+                            anchors.bottomMargin: 2
+                            color: dashboardTag.occupied && !dashboardTag.active ? island.accentColor : "transparent"
+                        }
+
+                        HoverHandler {
+                            onHoveredChanged: dashboardTag.hovered = hovered
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            acceptedButtons: Qt.LeftButton
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: island.mango.switchTag(dashboardTag.index + 1)
+                        }
                     }
                 }
             }
-        }
 
-        IslandSeparator {
-            color: island.borderMutedColor
-        }
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 26
+                spacing: 6
 
-        IconImage {
-            visible: island.appIconSource.length > 0
-            source: island.appIconSource
-            implicitSize: 18
-            Layout.preferredWidth: 18
-            Layout.preferredHeight: 18
-            Layout.alignment: Qt.AlignVCenter
-        }
-
-        Text {
-            Layout.fillWidth: true
-            Layout.minimumWidth: 80
-            Layout.maximumWidth: 220
-            text: island.windowTitle
-            color: island.fgColor
-            font.family: island.monoFont
-            font.pixelSize: 12
-            font.weight: Font.Medium
-            elide: Text.ElideRight
-            maximumLineCount: 1
-        }
-
-        IslandSeparator {
-            color: island.borderMutedColor
-        }
-
-        Row {
-            spacing: 4
-
-            Text {
-                text: "LAYOUT"
-                color: island.mutedColor
-                font.family: island.monoFont
-                font.pixelSize: 9
-                font.weight: Font.DemiBold
-            }
-
-            Text {
-                text: island.layoutSymbol
-                color: island.tertiaryColor
-                font.family: island.monoFont
-                font.pixelSize: 11
-                font.weight: Font.Bold
-            }
-        }
-
-        IslandSeparator {
-            color: island.borderMutedColor
-        }
-
-        Row {
-            spacing: 4
-
-            Text {
-                text: "CPU"
-                color: island.mutedColor
-                font.family: island.monoFont
-                font.pixelSize: 10
-                font.weight: Font.DemiBold
-            }
-
-            Text {
-                text: island.stats ? island.stats.cpuText : "--"
-                color: island.fgColor
-                font.family: island.monoFont
-                font.pixelSize: 12
-                font.weight: Font.Medium
-            }
-        }
-
-        Row {
-            spacing: 4
-
-            Text {
-                text: "RAM"
-                color: island.mutedColor
-                font.family: island.monoFont
-                font.pixelSize: 10
-                font.weight: Font.DemiBold
-            }
-
-            Text {
-                text: island.stats ? island.stats.memText : "--"
-                color: island.fgColor
-                font.family: island.monoFont
-                font.pixelSize: 12
-                font.weight: Font.Medium
-            }
-        }
-
-        Row {
-            spacing: 4
-
-            Text {
-                text: "TMP"
-                color: island.mutedColor
-                font.family: island.monoFont
-                font.pixelSize: 10
-                font.weight: Font.DemiBold
-            }
-
-            Text {
-                text: island.stats ? island.stats.tempText : "--"
-                color: island.fgColor
-                font.family: island.monoFont
-                font.pixelSize: 12
-                font.weight: Font.Medium
-            }
-        }
-
-        IslandSeparator {
-            color: island.borderMutedColor
-        }
-
-        Row {
-            spacing: 4
-
-            Text {
-                text: "BAT"
-                color: island.mutedColor
-                font.family: island.monoFont
-                font.pixelSize: 9
-                font.weight: Font.DemiBold
-            }
-
-            Text {
-                text: island.stats ? island.stats.batteryIcon : "󰂎"
-                color: island.stats && island.stats.batteryPercent >= 0 && island.stats.batteryPercent <= 20 ? island.errorColor : island.secondaryColor
-                font.family: island.monoFont
-                font.pixelSize: 12
-                font.weight: Font.Medium
-            }
-
-            Text {
-                text: island.stats ? island.stats.batteryText : "--"
-                color: island.stats && island.stats.batteryPercent >= 0 && island.stats.batteryPercent <= 20 ? island.errorColor : island.fgColor
-                font.family: island.monoFont
-                font.pixelSize: 12
-                font.weight: Font.Medium
-            }
-        }
-
-        IslandSeparator {
-            color: island.borderMutedColor
-        }
-
-        Item {
-            id: wifiItem
-
-            Layout.preferredWidth: wifiContent.implicitWidth
-            Layout.preferredHeight: 22
-
-            Row {
-                id: wifiContent
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 4
+                IconImage {
+                    visible: island.appIconSource.length > 0
+                    source: island.appIconSource
+                    implicitSize: 20
+                    Layout.preferredWidth: 20
+                    Layout.preferredHeight: 20
+                    Layout.alignment: Qt.AlignVCenter
+                }
 
                 Text {
-                    text: island.network ? island.network.icon : "󰤯"
-                    color: {
-                        if (!island.network || !island.network.enabled)
-                            return island.mutedColor;
-                        if (island.network.connected)
-                            return island.secondaryColor;
-                        return island.accentColor;
-                    }
+                    Layout.fillWidth: false
+                    Layout.maximumWidth: 80
+                    text: island.windowTitle
+                    color: island.fgColor
                     font.family: island.monoFont
-                    font.pixelSize: 12
+                    font.pixelSize: 11
                     font.weight: Font.Medium
-                }
-
-                Text {
-                    text: island.network ? island.network.label : "--"
-                    width: Math.min(implicitWidth, 82)
-                    color: island.network && island.network.connected ? island.fgColor : island.mutedColor
-                    font.family: island.monoFont
-                    font.pixelSize: 9
-                    font.weight: Font.DemiBold
                     elide: Text.ElideRight
-                }
-            }
-
-            HoverHandler {
-                id: wifiHover
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                acceptedButtons: Qt.LeftButton | Qt.RightButton
-                cursorShape: Qt.PointingHandCursor
-                onClicked: mouse => {
-                    if (!island.network)
-                        return;
-                    if (mouse.button === Qt.RightButton)
-                        island.network.toggle();
-                    else
-                        island.toggleWifiMenu();
-                }
-            }
-        }
-
-        IslandSeparator {
-            color: island.borderMutedColor
-        }
-
-        Item {
-            id: bluetoothItem
-
-            Layout.preferredWidth: bluetoothContent.implicitWidth
-            Layout.preferredHeight: 22
-            opacity: island.bluetooth && island.bluetooth.busy ? 0.5 : 1
-
-            Row {
-                id: bluetoothContent
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 4
-
-                Text {
-                    text: island.bluetooth ? island.bluetooth.icon : "󰂲"
-                    color: island.bluetooth && island.bluetooth.enabled ? (island.bluetooth.connectedCount > 0 ? island.secondaryColor : island.accentColor) : island.mutedColor
-                    font.family: island.monoFont
-                    font.pixelSize: 12
-                    font.weight: Font.Medium
+                    maximumLineCount: 1
                 }
 
                 Text {
-                    text: island.bluetooth ? island.bluetooth.label : "--"
-                    color: island.bluetooth && island.bluetooth.enabled ? island.fgColor : island.mutedColor
+                    text: "LAYOUT"
+                    color: island.mutedColor
                     font.family: island.monoFont
-                    font.pixelSize: 9
+                    font.pixelSize: 8
                     font.weight: Font.DemiBold
                 }
-            }
-
-            HoverHandler {
-                id: bluetoothHover
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                acceptedButtons: Qt.LeftButton | Qt.RightButton
-                cursorShape: Qt.PointingHandCursor
-                onClicked: mouse => {
-                    if (!island.bluetooth)
-                        return;
-                    if (mouse.button === Qt.RightButton)
-                        island.bluetooth.toggle();
-                    else
-                        island.toggleBluetoothMenu();
-                }
-            }
-        }
-
-        IslandSeparator {
-            color: island.borderMutedColor
-        }
-
-        Item {
-            id: powerItem
-
-            Layout.preferredWidth: powerContent.implicitWidth
-            Layout.preferredHeight: 22
-            opacity: island.power && island.power.busy ? 0.5 : 1
-
-            Row {
-                id: powerContent
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 4
 
                 Text {
-                    text: island.power ? island.power.icon : "󰾅"
-                    color: powerHover.hovered ? island.accentColor : island.powerColor()
+                    text: island.layoutSymbol
+                    color: island.tertiaryColor
                     font.family: island.monoFont
-                    font.pixelSize: 12
-                    font.weight: Font.Medium
-                }
-
-                Text {
-                    text: island.power ? island.power.label : "--"
-                    color: powerHover.hovered ? island.accentColor : island.fgColor
-                    font.family: island.monoFont
-                    font.pixelSize: 9
-                    font.weight: Font.DemiBold
-                }
-            }
-
-            HoverHandler {
-                id: powerHover
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                acceptedButtons: Qt.LeftButton
-                cursorShape: Qt.PointingHandCursor
-                onClicked: {
-                    if (island.power)
-                        island.power.cycle();
-                }
-            }
-        }
-
-        IslandSeparator {
-            color: island.borderMutedColor
-        }
-
-        Item {
-            id: bellItem
-
-            Layout.preferredWidth: 22
-            Layout.preferredHeight: 22
-
-            HoverHandler {
-                id: bellHover
-            }
-
-            Text {
-                anchors.centerIn: parent
-                text: "󰂚"
-                color: bellHover.hovered ? island.accentColor : island.fgColor
-                font.family: island.monoFont
-                font.pixelSize: 14
-                font.weight: Font.Medium
-            }
-
-            Rectangle {
-                visible: island.notifications && island.notifications.unreadCount > 0
-                width: 14
-                height: 14
-                radius: 7
-                anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.rightMargin: -4
-                anchors.topMargin: -4
-                color: island.errorColor
-
-                Text {
-                    anchors.centerIn: parent
-                    text: island.notifications && island.notifications.unreadCount > 9
-                        ? "9+"
-                        : (island.notifications ? island.notifications.unreadCount : "")
-                    color: island.onAccentColor
-                    font.family: island.monoFont
-                    font.pixelSize: 7
+                    font.pixelSize: 10
                     font.weight: Font.Bold
                 }
-            }
 
-            MouseArea {
-                anchors.fill: parent
-                acceptedButtons: Qt.LeftButton
-                cursorShape: Qt.PointingHandCursor
-                onClicked: island.toggleNotificationCenter()
+                Row {
+                    id: trayRow
+                    spacing: 4
+
+                    Repeater {
+                        model: SystemTray.items
+
+                        delegate: MouseArea {
+                            id: trayIcon
+
+                            required property var modelData
+                            required property int index
+
+                            width: trayIcon.index < 3 ? 18 : 0
+                            height: 18
+                            visible: trayIcon.index < 3
+                            acceptedButtons: Qt.LeftButton
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: trayIcon.modelData.activate()
+
+                            Image {
+                                anchors.centerIn: parent
+                                width: 16
+                                height: 16
+                                source: island.trayIconSource(trayIcon.modelData)
+                                sourceSize.width: 16
+                                sourceSize.height: 16
+                                fillMode: Image.PreserveAspectFit
+                                smooth: true
+                            }
+                        }
+                    }
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
             }
         }
 
         Rectangle {
-            visible: island.volume && island.volume.visible
-            Layout.preferredWidth: 66
-            Layout.preferredHeight: 22
-            radius: 7
-            color: island.surfaceHighColor
+            Layout.fillWidth: true
+            Layout.preferredHeight: 1
+            color: island.borderMutedColor
+        }
+
+        RowLayout {
+            Layout.alignment: Qt.AlignHCenter
+            Layout.preferredHeight: 30
+            spacing: 16
+
+            Item {
+                id: wifiItem
+
+                Layout.preferredWidth: wifiContent.implicitWidth + 18
+                Layout.preferredHeight: 28
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 8
+                    color: Qt.rgba(island.surfaceHighColor.r, island.surfaceHighColor.g, island.surfaceHighColor.b, wifiMouse.containsMouse ? 0.8 : 0.5)
+                }
+
+                Row {
+                    id: wifiContent
+                    anchors.left: parent.left
+                    anchors.leftMargin: 9
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 5
+
+                    Text {
+                        text: island.network ? island.network.icon : "󰤯"
+                        color: {
+                            if (!island.network || !island.network.enabled)
+                                return island.mutedColor;
+                            if (island.network.connected)
+                                return island.secondaryColor;
+                            return island.accentColor;
+                        }
+                        font.family: island.monoFont
+                        font.pixelSize: 12
+                        font.weight: Font.Medium
+                    }
+
+                    Text {
+                        text: island.network ? island.network.label : "--"
+                        width: Math.min(implicitWidth, 72)
+                        color: island.network && island.network.connected ? island.fgColor : island.mutedColor
+                        font.family: island.monoFont
+                        font.pixelSize: 8
+                        font.weight: Font.DemiBold
+                        elide: Text.ElideRight
+                    }
+                }
+
+                MouseArea {
+                    id: wifiMouse
+
+                    anchors.fill: parent
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: mouse => {
+                        if (!island.network)
+                            return;
+                        if (mouse.button === Qt.RightButton)
+                            island.network.toggle();
+                        else
+                            island.toggleWifiMenu();
+                    }
+                }
+            }
+
+            Item {
+                id: bluetoothItem
+
+                Layout.preferredWidth: bluetoothContent.implicitWidth + 18
+                Layout.preferredHeight: 28
+                opacity: island.bluetooth && island.bluetooth.busy ? 0.5 : 1
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 8
+                    color: Qt.rgba(island.surfaceHighColor.r, island.surfaceHighColor.g, island.surfaceHighColor.b, bluetoothMouse.containsMouse ? 0.8 : 0.5)
+                }
+
+                Row {
+                    id: bluetoothContent
+                    anchors.left: parent.left
+                    anchors.leftMargin: 9
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 5
+
+                    Text {
+                        text: island.bluetooth ? island.bluetooth.icon : "󰂲"
+                        color: island.bluetooth && island.bluetooth.enabled
+                            ? (island.bluetooth.connectedCount > 0 ? island.secondaryColor : island.accentColor)
+                            : island.mutedColor
+                        font.family: island.monoFont
+                        font.pixelSize: 12
+                        font.weight: Font.Medium
+                    }
+
+                    Text {
+                        text: island.bluetooth ? island.bluetooth.label : "--"
+                        color: island.bluetooth && island.bluetooth.enabled ? island.fgColor : island.mutedColor
+                        font.family: island.monoFont
+                        font.pixelSize: 8
+                        font.weight: Font.DemiBold
+                    }
+                }
+
+                MouseArea {
+                    id: bluetoothMouse
+
+                    anchors.fill: parent
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: mouse => {
+                        if (!island.bluetooth)
+                            return;
+                        if (mouse.button === Qt.RightButton)
+                            island.bluetooth.toggle();
+                        else
+                            island.toggleBluetoothMenu();
+                    }
+                }
+            }
+
+            Item {
+                id: powerItem
+
+                Layout.preferredWidth: powerContent.implicitWidth + 18
+                Layout.preferredHeight: 28
+                opacity: island.power && island.power.busy ? 0.5 : 1
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 8
+                    color: Qt.rgba(island.surfaceHighColor.r, island.surfaceHighColor.g, island.surfaceHighColor.b, powerMouse.containsMouse ? 0.8 : 0.5)
+                }
+
+                Row {
+                    id: powerContent
+                    anchors.left: parent.left
+                    anchors.leftMargin: 9
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 5
+
+                    Text {
+                        text: island.power ? island.power.icon : "󰾅"
+                        color: island.powerColor()
+                        font.family: island.monoFont
+                        font.pixelSize: 12
+                        font.weight: Font.Medium
+                    }
+
+                    Text {
+                        text: island.power ? island.power.label : "--"
+                        color: island.fgColor
+                        font.family: island.monoFont
+                        font.pixelSize: 8
+                        font.weight: Font.DemiBold
+                    }
+                }
+
+                MouseArea {
+                    id: powerMouse
+
+                    anchors.fill: parent
+                    acceptedButtons: Qt.LeftButton
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        if (island.power)
+                            island.power.cycle();
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 1
+            color: island.borderMutedColor
+        }
+
+        RowLayout {
+            Layout.alignment: Qt.AlignHCenter
+            Layout.preferredHeight: 24
+            spacing: 16
 
             Row {
-                anchors.centerIn: parent
-                spacing: 4
+                spacing: 3
 
                 Text {
-                    text: "VOL"
+                    text: "󰻠"
+                    color: island.mutedColor
+                    font.family: island.monoFont
+                    font.pixelSize: 12
+                    font.weight: Font.Medium
+                }
+
+                Text {
+                    text: island.stats ? island.stats.cpuText : "--"
+                    color: island.fgColor
+                    font.family: island.monoFont
+                    font.pixelSize: 10
+                    font.weight: Font.Medium
+                }
+            }
+
+            Row {
+                spacing: 3
+
+                Text {
+                    text: "󰍛"
+                    color: island.mutedColor
+                    font.family: island.monoFont
+                    font.pixelSize: 12
+                    font.weight: Font.Medium
+                }
+
+                Text {
+                    text: island.stats ? island.stats.memText : "--"
+                    color: island.fgColor
+                    font.family: island.monoFont
+                    font.pixelSize: 10
+                    font.weight: Font.Medium
+                }
+            }
+
+            Row {
+                spacing: 3
+
+                Text {
+                    text: "󰔏"
+                    color: island.mutedColor
+                    font.family: island.monoFont
+                    font.pixelSize: 12
+                    font.weight: Font.Medium
+                }
+
+                Text {
+                    text: island.stats ? island.stats.tempText : "--"
+                    color: island.fgColor
+                    font.family: island.monoFont
+                    font.pixelSize: 10
+                    font.weight: Font.Medium
+                }
+            }
+
+            Row {
+                spacing: 3
+
+                Text {
+                    text: island.stats ? island.stats.batteryIcon : "󰂎"
+                    color: island.stats && island.stats.batteryPercent >= 0 && island.stats.batteryPercent <= 20
+                        ? island.errorColor
+                        : island.secondaryColor
+                    font.family: island.monoFont
+                    font.pixelSize: 11
+                    font.weight: Font.Medium
+                }
+
+                Text {
+                    text: island.stats ? island.stats.batteryText : "--"
+                    color: island.stats && island.stats.batteryPercent >= 0 && island.stats.batteryPercent <= 20
+                        ? island.errorColor
+                        : island.fgColor
+                    font.family: island.monoFont
+                    font.pixelSize: 10
+                    font.weight: Font.Medium
+                }
+            }
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 1
+            color: island.borderMutedColor
+        }
+
+        MediaCard {
+            visible: island.media && island.media.hasPlayer
+            Layout.fillWidth: true
+            Layout.preferredHeight: 104
+            media: island.media
+            monoFont: island.monoFont
+            bgColor: island.bgColor
+            surfaceHighColor: island.surfaceHighColor
+            fgColor: island.fgColor
+            mutedColor: island.mutedColor
+            accentColor: island.accentColor
+            secondaryColor: island.secondaryColor
+            onAccentColor: island.onAccentColor
+            errorColor: island.errorColor
+            borderMutedColor: island.borderMutedColor
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 1
+            color: island.borderMutedColor
+        }
+
+        RowLayout {
+            Layout.alignment: Qt.AlignHCenter
+            Layout.preferredHeight: 24
+            spacing: 8
+
+            Item {
+                Layout.preferredWidth: 22
+                Layout.preferredHeight: 22
+
+                Text {
+                    anchors.centerIn: parent
+                    text: island.volume ? island.volume.icon : "󰖁"
+                    color: island.volume && island.volume.muted ? island.mutedColor : island.accentColor
+                    font.family: island.monoFont
+                    font.pixelSize: 16
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        if (island.volume)
+                            island.volume.toggleMute();
+                    }
+                }
+            }
+
+            Text {
+                text: island.volume && island.volume.muted ? "MUTE" : "VOL"
+                color: island.mutedColor
+                font.family: island.monoFont
+                font.pixelSize: 9
+                font.weight: Font.DemiBold
+            }
+
+            Text {
+                Layout.preferredWidth: 42
+                text: island.volume ? island.volume.levelText : "--"
+                color: island.volume && island.volume.muted ? island.mutedColor : island.accentColor
+                font.family: island.monoFont
+                font.pixelSize: 11
+                font.weight: Font.DemiBold
+                horizontalAlignment: Text.AlignRight
+            }
+
+            Rectangle {
+                Layout.preferredWidth: 170
+                Layout.preferredHeight: 4
+                radius: 2
+                color: island.surfaceHighColor
+
+                Rectangle {
+                    width: parent.width * (island.volume ? island.volume.progress : 0)
+                    height: parent.height
+                    radius: parent.radius
+                    color: island.volume && island.volume.muted ? island.mutedColor : island.accentColor
+
+                    Behavior on width {
+                        NumberAnimation {
+                            duration: 120
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: mouse => {
+                        if (island.volume)
+                            island.volume.setLevel(Math.round(mouse.x / width * 100));
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 1
+            color: island.borderMutedColor
+        }
+
+        ColumnLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            spacing: 3
+
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 20
+                spacing: 6
+
+                Text {
+                    text: "NOTIFICATIONS"
                     color: island.mutedColor
                     font.family: island.monoFont
                     font.pixelSize: 9
@@ -2432,14 +2507,181 @@ Rectangle {
                 }
 
                 Text {
-                    text: island.volume ? island.volume.levelText : "--"
-                    color: island.accentColor
+                    text: island.notifications ? island.notifications.history.length : "0"
+                    color: island.borderColor
                     font.family: island.monoFont
-                    font.pixelSize: 11
-                    font.weight: Font.DemiBold
+                    font.pixelSize: 8
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+
+                Item {
+                    id: bellItem
+
+                    Layout.preferredWidth: 22
+                    Layout.preferredHeight: 22
+
+                    HoverHandler {
+                        id: bellHover
+                    }
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "󰂚"
+                        color: bellHover.hovered ? island.accentColor : island.fgColor
+                        font.family: island.monoFont
+                        font.pixelSize: 14
+                        font.weight: Font.Medium
+                    }
+
+                    Rectangle {
+                        visible: island.notifications && island.notifications.unreadCount > 0
+                        width: 14
+                        height: 14
+                        radius: 7
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.rightMargin: -4
+                        anchors.topMargin: -4
+                        color: island.errorColor
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: island.notifications && island.notifications.unreadCount > 9
+                                ? "9+"
+                                : (island.notifications ? island.notifications.unreadCount : "")
+                            color: island.onAccentColor
+                            font.family: island.monoFont
+                            font.pixelSize: 7
+                            font.weight: Font.Bold
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: island.toggleNotificationCenter()
+                    }
+                }
+            }
+
+            Repeater {
+                model: island.notifications ? island.notifications.history.slice(0, 2) : []
+
+                delegate: RowLayout {
+                    id: dashboardNotification
+
+                    required property var modelData
+
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 20
+                    spacing: 5
+
+                    Rectangle {
+                        Layout.preferredWidth: 16
+                        Layout.preferredHeight: 16
+                        radius: 4
+                        color: island.surfaceHighColor
+                        clip: true
+
+                        Image {
+                            id: dashboardNotificationImage
+                            anchors.fill: parent
+                            source: dashboardNotification.modelData.image
+                            sourceSize.width: 16
+                            sourceSize.height: 16
+                            fillMode: Image.PreserveAspectCrop
+                            asynchronous: true
+                            cache: true
+                            visible: dashboardNotification.modelData.image.length > 0 && status === Image.Ready
+                        }
+
+                        IconImage {
+                            id: dashboardNotificationIcon
+                            anchors.centerIn: parent
+                            visible: !dashboardNotificationImage.visible
+                            source: island.notifications
+                                ? island.notifications.resolveIcon(dashboardNotification.modelData.appIcon)
+                                : ""
+                            implicitSize: 11
+                        }
+
+                        Text {
+                            anchors.centerIn: parent
+                            visible: !dashboardNotificationImage.visible && dashboardNotificationIcon.status !== Image.Ready
+                            text: "󰂚"
+                            color: island.mutedColor
+                            font.family: island.monoFont
+                            font.pixelSize: 9
+                        }
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: dashboardNotification.modelData.summary.length > 0
+                            ? dashboardNotification.modelData.summary
+                            : dashboardNotification.modelData.appName
+                        color: island.fgColor
+                        font.family: island.monoFont
+                        font.pixelSize: 9
+                        elide: Text.ElideRight
+                        maximumLineCount: 1
+                        textFormat: Text.PlainText
+                    }
+
+                    Rectangle {
+                        visible: dashboardNotification.modelData.urgency === NotificationUrgency.Critical
+                        width: 5
+                        height: 5
+                        radius: 3
+                        color: island.errorColor
+                    }
+
+                    Text {
+                        text: Qt.formatTime(new Date(dashboardNotification.modelData.timestamp), "hh:mm")
+                        color: island.borderColor
+                        font.family: island.monoFont
+                        font.pixelSize: 8
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: island.toggleNotificationCenter()
+                    }
+                }
+            }
+
+            Item {
+                visible: !island.notifications || island.notifications.history.length === 0
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                Column {
+                    anchors.centerIn: parent
+                    spacing: 5
+
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: "󰂚"
+                        color: island.borderColor
+                        font.family: island.monoFont
+                        font.pixelSize: 20
+                    }
+
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: "No notifications"
+                        color: island.borderColor
+                        font.family: island.monoFont
+                        font.pixelSize: 8
+                    }
                 }
             }
         }
+
     }
 
 }

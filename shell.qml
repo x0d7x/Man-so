@@ -69,10 +69,10 @@ ShellRoot {
             right: true
         }
         margins {
-            top: 5
+            top: 6
         }
 
-        implicitHeight: 420
+        implicitHeight: 440
         color: "transparent"
         exclusiveZone: 34
         aboveWindows: true
@@ -156,14 +156,8 @@ ShellRoot {
             island.toggleNotificationCenter();
         }
 
-
-
         function clearNotifications(): void {
             notifications.clearAll();
         }
-
-
-
-
     }
 }
