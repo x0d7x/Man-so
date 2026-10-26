@@ -133,7 +133,7 @@ Rectangle {
         if (island.mode === "transient")
             return 380;
         if (island.mode === "volume")
-            return 112;
+            return 250;
         return 84;
     }
 
@@ -1465,26 +1465,65 @@ Rectangle {
         }
     }
 
-    Row {
+    RowLayout {
         id: volumeRow
-        anchors.centerIn: parent
-        spacing: 6
+        anchors.fill: parent
+        anchors.leftMargin: 12
+        anchors.rightMargin: 12
+        spacing: 8
         visible: island.mode === "volume"
 
         Text {
-            text: "VOL"
+            text: island.volume ? island.volume.icon : "󰖁"
+            color: island.volume && island.volume.muted ? island.mutedColor : island.accentColor
+            font.family: island.monoFont
+            font.pixelSize: 16
+            font.weight: Font.Medium
+        }
+
+        Text {
+            text: island.volume && island.volume.muted ? "MUTE" : "VOL"
             color: island.mutedColor
             font.family: island.monoFont
-            font.pixelSize: 10
+            font.pixelSize: 9
             font.weight: Font.DemiBold
         }
 
         Text {
+            Layout.preferredWidth: 42
             text: island.volume ? island.volume.levelText : "--"
-            color: island.accentColor
+            color: island.volume && island.volume.muted ? island.mutedColor : island.accentColor
             font.family: island.monoFont
-            font.pixelSize: 13
+            font.pixelSize: 12
             font.weight: Font.DemiBold
+            horizontalAlignment: Text.AlignRight
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 5
+            radius: 3
+            color: island.surfaceHighColor
+
+            Rectangle {
+                width: parent.width * (island.volume ? island.volume.progress : 0)
+                height: parent.height
+                radius: parent.radius
+                color: island.volume && island.volume.muted ? island.mutedColor : island.accentColor
+
+                Behavior on width {
+                    NumberAnimation {
+                        duration: 120
+                        easing.type: Easing.OutCubic
+                    }
+                }
+
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 120
+                    }
+                }
+            }
         }
     }
 
