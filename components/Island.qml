@@ -18,7 +18,16 @@ Rectangle {
     property bool pinned: false
     property bool pointerHovered: false
     property bool transientActive: false
+    property bool suppressHoverKeyboard: false
     property bool wifiMenuOpen: false
+    property bool wifiPopupReady: false
+    property bool wifiPasswordOpen: false
+    property bool bluetoothMenuOpen: false
+    property bool bluetoothPopupReady: false
+    property string bluetoothInput: ""
+    property var wifiSelectedNetwork: null
+    property string wifiPasswordText: ""
+    property string wifiPasswordError: ""
 
     signal pinRequested()
 
@@ -105,8 +114,11 @@ Rectangle {
         return island.resolveIcon("application-x-executable");
     }
 
+    readonly property bool needsKeyboard: island.wifiMenuOpen || island.bluetoothMenuOpen
+        || (island.pointerHovered && !island.suppressHoverKeyboard)
+
     readonly property string mode: {
-        if (island.pinned || island.pointerHovered || island.wifiMenuOpen)
+        if (island.pinned || island.pointerHovered || island.wifiMenuOpen || island.bluetoothMenuOpen)
             return "expanded";
         if (island.volume && island.volume.visible)
             return "volume";
@@ -125,7 +137,7 @@ Rectangle {
         return 84;
     }
 
-    readonly property int targetHeight: island.mode === "expanded" ? 42 : (island.mode === "transient" ? 36 : 34)
+    readonly property int targetHeight: island.mode === "expanded" ? 38 : (island.mode === "transient" ? 36 : 34)
     readonly property string timeText: island.pad(clock.hours) + ":" + island.pad(clock.minutes)
 
     function pad(value) {
@@ -160,21 +172,142 @@ Rectangle {
         Quickshell.execDetached(["swaync-client", "-t", "-sw"]);
     }
 
+    function releaseHoverKeyboard() {
+        if (!island.pointerHovered) {
+            island.suppressHoverKeyboard = false;
+            return;
+        }
+
+        island.suppressHoverKeyboard = true;
+        hoverKeyboardReleaseTimer.restart();
+    }
+
+    function closeWifiMenu() {
+        island.wifiMenuOpen = false;
+        island.wifiPopupReady = false;
+        wifiPopupDelay.stop();
+        island.wifiPasswordOpen = false;
+        island.wifiSelectedNetwork = null;
+        island.wifiPasswordText = "";
+        island.wifiPasswordError = "";
+        if (island.network)
+            island.network.setScanning(false);
+        island.releaseHoverKeyboard();
+    }
+
     function toggleWifiMenu() {
         if (!island.network)
             return;
 
-        island.wifiMenuOpen = !island.wifiMenuOpen;
-        if (island.wifiMenuOpen)
-            island.network.scan();
+        if (island.wifiMenuOpen) {
+            island.closeWifiMenu();
+            return;
+        }
+
+        if (island.bluetoothMenuOpen)
+            island.closeBluetoothMenu();
+
+        island.wifiMenuOpen = true;
+        island.wifiPopupReady = false;
+        wifiPopupDelay.restart();
+        island.network.clearError();
+        island.network.setScanning(true);
     }
 
-    function connectWifi(ssid, secure) {
-        if (!island.network)
+    function selectWifi(network) {
+        if (!network || !island.network)
+            return;
+        if (network.connected) {
+            island.closeWifiMenu();
+            return;
+        }
+
+        island.network.clearError();
+        island.wifiPasswordError = "";
+
+        if (island.network.isEnterprise(network)) {
+            island.wifiPasswordError = "Enterprise Wi-Fi needs the connection editor";
+            return;
+        }
+
+        if (island.network.needsPassword(network)) {
+            island.wifiSelectedNetwork = network;
+            island.wifiPasswordText = "";
+            island.wifiPasswordOpen = true;
+            return;
+        }
+
+        island.network.connect(network);
+    }
+
+    function cancelWifiPassword() {
+        island.wifiPasswordOpen = false;
+        island.wifiSelectedNetwork = null;
+        island.wifiPasswordText = "";
+        island.wifiPasswordError = "";
+        if (island.network)
+            island.network.clearError();
+    }
+
+    function submitWifiPassword() {
+        if (!island.wifiSelectedNetwork || !island.network)
             return;
 
-        island.network.connect(ssid, secure);
-        island.wifiMenuOpen = false;
+        if (island.wifiPasswordText.length === 0) {
+            island.wifiPasswordError = "Password is required";
+            return;
+        }
+
+        island.network.connectWithPassword(island.wifiSelectedNetwork, island.wifiPasswordText);
+        island.wifiPasswordText = "";
+        island.wifiPasswordOpen = false;
+        island.wifiSelectedNetwork = null;
+        island.wifiPasswordError = "";
+    }
+
+    function toggleBluetoothMenu() {
+        if (!island.bluetooth)
+            return;
+
+        if (island.bluetoothMenuOpen) {
+            island.closeBluetoothMenu();
+            return;
+        }
+
+        if (island.wifiMenuOpen)
+            island.closeWifiMenu();
+
+        island.bluetoothMenuOpen = true;
+        island.bluetoothPopupReady = false;
+        bluetoothPopupDelay.restart();
+        island.bluetooth.clearPrompt();
+        island.bluetooth.startDiscovery();
+    }
+
+    function closeBluetoothMenu() {
+        island.bluetoothMenuOpen = false;
+        island.bluetoothPopupReady = false;
+        bluetoothPopupDelay.stop();
+        island.bluetoothInput = "";
+        if (island.bluetooth) {
+            island.bluetooth.cancelPairing();
+            island.bluetooth.stopDiscovery();
+        }
+        island.releaseHoverKeyboard();
+    }
+
+    function submitBluetoothPasskey() {
+        if (!island.bluetooth)
+            return;
+        island.bluetooth.submitPasskey(island.bluetoothInput);
+        island.bluetoothInput = "";
+    }
+
+    function cancelBluetoothPrompt() {
+        if (!island.bluetooth)
+            return;
+        island.bluetooth.rejectPrompt();
+        island.bluetoothInput = "";
     }
 
     function powerColor() {
@@ -190,14 +323,65 @@ Rectangle {
     }
 
     onModeChanged: {
-        if (island.mode !== "expanded")
-            island.wifiMenuOpen = false;
+        if (island.mode !== "expanded") {
+            if (island.wifiMenuOpen)
+                island.closeWifiMenu();
+            if (island.bluetoothMenuOpen)
+                island.closeBluetoothMenu();
+        }
+    }
+
+    Connections {
+        target: island.bluetooth
+
+        function onPromptModeChanged() {
+            island.bluetoothInput = "";
+            if (island.bluetooth && island.bluetooth.promptNeedsInput) {
+                Qt.callLater(() => bluetoothInput.forceActiveFocus());
+            } else if (island.bluetooth && island.bluetooth.promptActive) {
+                Qt.callLater(() => bluetoothPromptOverlay.forceActiveFocus());
+            } else if (island.bluetoothMenuOpen) {
+                Qt.callLater(() => bluetoothEscapeFocus.forceActiveFocus());
+            }
+        }
+    }
+
+    Timer {
+        id: hoverKeyboardReleaseTimer
+        interval: 100
+        onTriggered: island.suppressHoverKeyboard = false
+    }
+
+    Timer {
+        id: wifiPopupDelay
+        interval: 80
+        onTriggered: {
+            if (island.wifiMenuOpen)
+                island.wifiPopupReady = true;
+        }
+    }
+
+    Timer {
+        id: bluetoothPopupDelay
+        interval: 80
+        onTriggered: {
+            if (island.bluetoothMenuOpen)
+                island.bluetoothPopupReady = true;
+        }
+    }
+
+    onWifiPasswordOpenChanged: {
+        if (island.wifiPasswordOpen) {
+            Qt.callLater(() => passwordInput.forceActiveFocus());
+        } else if (island.wifiMenuOpen) {
+            Qt.callLater(() => wifiEscapeFocus.forceActiveFocus());
+        }
     }
 
     width: island.targetWidth
     height: island.targetHeight
     radius: 17
-    color: Qt.rgba(island.bgColor.r, island.bgColor.g, island.bgColor.b, 0.96)
+    color: Qt.rgba(island.bgColor.r, island.bgColor.g, island.bgColor.b)
     border.width: 1
     border.color: island.pinned ? island.accentColor : island.borderMutedColor
     clip: true
@@ -250,7 +434,14 @@ Rectangle {
 
     HoverHandler {
         id: hoverHandler
-        onHoveredChanged: island.pointerHovered = hoverHandler.hovered
+
+        onHoveredChanged: {
+            island.pointerHovered = hoverHandler.hovered;
+            if (!hoverHandler.hovered) {
+                hoverKeyboardReleaseTimer.stop();
+                island.suppressHoverKeyboard = false;
+            }
+        }
     }
 
     MouseArea {
@@ -277,18 +468,23 @@ Rectangle {
         anchor.edges: Edges.Bottom | Edges.Left
         anchor.gravity: Edges.Bottom | Edges.Right
         anchor.margins.bottom: -16
-        visible: island.wifiMenuOpen
+        visible: island.wifiMenuOpen && island.wifiPopupReady
         grabFocus: true
-        implicitWidth: 300
+        implicitWidth: 350
         implicitHeight: 360
         color: "transparent"
 
         onVisibleChanged: {
-            if (!wifiPopup.visible && island.wifiMenuOpen)
-                island.wifiMenuOpen = false;
+            if (!wifiPopup.visible && island.wifiMenuOpen) {
+                island.closeWifiMenu();
+            } else if (wifiPopup.visible && !island.wifiPasswordOpen) {
+                Qt.callLater(() => wifiEscapeFocus.forceActiveFocus());
+            }
         }
 
         Rectangle {
+            id: wifiCard
+
             anchors.fill: parent
             radius: 14
             color: Qt.rgba(island.bgColor.r, island.bgColor.g, island.bgColor.b, 0.98)
@@ -367,7 +563,7 @@ Rectangle {
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
                                 if (island.network)
-                                    island.network.scan();
+                                    island.network.setScanning(true);
                             }
                         }
                     }
@@ -396,9 +592,9 @@ Rectangle {
                     }
 
                     Text {
-                        text: island.network && island.network.scanning
-                            ? "SCANNING"
-                            : (island.network ? island.network.networks.length + " FOUND" : "0 FOUND")
+                        text: island.network
+                            ? island.network.networks.length + " FOUND"
+                            : "0 FOUND"
                         color: island.borderColor
                         font.family: island.monoFont
                         font.pixelSize: 9
@@ -428,7 +624,7 @@ Rectangle {
                             radius: 7
                             color: wifiRow.rowHovered
                                 ? island.surfaceHighColor
-                                : (wifiRow.modelData.inUse ? Qt.rgba(island.accentColor.r, island.accentColor.g, island.accentColor.b, 0.16) : "transparent")
+                                : (wifiRow.modelData.connected ? Qt.rgba(island.accentColor.r, island.accentColor.g, island.accentColor.b, 0.16) : "transparent")
 
                             HoverHandler {
                                 id: wifiRowHover
@@ -441,24 +637,26 @@ Rectangle {
                                 spacing: 6
 
                                 Text {
-                                    text: wifiRow.modelData.inUse ? "󰄬" : (wifiRow.modelData.secure ? "󰌾" : "󰤯")
-                                    color: wifiRow.modelData.inUse ? island.accentColor : island.mutedColor
+                                    text: wifiRow.modelData.connected
+                                        ? "󰄬"
+                                        : (island.network && !island.network.isOpen(wifiRow.modelData) ? "󰌾" : "󰤯")
+                                    color: wifiRow.modelData.connected ? island.accentColor : island.mutedColor
                                     font.family: island.monoFont
                                     font.pixelSize: 12
                                 }
 
                                 Text {
                                     Layout.fillWidth: true
-                                    text: wifiRow.modelData.ssid
-                                    color: wifiRow.modelData.inUse ? island.accentColor : island.fgColor
+                                    text: wifiRow.modelData.name
+                                    color: wifiRow.modelData.connected ? island.accentColor : island.fgColor
                                     font.family: island.monoFont
                                     font.pixelSize: 11
-                                    font.weight: wifiRow.modelData.inUse ? Font.DemiBold : Font.Normal
+                                    font.weight: wifiRow.modelData.connected ? Font.DemiBold : Font.Normal
                                     elide: Text.ElideRight
                                 }
 
                                 Text {
-                                    text: wifiRow.modelData.signal + "%"
+                                    text: Math.round(wifiRow.modelData.signalStrength * 100) + "%"
                                     color: island.mutedColor
                                     font.family: island.monoFont
                                     font.pixelSize: 9
@@ -468,25 +666,35 @@ Rectangle {
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    if (wifiRow.modelData.inUse) {
-                                        island.wifiMenuOpen = false;
-                                    } else {
-                                        island.connectWifi(wifiRow.modelData.ssid, wifiRow.modelData.secure);
-                                    }
-                                }
+                                onClicked: island.selectWifi(wifiRow.modelData)
                             }
                         }
                     }
 
                     Text {
                         anchors.centerIn: parent
-                        visible: !island.network || (!island.network.scanning && island.network.networks.length === 0)
-                        text: island.network && island.network.enabled ? "No networks found" : "Wi-Fi is off"
+                        visible: !island.network || island.network.networks.length === 0
+                        text: {
+                            if (!island.network || !island.network.enabled)
+                                return "Wi-Fi is off";
+                            if (island.network.scanning)
+                                return "Scanning…";
+                            return "No networks found";
+                        }
                         color: island.mutedColor
                         font.family: island.monoFont
                         font.pixelSize: 10
                     }
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    visible: island.network && island.network.lastError.length > 0
+                    text: island.network ? island.network.lastError : ""
+                    color: island.errorColor
+                    font.family: island.monoFont
+                    font.pixelSize: 9
+                    wrapMode: Text.WordWrap
                 }
 
                 Rectangle {
@@ -524,7 +732,716 @@ Rectangle {
                         onClicked: {
                             if (island.network)
                                 island.network.openEditor();
-                            island.wifiMenuOpen = false;
+                            island.closeWifiMenu();
+                        }
+                    }
+                }
+            }
+
+            FocusScope {
+                id: wifiEscapeFocus
+
+                anchors.fill: parent
+                focus: island.wifiMenuOpen && !island.wifiPasswordOpen
+                Keys.onEscapePressed: island.closeWifiMenu()
+            }
+
+            Rectangle {
+                id: wifiPasswordOverlay
+
+                anchors.fill: parent
+                visible: island.wifiPasswordOpen
+                focus: island.wifiPasswordOpen
+                Keys.onEscapePressed: island.cancelWifiPassword()
+                z: 10
+                radius: 14
+                color: Qt.rgba(island.bgColor.r, island.bgColor.g, island.bgColor.b, 0.99)
+                border.width: 1
+                border.color: island.borderMutedColor
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 14
+                    spacing: 10
+
+                    Text {
+                        text: "JOIN NETWORK"
+                        color: island.accentColor
+                        font.family: island.monoFont
+                        font.pixelSize: 10
+                        font.weight: Font.Bold
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: island.wifiSelectedNetwork ? island.wifiSelectedNetwork.name : ""
+                        color: island.fgColor
+                        font.family: island.monoFont
+                        font.pixelSize: 14
+                        font.weight: Font.DemiBold
+                        elide: Text.ElideRight
+                    }
+
+                    Text {
+                        text: "Wi-Fi password"
+                        color: island.mutedColor
+                        font.family: island.monoFont
+                        font.pixelSize: 10
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 36
+                        radius: 8
+                        color: island.surfaceHighColor
+                        border.width: 1
+                        border.color: passwordInput.activeFocus ? island.accentColor : island.borderMutedColor
+
+                        TextInput {
+                            id: passwordInput
+
+                            anchors.fill: parent
+                            anchors.leftMargin: 9
+                            anchors.rightMargin: 9
+                            verticalAlignment: TextInput.AlignVCenter
+                            text: island.wifiPasswordText
+                            color: island.fgColor
+                            selectionColor: island.accentColor
+                            selectedTextColor: island.onAccentColor
+                            font.family: island.monoFont
+                            font.pixelSize: 12
+                            echoMode: TextInput.Password
+                            passwordCharacter: "●"
+                            focus: island.wifiPasswordOpen
+                            onAccepted: island.submitWifiPassword()
+                            onTextChanged: {
+                                if (island.wifiPasswordText !== text)
+                                    island.wifiPasswordText = text;
+                                if (island.wifiPasswordError.length > 0)
+                                    island.wifiPasswordError = "";
+                            }
+                            Keys.onEscapePressed: island.cancelWifiPassword()
+                        }
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        visible: island.wifiPasswordError.length > 0 || (island.network && island.network.lastError.length > 0)
+                        text: island.wifiPasswordError.length > 0
+                            ? island.wifiPasswordError
+                            : (island.network ? island.network.lastError : "")
+                        color: island.errorColor
+                        font.family: island.monoFont
+                        font.pixelSize: 9
+                        wrapMode: Text.WordWrap
+                    }
+
+                    Item {
+                        Layout.fillHeight: true
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        Item {
+                            Layout.fillWidth: true
+                        }
+
+                        Rectangle {
+                            Layout.preferredWidth: 80
+                            Layout.preferredHeight: 30
+                            radius: 8
+                            color: island.surfaceHighColor
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "CANCEL"
+                                color: island.fgColor
+                                font.family: island.monoFont
+                                font.pixelSize: 9
+                                font.weight: Font.DemiBold
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: island.cancelWifiPassword()
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.preferredWidth: 88
+                            Layout.preferredHeight: 30
+                            radius: 8
+                            color: island.wifiPasswordText.length > 0 ? island.accentColor : island.surfaceHighColor
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "CONNECT"
+                                color: island.wifiPasswordText.length > 0 ? island.onAccentColor : island.mutedColor
+                                font.family: island.monoFont
+                                font.pixelSize: 9
+                                font.weight: Font.Bold
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: island.submitWifiPassword()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    PopupWindow {
+        id: bluetoothPopup
+
+        anchor.window: island.panelWindow
+        anchor.item: bluetoothItem
+        anchor.edges: Edges.Bottom | Edges.Left
+        anchor.gravity: Edges.Bottom | Edges.Right
+        anchor.margins.bottom: -16
+        visible: island.bluetoothMenuOpen && island.bluetoothPopupReady
+        grabFocus: true
+        implicitWidth: 320
+        implicitHeight: 380
+        color: "transparent"
+
+        onVisibleChanged: {
+            if (!bluetoothPopup.visible && island.bluetoothMenuOpen) {
+                island.closeBluetoothMenu();
+            } else if (bluetoothPopup.visible && !(island.bluetooth && island.bluetooth.promptActive)) {
+                Qt.callLater(() => bluetoothEscapeFocus.forceActiveFocus());
+            }
+        }
+
+        Rectangle {
+            id: bluetoothCard
+
+            anchors.fill: parent
+            radius: 14
+            color: Qt.rgba(island.bgColor.r, island.bgColor.g, island.bgColor.b, 0.98)
+            border.width: 1
+            border.color: island.borderMutedColor
+            clip: true
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 10
+                spacing: 8
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 7
+
+                    Text {
+                        text: "BLUETOOTH"
+                        color: island.mutedColor
+                        font.family: island.monoFont
+                        font.pixelSize: 10
+                        font.weight: Font.DemiBold
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: island.bluetooth ? island.bluetooth.label : "N/A"
+                        color: island.bluetooth && island.bluetooth.enabled
+                            ? (island.bluetooth.connectedCount > 0 ? island.secondaryColor : island.accentColor)
+                            : island.mutedColor
+                        font.family: island.monoFont
+                        font.pixelSize: 11
+                        font.weight: Font.Medium
+                        elide: Text.ElideRight
+                    }
+
+                    Rectangle {
+                        Layout.preferredWidth: 42
+                        Layout.preferredHeight: 22
+                        radius: 7
+                        color: island.bluetooth && island.bluetooth.enabled ? island.accentColor : island.surfaceHighColor
+                        opacity: island.bluetooth && island.bluetooth.busy ? 0.5 : 1
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: island.bluetooth && island.bluetooth.enabled ? "ON" : "OFF"
+                            color: island.bluetooth && island.bluetooth.enabled ? island.onAccentColor : island.mutedColor
+                            font.family: island.monoFont
+                            font.pixelSize: 9
+                            font.weight: Font.Bold
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (island.bluetooth)
+                                    island.bluetooth.toggle();
+                            }
+                        }
+                    }
+
+                    Item {
+                        Layout.preferredWidth: 20
+                        Layout.preferredHeight: 20
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰑐"
+                            color: island.bluetooth && island.bluetooth.discovering ? island.accentColor : island.mutedColor
+                            font.family: island.monoFont
+                            font.pixelSize: 13
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (island.bluetooth)
+                                    island.bluetooth.startDiscovery();
+                            }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 1
+                    color: island.borderMutedColor
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 6
+                    visible: island.bluetooth && island.bluetooth.enabled
+
+                    Text {
+                        text: "DEVICES"
+                        color: island.mutedColor
+                        font.family: island.monoFont
+                        font.pixelSize: 9
+                        font.weight: Font.DemiBold
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                    }
+
+                    Text {
+                        text: island.bluetooth ? island.bluetooth.devices.length + " FOUND" : "0 FOUND"
+                        color: island.borderColor
+                        font.family: island.monoFont
+                        font.pixelSize: 9
+                    }
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    visible: island.bluetooth && island.bluetooth.enabled
+
+                    ListView {
+                        anchors.fill: parent
+                        clip: true
+                        spacing: 2
+                        model: island.bluetooth ? island.bluetooth.devices : []
+
+                        delegate: Rectangle {
+                            id: bluetoothRow
+
+                            required property var modelData
+
+                            readonly property bool rowHovered: bluetoothRowHover.hovered
+
+                            width: ListView.view.width
+                            height: 40
+                            radius: 7
+                            color: bluetoothRow.rowHovered
+                                ? island.surfaceHighColor
+                                : (bluetoothRow.modelData.connected ? Qt.rgba(island.accentColor.r, island.accentColor.g, island.accentColor.b, 0.16) : "transparent")
+
+                            HoverHandler {
+                                id: bluetoothRowHover
+                            }
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 7
+                                anchors.rightMargin: 7
+                                spacing: 7
+
+                                Text {
+                                    text: bluetoothRow.modelData.connected
+                                        ? "󰂱"
+                                        : (bluetoothRow.modelData.paired ? "󰂯" : "󰂰")
+                                    color: bluetoothRow.modelData.connected
+                                        ? island.secondaryColor
+                                        : (bluetoothRow.modelData.paired ? island.accentColor : island.mutedColor)
+                                    font.family: island.monoFont
+                                    font.pixelSize: 14
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 0
+
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: bluetoothRow.modelData.name
+                                            ? bluetoothRow.modelData.name
+                                            : bluetoothRow.modelData.address
+                                        color: bluetoothRow.modelData.connected ? island.accentColor : island.fgColor
+                                        font.family: island.monoFont
+                                        font.pixelSize: 11
+                                        font.weight: bluetoothRow.modelData.connected ? Font.DemiBold : Font.Medium
+                                        elide: Text.ElideRight
+                                    }
+
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: bluetoothRow.modelData.pairing
+                                            ? "PAIRING"
+                                            : (bluetoothRow.modelData.connected
+                                                ? "CONNECTED"
+                                                : (bluetoothRow.modelData.paired ? "PAIRED" : "AVAILABLE"))
+                                        color: bluetoothRow.modelData.pairing ? island.accentColor : island.mutedColor
+                                        font.family: island.monoFont
+                                        font.pixelSize: 8
+                                        font.weight: Font.DemiBold
+                                        elide: Text.ElideRight
+                                    }
+                                }
+
+                                Text {
+                                    visible: bluetoothRow.modelData.batteryAvailable
+                                    text: bluetoothRow.modelData.batteryAvailable
+                                        ? Math.round(bluetoothRow.modelData.battery * 100) + "%"
+                                        : ""
+                                    color: island.mutedColor
+                                    font.family: island.monoFont
+                                    font.pixelSize: 9
+                                }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: island.bluetooth.activate(bluetoothRow.modelData)
+                            }
+                        }
+                    }
+
+                    Text {
+                        anchors.centerIn: parent
+                        visible: !island.bluetooth || island.bluetooth.devices.length === 0
+                        text: island.bluetooth && island.bluetooth.discovering ? "Scanning…" : "No devices found"
+                        color: island.mutedColor
+                        font.family: island.monoFont
+                        font.pixelSize: 10
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    spacing: 8
+                    visible: !island.bluetooth || !island.bluetooth.enabled
+
+                    Item {
+                        Layout.fillHeight: true
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: "Bluetooth is off"
+                        color: island.mutedColor
+                        font.family: island.monoFont
+                        font.pixelSize: 11
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+
+                    Rectangle {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.preferredWidth: 96
+                        Layout.preferredHeight: 30
+                        radius: 8
+                        color: island.accentColor
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "TURN ON"
+                            color: island.onAccentColor
+                            font.family: island.monoFont
+                            font.pixelSize: 9
+                            font.weight: Font.Bold
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (island.bluetooth)
+                                    island.bluetooth.setEnabled(true);
+                            }
+                        }
+                    }
+
+                    Item {
+                        Layout.fillHeight: true
+                    }
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    visible: island.bluetooth && island.bluetooth.lastError.length > 0
+                    text: island.bluetooth ? island.bluetooth.lastError : ""
+                    color: island.errorColor
+                    font.family: island.monoFont
+                    font.pixelSize: 9
+                    wrapMode: Text.WordWrap
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 1
+                    color: island.borderMutedColor
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 26
+
+                    Row {
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 7
+
+                        Text {
+                            text: "󰒓"
+                            color: island.mutedColor
+                            font.family: island.monoFont
+                            font.pixelSize: 12
+                        }
+
+                        Text {
+                            text: "Open Bluetooth manager"
+                            color: island.fgColor
+                            font.family: island.monoFont
+                            font.pixelSize: 10
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (island.bluetooth)
+                                island.bluetooth.openManager();
+                            island.closeBluetoothMenu();
+                        }
+                    }
+                }
+            }
+
+            FocusScope {
+                id: bluetoothEscapeFocus
+
+                anchors.fill: parent
+                focus: island.bluetoothMenuOpen && !(island.bluetooth && island.bluetooth.promptActive)
+                Keys.onEscapePressed: island.closeBluetoothMenu()
+            }
+
+            Rectangle {
+                id: bluetoothPromptOverlay
+
+                anchors.fill: parent
+                visible: island.bluetooth && island.bluetooth.promptActive
+                focus: island.bluetooth && island.bluetooth.promptActive
+                Keys.onEscapePressed: island.cancelBluetoothPrompt()
+                z: 10
+                radius: 14
+                color: Qt.rgba(island.bgColor.r, island.bgColor.g, island.bgColor.b, 0.99)
+                border.width: 1
+                border.color: island.borderMutedColor
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 14
+                    spacing: 10
+
+                    Text {
+                        text: "BLUETOOTH PAIRING"
+                        color: island.accentColor
+                        font.family: island.monoFont
+                        font.pixelSize: 10
+                        font.weight: Font.Bold
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: island.bluetooth ? island.bluetooth.promptDeviceName : ""
+                        color: island.fgColor
+                        font.family: island.monoFont
+                        font.pixelSize: 14
+                        font.weight: Font.DemiBold
+                        elide: Text.ElideRight
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: island.bluetooth ? island.bluetooth.promptMessage : ""
+                        color: island.mutedColor
+                        font.family: island.monoFont
+                        font.pixelSize: 10
+                        wrapMode: Text.WordWrap
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        visible: island.bluetooth && island.bluetooth.promptPasskey.length > 0
+                        text: island.bluetooth ? island.bluetooth.promptPasskey : ""
+                        color: island.accentColor
+                        font.family: island.monoFont
+                        font.pixelSize: 26
+                        font.weight: Font.Bold
+                        font.letterSpacing: 3
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 36
+                        visible: island.bluetooth && island.bluetooth.promptNeedsInput
+                        radius: 8
+                        color: island.surfaceHighColor
+                        border.width: 1
+                        border.color: bluetoothInput.activeFocus ? island.accentColor : island.borderMutedColor
+
+                        TextInput {
+                            id: bluetoothInput
+
+                            anchors.fill: parent
+                            anchors.leftMargin: 9
+                            anchors.rightMargin: 9
+                            verticalAlignment: TextInput.AlignVCenter
+                            text: island.bluetoothInput
+                            color: island.fgColor
+                            selectionColor: island.accentColor
+                            selectedTextColor: island.onAccentColor
+                            font.family: island.monoFont
+                            font.pixelSize: 12
+                            inputMethodHints: Qt.ImhDigitsOnly
+                            focus: island.bluetooth && island.bluetooth.promptNeedsInput
+                            onAccepted: island.submitBluetoothPasskey()
+                            onTextChanged: {
+                                if (island.bluetoothInput !== text)
+                                    island.bluetoothInput = text;
+                            }
+                            Keys.onEscapePressed: island.cancelBluetoothPrompt()
+                        }
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        visible: island.bluetooth && island.bluetooth.lastError.length > 0
+                        text: island.bluetooth ? island.bluetooth.lastError : ""
+                        color: island.errorColor
+                        font.family: island.monoFont
+                        font.pixelSize: 9
+                        wrapMode: Text.WordWrap
+                    }
+
+                    Item {
+                        Layout.fillHeight: true
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        Item {
+                            Layout.fillWidth: true
+                        }
+
+                        Rectangle {
+                            Layout.preferredWidth: 80
+                            Layout.preferredHeight: 30
+                            radius: 8
+                            color: island.surfaceHighColor
+                            visible: island.bluetooth && island.bluetooth.promptMode !== "display"
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "CANCEL"
+                                color: island.fgColor
+                                font.family: island.monoFont
+                                font.pixelSize: 9
+                                font.weight: Font.DemiBold
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: island.cancelBluetoothPrompt()
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.preferredWidth: 92
+                            Layout.preferredHeight: 30
+                            radius: 8
+                            color: island.accentColor
+                            visible: island.bluetooth && island.bluetooth.promptMode !== "display"
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: island.bluetooth && island.bluetooth.promptNeedsInput ? "PAIR" : "CONFIRM"
+                                color: island.onAccentColor
+                                font.family: island.monoFont
+                                font.pixelSize: 9
+                                font.weight: Font.Bold
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    if (!island.bluetooth)
+                                        return;
+                                    if (island.bluetooth.promptNeedsInput)
+                                        island.submitBluetoothPasskey();
+                                    else
+                                        island.bluetooth.acceptPrompt();
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.preferredWidth: 80
+                            Layout.preferredHeight: 30
+                            radius: 8
+                            color: island.accentColor
+                            visible: island.bluetooth && island.bluetooth.promptMode === "display"
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "DONE"
+                                color: island.onAccentColor
+                                font.family: island.monoFont
+                                font.pixelSize: 9
+                                font.weight: Font.Bold
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    if (island.bluetooth)
+                                        island.bluetooth.dismissPrompt();
+                                }
+                            }
                         }
                     }
                 }
@@ -993,7 +1910,7 @@ Rectangle {
                     if (mouse.button === Qt.RightButton)
                         island.bluetooth.toggle();
                     else
-                        island.bluetooth.openManager();
+                        island.toggleBluetoothMenu();
                 }
             }
         }

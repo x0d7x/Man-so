@@ -61,14 +61,14 @@ ShellRoot {
             right: true
         }
         margins {
-            top: 46
+            top: 9
         }
 
-        implicitHeight: 48
+        implicitHeight: 38
         color: "transparent"
-        exclusiveZone: 0
-        aboveWindows: true
-        focusable: false
+        // exclusiveZone: 1
+        // aboveWindows: true
+        focusable: island.needsKeyboard
 
         mask: Region {
             x: Math.round(island.x)
@@ -136,6 +136,10 @@ ShellRoot {
                 + " window=" + Math.round(panel.width) + "x" + Math.round(panel.height)
                 + " island=" + Math.round(island.x) + "," + Math.round(island.y)
                 + " dpr=" + panel.devicePixelRatio;
+        }
+
+        function reloadTheme(): void {
+            colors.reloadColors();
         }
     }
 }
