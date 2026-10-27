@@ -33,8 +33,13 @@ ShellRoot {
         settings: settings
     }
 
+    PulseEvents {
+        id: pulseEvents
+    }
+
     VolumeState {
         id: volume
+        pulseEvents: pulseEvents
         step: settings.volumeStep
         osdTimeout: settings.volumeOsdTimeout
     }
@@ -54,6 +59,11 @@ ShellRoot {
         id: notifications
         defaultTimeout: settings.notificationOsdTimeout
         maxHistory: settings.notificationHistoryLimit
+    }
+
+    PrivacyState {
+        id: privacy
+        pulseEvents: pulseEvents
     }
 
     MediaState {
@@ -202,6 +212,14 @@ ShellRoot {
 
         function toggleSettings(): void {
             island.toggleSettings();
+        }
+
+        function privacyStatus(): string {
+            return "microphoneKnown=" + privacy.microphoneKnown
+                + " microphoneActive=" + privacy.microphoneActive
+                + " sessions=" + privacy.microphoneSessionCount
+                + " apps=" + privacy.microphoneApps.join(",")
+                + " error=" + privacy.lastError;
         }
 
     }

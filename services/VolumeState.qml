@@ -14,6 +14,7 @@ Scope {
     property int pendingLevel: -1
     property int step: 2
     property int osdTimeout: 1500
+    property var pulseEvents: null
     property string deviceText: ""
 
     readonly property string levelText: root.level < 0 ? "--" : (root.muted ? "MUTE" : root.level + "%")
@@ -146,19 +147,15 @@ Scope {
             hideTimer.restart();
     }
 
-    Component.onCompleted: root.requestUpdate(false)
+    Connections {
+        target: root.pulseEvents ? root.pulseEvents : null
 
-    Process {
-        id: subscribeProcess
-        command: ["pactl", "subscribe"]
-        running: true
-
-        stdout: SplitParser {
-            onRead: data => root.handleEvent(data)
+        function onEvent(line) {
+            root.handleEvent(line);
         }
-
-        onExited: restartSubscribe.restart()
     }
+
+    Component.onCompleted: root.requestUpdate(false)
 
     Process {
         id: getVolume
@@ -190,9 +187,4 @@ Scope {
         onTriggered: root.visible = false
     }
 
-    Timer {
-        id: restartSubscribe
-        interval: 500
-        onTriggered: subscribeProcess.running = true
-    }
 }
