@@ -18,6 +18,8 @@ Scope {
     property bool showSystemStats: true
     property bool showMedia: true
     property bool showVolume: true
+    property bool showBrightness: true
+    property bool showExternalBrightness: true
     property bool showNotifications: true
     property int cpuRefreshInterval: 300
     property int batteryWarningThreshold: 20
@@ -114,9 +116,23 @@ Scope {
         return value === "occupied" || value === "active" ? value : "all";
     }
 
+    function clampCollapsedItemSpacing(value) {
+        const spacing = Number(value);
+        if (!Number.isFinite(spacing))
+            return 4;
+        return Math.max(0, Math.min(12, Math.round(spacing)));
+    }
+
+    function clampCollapsedPadding(value) {
+        const padding = Number(value);
+        if (!Number.isFinite(padding))
+            return 14;
+        return Math.max(8, Math.min(24, Math.round(padding)));
+    }
+
     readonly property var collapsedItemKeys: [
         "time", "workspace", "window", "layout", "cpu", "ram", "temp", "battery",
-        "wifi", "bluetooth", "power", "volume", "media", "notifications", "tray"
+        "wifi", "bluetooth", "power", "volume", "brightness", "externalBrightness", "media", "notifications", "tray"
     ]
 
     function sanitizeCollapsedItems(value) {
@@ -184,6 +200,8 @@ Scope {
         root.showSystemStats = true;
         root.showMedia = true;
         root.showVolume = true;
+        root.showBrightness = true;
+        root.showExternalBrightness = true;
         root.showNotifications = true;
     }
 
@@ -220,6 +238,8 @@ Scope {
         root.showSystemStats = true;
         root.showMedia = true;
         root.showVolume = true;
+        root.showBrightness = true;
+        root.showExternalBrightness = true;
         root.showNotifications = true;
         root.cpuRefreshInterval = 300;
         root.batteryWarningThreshold = 20;
@@ -271,11 +291,16 @@ Scope {
                 root.workspaceVisibility = root.clampWorkspaceVisibility(parsed.workspaceVisibility);
                 root.showOccupiedIndicator = parsed.showOccupiedIndicator === undefined ? true : !!parsed.showOccupiedIndicator;
                 root.includeUrgentWorkspaces = parsed.includeUrgentWorkspaces === undefined ? true : !!parsed.includeUrgentWorkspaces;
+                root.collapsedItems = root.sanitizeCollapsedItems(parsed.collapsedItems);
+                root.collapsedItemSpacing = root.clampCollapsedItemSpacing(parsed.collapsedItemSpacing);
+                root.collapsedPadding = root.clampCollapsedPadding(parsed.collapsedPadding);
                 root.showWorkspaceTags = parsed.showWorkspaceTags === undefined ? true : !!parsed.showWorkspaceTags;
                 root.showWindowInfo = parsed.showWindowInfo === undefined ? true : !!parsed.showWindowInfo;
                 root.showSystemStats = parsed.showSystemStats === undefined ? true : !!parsed.showSystemStats;
                 root.showMedia = parsed.showMedia === undefined ? true : !!parsed.showMedia;
                 root.showVolume = parsed.showVolume === undefined ? true : !!parsed.showVolume;
+                root.showBrightness = parsed.showBrightness === undefined ? true : !!parsed.showBrightness;
+                root.showExternalBrightness = parsed.showExternalBrightness === undefined ? true : !!parsed.showExternalBrightness;
                 root.showNotifications = parsed.showNotifications === undefined ? true : !!parsed.showNotifications;
                 root.cpuRefreshInterval = root.clampCpuRefreshInterval(parsed.cpuRefreshInterval);
                 root.batteryWarningThreshold = root.clampBatteryWarning(parsed.batteryWarningThreshold);
@@ -296,7 +321,7 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 12,
+            "version": 14,
             "settingsPage": root.settingsPage,
             "hoverExpansion": root.hoverExpansion,
             "animationDuration": root.animationDuration,
@@ -318,6 +343,8 @@ Scope {
             "showSystemStats": root.showSystemStats,
             "showMedia": root.showMedia,
             "showVolume": root.showVolume,
+            "showBrightness": root.showBrightness,
+            "showExternalBrightness": root.showExternalBrightness,
             "showNotifications": root.showNotifications,
             "cpuRefreshInterval": root.cpuRefreshInterval,
             "batteryWarningThreshold": root.batteryWarningThreshold,
@@ -441,6 +468,16 @@ Scope {
     }
 
     onShowVolumeChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onShowBrightnessChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onShowExternalBrightnessChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }

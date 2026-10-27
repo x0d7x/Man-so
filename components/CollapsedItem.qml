@@ -215,6 +215,50 @@ Row {
         }
     }
 
+    Row {
+        visible: item.itemType === "brightness"
+        spacing: 3
+
+        Text {
+            text: item.host && item.host.brightness ? item.host.brightness.icon : "󰃞"
+            color: item.host ? item.host.accentColor : "transparent"
+            font.family: item.host ? item.host.monoFont : ""
+            font.pixelSize: item.host ? Math.round(12 * item.host.fontScale) : 12
+            font.weight: Font.Medium
+        }
+
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: item.host && item.host.brightness ? item.host.brightness.percentText : "--"
+            color: item.host ? item.host.fgColor : "transparent"
+            font.family: item.host ? item.host.monoFont : ""
+            font.pixelSize: item.host ? Math.round(9 * item.host.fontScale) : 9
+            font.weight: Font.DemiBold
+        }
+    }
+
+    Row {
+        visible: item.itemType === "externalBrightness"
+        spacing: 3
+
+        Text {
+            text: item.host && item.host.ddcBrightness ? item.host.ddcBrightness.icon : "󰃞"
+            color: item.host ? item.host.secondaryColor : "transparent"
+            font.family: item.host ? item.host.monoFont : ""
+            font.pixelSize: item.host ? Math.round(12 * item.host.fontScale) : 12
+            font.weight: Font.Medium
+        }
+
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: item.host && item.host.ddcBrightness ? item.host.ddcBrightness.percentText : "--"
+            color: item.host ? item.host.fgColor : "transparent"
+            font.family: item.host ? item.host.monoFont : ""
+            font.pixelSize: item.host ? Math.round(9 * item.host.fontScale) : 9
+            font.weight: Font.DemiBold
+        }
+    }
+
     Text {
         visible: item.itemType === "media"
         text: item.host && item.host.media && item.host.media.hasPlayer

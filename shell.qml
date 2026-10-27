@@ -37,6 +37,14 @@ ShellRoot {
         id: volume
     }
 
+    BrightnessState {
+        id: brightness
+    }
+
+    DdcBrightnessState {
+        id: ddcBrightness
+    }
+
     NotificationState {
         id: notifications
     }
@@ -106,6 +114,8 @@ ShellRoot {
             mango: mango
             stats: stats
             volume: volume
+            brightness: brightness
+            ddcBrightness: ddcBrightness
             notifications: notifications
             media: media
             diagnostics: diagnostics

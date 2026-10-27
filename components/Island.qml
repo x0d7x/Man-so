@@ -11,6 +11,8 @@ Rectangle {
     property var mango
     property var stats
     property var volume
+    property var brightness
+    property var ddcBrightness
     property var notifications
     property var media
     property var diagnostics
@@ -135,6 +137,8 @@ Rectangle {
     readonly property bool showSystemStats: island.settings ? island.settings.showSystemStats : true
     readonly property bool showMedia: island.settings ? island.settings.showMedia : true
     readonly property bool showVolume: island.settings ? island.settings.showVolume : true
+    readonly property bool showBrightness: island.settings ? island.settings.showBrightness : true
+    readonly property bool showExternalBrightness: island.settings ? island.settings.showExternalBrightness : true
     readonly property bool showNotifications: island.settings ? island.settings.showNotifications : true
     readonly property string workspaceVisibility: island.settings ? island.settings.workspaceVisibility : "all"
     readonly property bool showOccupiedIndicator: island.settings ? island.settings.showOccupiedIndicator : true
@@ -180,6 +184,8 @@ Rectangle {
             return "expanded";
         if (island.volume && island.volume.visible)
             return "volume";
+        if (island.brightness && island.brightness.visible)
+            return "brightness";
         if (island.media && island.media.visible)
             return "media";
         if ((island.pointerHovered && island.hoverExpansionEnabled) || island.wifiMenuOpen
@@ -202,6 +208,8 @@ Rectangle {
         if (island.mode === "transient")
             return 380;
         if (island.mode === "volume")
+            return 250;
+        if (island.mode === "brightness")
             return 250;
         if (island.mode === "collapsed")
             return Math.max(84, Math.round(collapsedRow.implicitWidth + island.collapsedPadding * 2));
@@ -1980,6 +1988,100 @@ Rectangle {
                     }
                 }
             }
+
+            MouseArea {
+                anchors.fill: parent
+                anchors.topMargin: -6
+                anchors.bottomMargin: -6
+                cursorShape: Qt.PointingHandCursor
+                preventStealing: true
+
+                function applyVolume(x) {
+                    if (island.volume)
+                        island.volume.setLevel(Math.round(Math.max(0, Math.min(width, x)) / width * 100));
+                }
+
+                onPressed: mouse => applyVolume(mouse.x)
+                onPositionChanged: mouse => {
+                    if (pressed)
+                        applyVolume(mouse.x);
+                }
+            }
+        }
+    }
+
+    RowLayout {
+        id: brightnessRow
+        anchors.fill: parent
+        anchors.leftMargin: 12
+        anchors.rightMargin: 12
+        spacing: 8
+        visible: island.mode === "brightness"
+
+        Text {
+            text: island.brightness ? island.brightness.icon : "󰃞"
+            color: island.accentColor
+            font.family: island.monoFont
+            font.pixelSize: Math.round(16 * island.fontScale)
+            font.weight: Font.Medium
+        }
+
+        Text {
+            text: "BRT"
+            color: island.mutedColor
+            font.family: island.monoFont
+            font.pixelSize: Math.round(9 * island.fontScale)
+            font.weight: Font.DemiBold
+        }
+
+        Text {
+            Layout.preferredWidth: 42
+            text: island.brightness ? island.brightness.percentText : "--"
+            color: island.accentColor
+            font.family: island.monoFont
+            font.pixelSize: Math.round(12 * island.fontScale)
+            font.weight: Font.DemiBold
+            horizontalAlignment: Text.AlignRight
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 5
+            radius: 3
+            color: island.surfaceHighColor
+
+            Rectangle {
+                width: parent.width * (island.brightness ? Math.max(0, island.brightness.percent) / 100 : 0)
+                height: parent.height
+                radius: parent.radius
+                color: island.accentColor
+
+                Behavior on width {
+                    NumberAnimation {
+                        duration: 120
+                        easing.type: Easing.OutCubic
+                    }
+                }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                anchors.topMargin: -6
+                anchors.bottomMargin: -6
+                cursorShape: Qt.PointingHandCursor
+                preventStealing: true
+
+                function applyBrightness(x) {
+                    if (island.brightness)
+                        island.brightness.setPercent(Math.round(Math.max(0, Math.min(width, x)) / width * 100));
+                }
+
+                onPressed: mouse => applyBrightness(mouse.x)
+                onPositionChanged: mouse => {
+                    if (pressed)
+                        applyBrightness(mouse.x);
+                }
+            }
         }
     }
 
@@ -2619,10 +2721,179 @@ Rectangle {
 
                 MouseArea {
                     anchors.fill: parent
+                    anchors.topMargin: -7
+                    anchors.bottomMargin: -7
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: mouse => {
+                    preventStealing: true
+
+                    function applyVolume(x) {
                         if (island.volume)
-                            island.volume.setLevel(Math.round(mouse.x / width * 100));
+                            island.volume.setLevel(
+                                Math.round(Math.max(0, Math.min(width, x)) / width * 100), false);
+                    }
+
+                    onPressed: mouse => applyVolume(mouse.x)
+                    onPositionChanged: mouse => {
+                        if (pressed)
+                            applyVolume(mouse.x);
+                    }
+                }
+            }
+        }
+
+        RowLayout {
+            visible: island.showBrightness && island.brightness && island.brightness.available
+            Layout.alignment: Qt.AlignHCenter
+            Layout.preferredHeight: 24
+            spacing: 8
+
+            Item {
+                Layout.preferredWidth: 22
+                Layout.preferredHeight: 22
+
+                Text {
+                    anchors.centerIn: parent
+                    text: island.brightness ? island.brightness.icon : "󰃞"
+                    color: island.accentColor
+                    font.family: island.monoFont
+                    font.pixelSize: Math.round(16 * island.fontScale)
+                }
+            }
+
+            Text {
+                text: "BRT"
+                color: island.mutedColor
+                font.family: island.monoFont
+                font.pixelSize: Math.round(9 * island.fontScale)
+                font.weight: Font.DemiBold
+            }
+
+            Text {
+                Layout.preferredWidth: 42
+                text: island.brightness ? island.brightness.percentText : "--"
+                color: island.accentColor
+                font.family: island.monoFont
+                font.pixelSize: Math.round(11 * island.fontScale)
+                font.weight: Font.DemiBold
+                horizontalAlignment: Text.AlignRight
+            }
+
+            Rectangle {
+                Layout.preferredWidth: 170
+                Layout.preferredHeight: 4
+                radius: 2
+                color: island.surfaceHighColor
+
+                Rectangle {
+                    width: parent.width * (island.brightness ? Math.max(0, island.brightness.percent) / 100 : 0)
+                    height: parent.height
+                    radius: parent.radius
+                    color: island.accentColor
+
+                    Behavior on width {
+                        NumberAnimation {
+                            duration: 120
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    anchors.topMargin: -7
+                    anchors.bottomMargin: -7
+                    cursorShape: Qt.PointingHandCursor
+                    preventStealing: true
+
+                    function applyBrightness(x) {
+                        if (island.brightness)
+                            island.brightness.setPercent(
+                                Math.round(Math.max(0, Math.min(width, x)) / width * 100), false);
+                    }
+
+                    onPressed: mouse => applyBrightness(mouse.x)
+                    onPositionChanged: mouse => {
+                        if (pressed)
+                            applyBrightness(mouse.x);
+                    }
+                }
+            }
+        }
+
+        RowLayout {
+            visible: island.showExternalBrightness && island.ddcBrightness && island.ddcBrightness.available
+            Layout.alignment: Qt.AlignHCenter
+            Layout.preferredHeight: 24
+            spacing: 8
+
+            Item {
+                Layout.preferredWidth: 22
+                Layout.preferredHeight: 22
+
+                Text {
+                    anchors.centerIn: parent
+                    text: island.ddcBrightness ? island.ddcBrightness.icon : "󰃞"
+                    color: island.secondaryColor
+                    font.family: island.monoFont
+                    font.pixelSize: Math.round(16 * island.fontScale)
+                }
+            }
+
+            Text {
+                text: "EXT"
+                color: island.mutedColor
+                font.family: island.monoFont
+                font.pixelSize: Math.round(9 * island.fontScale)
+                font.weight: Font.DemiBold
+            }
+
+            Text {
+                Layout.preferredWidth: 42
+                text: island.ddcBrightness ? island.ddcBrightness.percentText : "--"
+                color: island.secondaryColor
+                font.family: island.monoFont
+                font.pixelSize: Math.round(11 * island.fontScale)
+                font.weight: Font.DemiBold
+                horizontalAlignment: Text.AlignRight
+            }
+
+            Rectangle {
+                Layout.preferredWidth: 170
+                Layout.preferredHeight: 4
+                radius: 2
+                color: island.surfaceHighColor
+
+                Rectangle {
+                    width: parent.width * (island.ddcBrightness ? Math.max(0, island.ddcBrightness.percent) / 100 : 0)
+                    height: parent.height
+                    radius: parent.radius
+                    color: island.secondaryColor
+
+                    Behavior on width {
+                        NumberAnimation {
+                            duration: 120
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    anchors.topMargin: -7
+                    anchors.bottomMargin: -7
+                    cursorShape: Qt.PointingHandCursor
+                    preventStealing: true
+
+                    function applyExternalBrightness(x) {
+                        if (island.ddcBrightness)
+                            island.ddcBrightness.setPercent(
+                                Math.round(Math.max(0, Math.min(width, x)) / width * 100));
+                    }
+
+                    onPressed: mouse => applyExternalBrightness(mouse.x)
+                    onPositionChanged: mouse => {
+                        if (pressed)
+                            applyExternalBrightness(mouse.x);
                     }
                 }
             }
@@ -2630,6 +2901,8 @@ Rectangle {
 
         Rectangle {
             visible: island.showVolume
+                || (island.showBrightness && island.brightness && island.brightness.available)
+                || (island.showExternalBrightness && island.ddcBrightness && island.ddcBrightness.available)
             Layout.fillWidth: true
             Layout.preferredHeight: 1
             color: island.borderMutedColor

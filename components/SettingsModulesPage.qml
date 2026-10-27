@@ -25,6 +25,8 @@ Item {
         { "key": "bluetooth", "label": "Bluetooth", "icon": "󰂯" },
         { "key": "power", "label": "Power", "icon": "󰾅" },
         { "key": "volume", "label": "Volume", "icon": "󰕾" },
+        { "key": "brightness", "label": "Brightness", "icon": "󰃠" },
+        { "key": "externalBrightness", "label": "Ext. brightness", "icon": "󰃠" },
         { "key": "media", "label": "Media", "icon": "󰎆" },
         { "key": "notifications", "label": "Notifications", "icon": "󰂚" },
         { "key": "tray", "label": "Tray", "icon": "󰀻" }
@@ -136,6 +138,34 @@ Item {
                 onAccentColor: page.onAccentColor
                 surfaceHighColor: page.surfaceHighColor
                 onToggled: if (page.settings) page.settings.showVolume = !page.settings.showVolume
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Brightness"
+                description: "Show the dashboard brightness slider."
+                checked: page.settings ? page.settings.showBrightness : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: if (page.settings) page.settings.showBrightness = !page.settings.showBrightness
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "External brightness"
+                description: "Show the DDC/CI brightness slider for external monitors."
+                checked: page.settings ? page.settings.showExternalBrightness : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: if (page.settings) page.settings.showExternalBrightness = !page.settings.showExternalBrightness
             }
 
             SettingsToggleRow {

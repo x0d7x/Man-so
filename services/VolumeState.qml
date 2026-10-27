@@ -11,6 +11,7 @@ Scope {
     property bool available: false
     property bool initialized: false
     property bool pendingShow: false
+    property int pendingLevel: -1
     property int step: 2
     property string deviceText: ""
 
@@ -110,14 +111,25 @@ Scope {
         Quickshell.execDetached(["wpctl", "set-mute", "@DEFAULT_SINK@", "toggle"]);
     }
 
-    function setLevel(percent) {
+    function setLevel(percent, showOsd) {
         if (!root.available)
             return;
 
         root.level = root.clamp(percent);
         root.muted = false;
-        root.show();
-        Quickshell.execDetached(["wpctl", "set-volume", "@DEFAULT_SINK@", root.level + "%"]);
+        if (showOsd === undefined || showOsd)
+            root.show();
+        root.pendingLevel = root.level;
+        if (!levelTimer.running)
+            levelTimer.restart();
+    }
+
+    function flushLevel() {
+        if (root.pendingLevel < 0)
+            return;
+        const value = root.pendingLevel;
+        root.pendingLevel = -1;
+        Quickshell.execDetached(["wpctl", "set-volume", "@DEFAULT_SINK@", value + "%"]);
         Quickshell.execDetached(["wpctl", "set-mute", "@DEFAULT_SINK@", "0"]);
     }
 
@@ -158,6 +170,12 @@ Scope {
         id: queryTimer
         interval: 60
         onTriggered: root.refresh()
+    }
+
+    Timer {
+        id: levelTimer
+        interval: 50
+        onTriggered: root.flushLevel()
     }
 
     Timer {
