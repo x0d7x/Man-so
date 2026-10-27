@@ -39,7 +39,6 @@ ShellRoot {
 
     VolumeState {
         id: volume
-        pulseEvents: pulseEvents
         step: settings.volumeStep
         osdTimeout: settings.volumeOsdTimeout
     }
@@ -217,6 +216,7 @@ ShellRoot {
         function toggleSettings(): void {
             island.toggleSettings();
         }
+
 
 
         function privacyStatus(): string {

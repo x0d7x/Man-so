@@ -1,22 +1,21 @@
 import Quickshell
-import Quickshell.Io
+import Quickshell.Services.Pipewire
 import QtQuick
 
 Scope {
     id: root
 
-    property int level: -1
-    property bool muted: false
     property bool visible: false
-    property bool available: false
-    property bool initialized: false
-    property bool pendingShow: false
-    property int pendingLevel: -1
     property int step: 2
     property int osdTimeout: 1500
-    property var pulseEvents: null
-    property string deviceText: ""
+    property bool suppressOsd: false
 
+    readonly property var sink: Pipewire.defaultAudioSink
+    readonly property var audio: root.sink ? root.sink.audio : null
+    readonly property bool available: Pipewire.ready && root.audio !== null
+    readonly property int level: root.audio ? Math.round(root.audio.volume * 100) : -1
+    readonly property bool muted: root.audio ? root.audio.muted : false
+    readonly property string deviceText: root.sink ? root.sink.description : ""
     readonly property string levelText: root.level < 0 ? "--" : (root.muted ? "MUTE" : root.level + "%")
     readonly property real progress: root.level < 0 ? 0 : root.level / 100
     readonly property string icon: {
@@ -30,116 +29,60 @@ Scope {
     }
 
     function clamp(value) {
-        return Math.max(0, Math.min(100, value));
+        return Math.max(0, Math.min(100, Math.round(value)));
     }
 
     function show() {
+        if (!root.available)
+            return;
         root.visible = true;
         hideTimer.restart();
     }
 
-    function parseVolume(text) {
-        const match = text.match(/Volume:\s*([0-9.]+)(\s*\[MUTED\])?/);
-        if (!match) {
-            root.available = false;
-            root.visible = false;
-            root.level = -1;
-            return;
-        }
-
-        const value = Number.parseFloat(match[1]);
-        if (!Number.isFinite(value)) {
-            root.available = false;
-            root.visible = false;
-            return;
-        }
-
-        const nextLevel = Math.round(value * 100);
-        const nextMuted = match[2] !== undefined;
-        const changed = root.level !== nextLevel || root.muted !== nextMuted;
-        const wasInitialized = root.initialized;
-
-        root.level = nextLevel;
-        root.muted = nextMuted;
-        root.available = true;
-
-        const description = text.match(/node\.description = "([^"]+)"/)
-            || text.match(/alsa\.name = "([^"]+)"/)
-            || text.match(/node\.nick = "([^"]+)"/);
-        root.deviceText = description ? description[1] : "";
-
-        if (wasInitialized && (root.pendingShow || changed))
-            root.show();
-
-        root.initialized = true;
-        root.pendingShow = false;
-    }
-
-    function requestUpdate(showOsd) {
-        if (showOsd)
-            root.pendingShow = true;
-        if (!queryTimer.running)
-            queryTimer.restart();
-    }
-
-    function refresh() {
-        if (!getVolume.running)
-            getVolume.running = true;
+    function beginWrite() {
+        root.suppressOsd = true;
+        suppressTimer.restart();
     }
 
     function adjust(direction) {
-        if (direction === 0 || !root.available)
+        if (direction === 0 || !root.audio)
             return;
-
-        root.level = root.clamp(root.level + direction * root.step);
-        if (direction > 0 && root.muted) {
-            root.muted = false;
-            Quickshell.execDetached(["wpctl", "set-mute", "@DEFAULT_SINK@", "0"]);
-        }
-
-        root.show();
-        Quickshell.execDetached([
-            "wpctl", "set-volume", "-l", "1.0", "@DEFAULT_SINK@",
-            root.step + "%" + (direction > 0 ? "+" : "-")
-        ]);
+        root.setLevel(root.level + direction * root.step, true);
     }
 
     function toggleMute() {
-        if (!root.available)
+        if (!root.audio)
             return;
-
-        root.muted = !root.muted;
+        root.beginWrite();
+        root.audio.muted = !root.audio.muted;
         root.show();
-        Quickshell.execDetached(["wpctl", "set-mute", "@DEFAULT_SINK@", "toggle"]);
     }
 
     function setLevel(percent, showOsd) {
-        if (!root.available)
+        if (!root.audio)
             return;
 
-        root.level = root.clamp(percent);
-        root.muted = false;
+        root.beginWrite();
+        const next = root.clamp(percent);
+        root.audio.volume = next / 100;
+        if (next > 0 && root.audio.muted)
+            root.audio.muted = false;
         if (showOsd === undefined || showOsd)
             root.show();
-        root.pendingLevel = root.level;
-        if (!levelTimer.running)
-            levelTimer.restart();
     }
 
-    function flushLevel() {
-        if (root.pendingLevel < 0)
-            return;
-        const value = root.pendingLevel;
-        root.pendingLevel = -1;
-        Quickshell.execDetached(["wpctl", "set-volume", "@DEFAULT_SINK@", value + "%"]);
-        Quickshell.execDetached(["wpctl", "set-mute", "@DEFAULT_SINK@", "0"]);
-    }
+    Connections {
+        target: root.audio
 
-    function handleEvent(line) {
-        if (line.indexOf("on sink") === -1 && line.indexOf("on server") === -1)
-            return;
+        function onVolumeChanged() {
+            if (!root.suppressOsd)
+                root.show();
+        }
 
-        root.requestUpdate(true);
+        function onMutedChanged() {
+            if (!root.suppressOsd)
+                root.show();
+        }
     }
 
     onOsdTimeoutChanged: {
@@ -147,38 +90,14 @@ Scope {
             hideTimer.restart();
     }
 
-    Connections {
-        target: root.pulseEvents ? root.pulseEvents : null
-
-        function onEvent(line) {
-            root.handleEvent(line);
-        }
-    }
-
-    Component.onCompleted: root.requestUpdate(false)
-
-    Process {
-        id: getVolume
-        command: [
-            "sh", "-c",
-            "wpctl get-volume @DEFAULT_SINK@ 2>&1; wpctl inspect @DEFAULT_SINK@ 2>&1"
-        ]
-
-        stdout: StdioCollector {
-            onStreamFinished: root.parseVolume(this.text)
-        }
+    PwObjectTracker {
+        objects: root.sink ? [root.sink] : []
     }
 
     Timer {
-        id: queryTimer
-        interval: 60
-        onTriggered: root.refresh()
-    }
-
-    Timer {
-        id: levelTimer
-        interval: 50
-        onTriggered: root.flushLevel()
+        id: suppressTimer
+        interval: 120
+        onTriggered: root.suppressOsd = false
     }
 
     Timer {
@@ -186,5 +105,4 @@ Scope {
         interval: root.osdTimeout
         onTriggered: root.visible = false
     }
-
 }

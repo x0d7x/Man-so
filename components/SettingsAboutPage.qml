@@ -117,7 +117,7 @@ Item {
             SettingsInfoRow {
                 Layout.fillWidth: true
                 label: "Audio"
-                value: "PipeWire · pactl + wpctl"
+                value: "PipeWire · Quickshell native"
                 monoFont: page.monoFont
                 fgColor: page.fgColor
                 mutedColor: page.mutedColor

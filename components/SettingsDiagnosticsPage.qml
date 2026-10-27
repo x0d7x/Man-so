@@ -309,7 +309,7 @@ Item {
             SettingsInfoRow {
                 Layout.fillWidth: true
                 label: "Volume backend"
-                value: "PipeWire · pactl subscribe + wpctl"
+                value: "PipeWire · Quickshell native"
                 monoFont: page.monoFont
                 fgColor: page.fgColor
                 mutedColor: page.mutedColor
