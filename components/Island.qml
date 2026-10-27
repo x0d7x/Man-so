@@ -37,7 +37,9 @@ Rectangle {
 
     signal pinRequested()
 
-    readonly property string monoFont: "JetBrainsMono Nerd Font Mono"
+    readonly property string monoFont: island.settings && island.settings.fontFamily.length > 0
+        ? island.settings.fontFamily
+        : "JetBrainsMono Nerd Font Mono"
     readonly property var monitorState: island.mango ? island.mango.monitors[island.mango.focusedMonitor] : null
     readonly property var tags: island.monitorState && island.monitorState.tags ? island.monitorState.tags : []
     readonly property var activeClient: island.monitorState ? island.monitorState.active_client : null
@@ -2770,6 +2772,7 @@ Rectangle {
         accentColor: island.accentColor
         onAccentColor: island.onAccentColor
         borderMutedColor: island.borderMutedColor
+        bgColor: island.bgColor
         diagnostics: island.diagnostics
         settings: island.settings
         onCloseRequested: island.closeSettings()

@@ -7,6 +7,7 @@ FocusScope {
     signal closeRequested()
 
     property string monoFont
+    property color bgColor
     property color surfaceHighColor
     property color fgColor
     property color mutedColor
@@ -15,6 +16,7 @@ FocusScope {
     property color borderMutedColor
     property var diagnostics
     property var settings
+    property bool fontSelectorOpen: false
 
     property int currentPage: 0
     readonly property var navItems: [
@@ -251,6 +253,7 @@ FocusScope {
                     anchors.fill: parent
                     visible: panel.currentPage === 1
                     settings: panel.settings
+                    onFontSelectorRequested: panel.fontSelectorOpen = true
                     monoFont: panel.monoFont
                     fgColor: panel.fgColor
                     mutedColor: panel.mutedColor
@@ -331,9 +334,29 @@ FocusScope {
         easing.type: Easing.OutCubic
     }
 
+    SettingsFontSelector {
+        anchors.fill: parent
+        visible: panel.fontSelectorOpen
+        currentFont: panel.settings ? panel.settings.fontFamily : ""
+        monoFont: panel.monoFont
+        bgColor: panel.bgColor
+        surfaceHighColor: panel.surfaceHighColor
+        fgColor: panel.fgColor
+        mutedColor: panel.mutedColor
+        accentColor: panel.accentColor
+        onAccentColor: panel.onAccentColor
+        borderMutedColor: panel.borderMutedColor
+        onSelected: family => {
+            if (panel.settings)
+                panel.settings.fontFamily = family;
+            panel.fontSelectorOpen = false;
+        }
+        onCloseRequested: panel.fontSelectorOpen = false
+    }
+
     Shortcut {
         sequence: "Esc"
-        enabled: panel.visible
+        enabled: panel.visible && !panel.fontSelectorOpen
         onActivated: panel.closeRequested()
     }
 
@@ -350,6 +373,8 @@ FocusScope {
         if (panel.visible) {
             panel.syncPageFromSettings();
             Qt.callLater(() => panel.forceActiveFocus());
+        } else {
+            panel.fontSelectorOpen = false;
         }
     }
 }

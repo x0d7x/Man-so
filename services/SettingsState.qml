@@ -12,6 +12,7 @@ Scope {
     property int cornerRadius: 17
     property bool borderVisible: true
     property int borderWidth: 1
+    property string fontFamily: "JetBrainsMono Nerd Font Mono"
     property bool initialized: false
     property bool loading: false
     property string lastError: ""
@@ -65,11 +66,18 @@ Scope {
         return Math.max(1, Math.min(4, Math.round(width)));
     }
 
+    function clampFontFamily(value) {
+        return typeof value === "string" && value.trim().length > 0
+            ? value
+            : "JetBrainsMono Nerd Font Mono";
+    }
+
     function resetAppearance() {
         root.backgroundOpacity = 100;
         root.cornerRadius = 17;
         root.borderVisible = true;
         root.borderWidth = 1;
+        root.fontFamily = "JetBrainsMono Nerd Font Mono";
     }
 
     function applyDefaults() {
@@ -81,6 +89,7 @@ Scope {
         root.cornerRadius = 17;
         root.borderVisible = true;
         root.borderWidth = 1;
+        root.fontFamily = "JetBrainsMono Nerd Font Mono";
         root.loading = false;
         root.initialized = true;
     }
@@ -110,6 +119,7 @@ Scope {
                 root.cornerRadius = root.clampCornerRadius(parsed.cornerRadius);
                 root.borderVisible = parsed.borderVisible === undefined ? true : !!parsed.borderVisible;
                 root.borderWidth = root.clampBorderWidth(parsed.borderWidth);
+                root.fontFamily = root.clampFontFamily(parsed.fontFamily);
                 root.lastError = "";
             } catch (error) {
                 root.settingsPage = 0;
@@ -124,14 +134,15 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 3,
+            "version": 4,
             "settingsPage": root.settingsPage,
             "hoverExpansion": root.hoverExpansion,
             "animationDuration": root.animationDuration,
             "backgroundOpacity": root.backgroundOpacity,
             "cornerRadius": root.cornerRadius,
             "borderVisible": root.borderVisible,
-            "borderWidth": root.borderWidth
+            "borderWidth": root.borderWidth,
+            "fontFamily": root.fontFamily
         };
     }
 
@@ -181,6 +192,11 @@ Scope {
     }
 
     onBorderWidthChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onFontFamilyChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }
