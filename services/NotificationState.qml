@@ -16,6 +16,7 @@ Scope {
     property int maxTimeout: 12000
     property int maxHistory: 50
     property var expandedGroups: ({})
+    property bool inhibited: false
 
     readonly property bool hasActive: root.active !== null
     readonly property bool activeCritical: root.active
@@ -131,6 +132,30 @@ Scope {
         };
     }
 
+    function setInhibited(value) {
+        const next = value === true;
+        if (root.inhibited === next)
+            return;
+
+        root.inhibited = next;
+        if (!next)
+            return;
+
+        const current = root.active;
+        const pending = root.queue;
+        root.active = null;
+        root.queue = [];
+        root.visible = false;
+        displayTimer.stop();
+
+        if (current)
+            current.dismiss();
+        for (let i = 0; i < pending.length; ++i) {
+            if (pending[i])
+                pending[i].dismiss();
+        }
+    }
+
     function addToHistory(notification) {
         if (notification.transient)
             return;
@@ -186,6 +211,8 @@ Scope {
 
         notification.tracked = true;
         root.addToHistory(notification);
+        if (root.inhibited)
+            return;
 
         if (!root.active) {
             root.setActive(notification);

@@ -1,5 +1,4 @@
 import Quickshell
-import Quickshell.Services.Notifications
 import Quickshell.Services.SystemTray
 import Quickshell.Widgets
 import QtQuick
@@ -29,6 +28,8 @@ Rectangle {
     property bool transientActive: false
     property bool layoutOsdActive: false
     property string layoutOsdText: ""
+    property bool notificationInhibitOsdActive: false
+    property bool notificationInhibitOsdInhibited: true
     property bool suppressHoverKeyboard: false
     property bool wifiMenuOpen: false
     property bool wifiPasswordOpen: false
@@ -201,6 +202,8 @@ Rectangle {
             return "wifi";
         if (island.bluetoothMenuOpen)
             return "bluetooth";
+        if (island.notificationInhibitOsdActive)
+            return "notificationsOff";
         if (island.notifications && island.notifications.visible && island.notifications.active)
             return "notification";
         if (island.layoutOsdActive)
@@ -238,6 +241,8 @@ Rectangle {
             return 420;
         if (island.mode === "layout")
             return 260;
+        if (island.mode === "notificationsOff")
+            return 260;
         if (island.mode === "transient")
             return 380;
         if (island.mode === "volume")
@@ -262,8 +267,14 @@ Rectangle {
             return 104;
         if (island.mode === "media")
             return 104;
-        if (island.mode === "expanded")
-            return 420;
+        if (island.mode === "expanded") {
+            const noteCount = island.showNotifications && island.notifications
+                ? island.notifications.history.length
+                : 0;
+            if (noteCount <= 1)
+                return 420;
+            return Math.min(620, 420 + (noteCount - 1) * 54);
+        }
         if (island.mode === "transient")
             return 36;
         return 34;
@@ -304,6 +315,12 @@ Rectangle {
         island.layoutOsdText = layout;
         island.layoutOsdActive = true;
         layoutOsdTimer.restart();
+    }
+
+    function showNotificationInhibitOsd(inhibited) {
+        island.notificationInhibitOsdInhibited = inhibited === true;
+        island.notificationInhibitOsdActive = true;
+        notificationInhibitOsdTimer.restart();
     }
 
     function openSettings() {
@@ -601,6 +618,15 @@ Rectangle {
     }
 
     Connections {
+        target: island.notifications
+
+        function onInhibitedChanged() {
+            if (island.notifications)
+                island.showNotificationInhibitOsd(island.notifications.inhibited);
+        }
+    }
+
+    Connections {
         target: island.mango
 
         function onWorkspaceChanged(monitor, activeTags) {
@@ -632,6 +658,12 @@ Rectangle {
         id: layoutOsdTimer
         interval: 1500
         onTriggered: island.layoutOsdActive = false
+    }
+
+    Timer {
+        id: notificationInhibitOsdTimer
+        interval: 2000
+        onTriggered: island.notificationInhibitOsdActive = false
     }
 
     HoverHandler {
@@ -1692,15 +1724,11 @@ Rectangle {
         anchor.rect.x: {
             if (!island.panelWindow)
                 return 0;
-            const bell = bellItem.mapToItem(island, 0, 0);
             const visualLeft = island.x + (island.width - island.width * island.uiScale) / 2;
-            const desired = Math.round(visualLeft + (bell.x + bellItem.width / 2) * island.uiScale - implicitWidth / 2);
+            const desired = Math.round(visualLeft + island.width * island.uiScale / 2 - implicitWidth / 2);
             return Math.max(16, Math.min(desired, island.panelWindow.width - implicitWidth - 16));
         }
-        anchor.rect.y: {
-            const bell = bellItem.mapToItem(island, 0, 0);
-            return Math.round(island.y + (bell.y + bellItem.height) * island.uiScale + 8);
-        }
+        anchor.rect.y: Math.round(island.y + island.height * island.uiScale + 8)
         visible: false
         grabFocus: true
         implicitWidth: 360
@@ -1749,7 +1777,7 @@ Rectangle {
                     spacing: 6
 
                     Text {
-                        text: "NOTIFICATIONS"
+                        text: "NOTIFICATION CENTER"
                         color: island.mutedColor
                         font.family: island.monoFont
                         font.pixelSize: Math.round(10 * island.fontScale)
@@ -1811,271 +1839,19 @@ Rectangle {
                     color: island.borderMutedColor
                 }
 
-                Item {
+                NotificationList {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-
-                    ListView {
-                        anchors.fill: parent
-                        clip: true
-                        spacing: 4
-                        model: island.notifications ? island.notifications.groups : []
-
-                        delegate: Column {
-                            id: notificationGroup
-
-                            required property var modelData
-
-                            readonly property var group: modelData
-
-                            width: ListView.view.width
-                            spacing: 3
-
-                            Rectangle {
-                                id: groupHeader
-
-                                width: parent.width
-                                height: 66
-                                radius: 8
-                                color: groupHover.hovered ? island.surfaceHighColor : "transparent"
-
-                                HoverHandler {
-                                    id: groupHover
-                                }
-
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.margins: 6
-                                    spacing: 8
-
-                                    Rectangle {
-                                        Layout.preferredWidth: 36
-                                        Layout.preferredHeight: 36
-                                        radius: 8
-                                        color: island.surfaceHighColor
-                                        clip: true
-
-                                        Image {
-                                            id: groupImage
-                                            anchors.fill: parent
-                                            source: notificationGroup.group.items.length > 0
-                                                ? notificationGroup.group.items[0].image
-                                                : ""
-                                            sourceSize.width: 36
-                                            sourceSize.height: 36
-                                            fillMode: Image.PreserveAspectCrop
-                                            asynchronous: true
-                                            cache: true
-                                            visible: notificationGroup.group.items.length > 0
-                                                && notificationGroup.group.items[0].image.length > 0
-                                                && status === Image.Ready
-                                        }
-
-                                        IconImage {
-                                            id: groupIcon
-                                            anchors.centerIn: parent
-                                            visible: !groupImage.visible
-                                            source: island.notifications
-                                                ? island.notifications.resolveIcon(notificationGroup.group.appIcon)
-                                                : ""
-                                            implicitSize: 22
-                                        }
-
-                                        Text {
-                                            anchors.centerIn: parent
-                                            visible: !groupImage.visible && groupIcon.status !== Image.Ready
-                                            text: "󰂚"
-                                            color: island.mutedColor
-                                            font.family: island.monoFont
-                                            font.pixelSize: Math.round(17 * island.fontScale)
-                                        }
-                                    }
-
-                                    ColumnLayout {
-                                        Layout.fillWidth: true
-                                        spacing: 0
-
-                                        RowLayout {
-                                            Layout.fillWidth: true
-                                            spacing: 5
-
-                                            Text {
-                                                Layout.fillWidth: true
-                                                text: notificationGroup.group.appName
-                                                color: island.mutedColor
-                                                font.family: island.monoFont
-                                                font.pixelSize: Math.round(9 * island.fontScale)
-                                                font.weight: Font.DemiBold
-                                                elide: Text.ElideRight
-                                                maximumLineCount: 1
-                                            }
-
-                                            Text {
-                                                visible: notificationGroup.group.count > 1
-                                                text: "×" + notificationGroup.group.count
-                                                color: island.borderColor
-                                                font.family: island.monoFont
-                                                font.pixelSize: Math.round(8 * island.fontScale)
-                                                font.weight: Font.DemiBold
-                                            }
-
-                                            Rectangle {
-                                                visible: notificationGroup.group.items.length > 0
-                                                    && notificationGroup.group.items[0].urgency === NotificationUrgency.Critical
-                                                width: 5
-                                                height: 5
-                                                radius: 3
-                                                color: island.errorColor
-                                            }
-
-                                            Text {
-                                                text: notificationGroup.group.items.length > 0
-                                                    ? Qt.formatTime(new Date(notificationGroup.group.items[0].timestamp), "hh:mm")
-                                                    : ""
-                                                color: island.borderColor
-                                                font.family: island.monoFont
-                                                font.pixelSize: Math.round(8 * island.fontScale)
-                                            }
-
-                                            Text {
-                                                text: notificationGroup.group.expanded ? "▾" : "▸"
-                                                color: island.mutedColor
-                                                font.family: island.monoFont
-                                                font.pixelSize: Math.round(10 * island.fontScale)
-                                            }
-                                        }
-
-                                        Text {
-                                            Layout.fillWidth: true
-                                            text: notificationGroup.group.items.length > 0
-                                                ? notificationGroup.group.items[0].summary
-                                                : ""
-                                            color: island.fgColor
-                                            font.family: island.monoFont
-                                            font.pixelSize: Math.round(10 * island.fontScale)
-                                            font.weight: Font.DemiBold
-                                            elide: Text.ElideRight
-                                            maximumLineCount: 1
-                                            textFormat: Text.PlainText
-                                        }
-
-                                        Text {
-                                            Layout.fillWidth: true
-                                            text: notificationGroup.group.items.length > 0
-                                                ? notificationGroup.group.items[0].body
-                                                : ""
-                                            color: island.mutedColor
-                                            font.family: island.monoFont
-                                            font.pixelSize: Math.round(8 * island.fontScale)
-                                            wrapMode: Text.Wrap
-                                            elide: Text.ElideRight
-                                            maximumLineCount: 2
-                                            textFormat: Text.PlainText
-                                        }
-                                    }
-                                }
-
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: {
-                                        if (island.notifications)
-                                            island.notifications.toggleGroup(notificationGroup.group.key);
-                                    }
-                                }
-                            }
-
-                            Repeater {
-                                model: notificationGroup.group.expanded ? notificationGroup.group.items : []
-
-                                delegate: Rectangle {
-                                    id: messageRow
-
-                                    required property var modelData
-
-                                    width: notificationGroup.width
-                                    height: 62
-                                    radius: 7
-                                    color: messageHover.hovered ? island.surfaceHighColor : "transparent"
-
-                                    HoverHandler {
-                                        id: messageHover
-                                    }
-
-                                    RowLayout {
-                                        anchors.fill: parent
-                                        anchors.leftMargin: 12
-                                        anchors.rightMargin: 6
-                                        anchors.topMargin: 5
-                                        anchors.bottomMargin: 5
-                                        spacing: 8
-
-                                        Rectangle {
-                                            Layout.preferredWidth: 2
-                                            Layout.fillHeight: true
-                                            Layout.topMargin: 4
-                                            Layout.bottomMargin: 4
-                                            radius: 1
-                                            color: island.borderMutedColor
-                                            opacity: 0.6
-                                        }
-
-                                        ColumnLayout {
-                                            Layout.fillWidth: true
-                                            spacing: 0
-
-                                            RowLayout {
-                                                Layout.fillWidth: true
-                                                spacing: 5
-
-                                                Text {
-                                                    Layout.fillWidth: true
-                                                    text: messageRow.modelData.summary.length > 0
-                                                        ? messageRow.modelData.summary
-                                                        : messageRow.modelData.appName
-                                                    color: island.fgColor
-                                                    font.family: island.monoFont
-                                                    font.pixelSize: Math.round(9 * island.fontScale)
-                                                    font.weight: Font.DemiBold
-                                                    elide: Text.ElideRight
-                                                    maximumLineCount: 1
-                                                    textFormat: Text.PlainText
-                                                }
-
-                                                Text {
-                                                    text: Qt.formatTime(new Date(messageRow.modelData.timestamp), "hh:mm")
-                                                    color: island.borderColor
-                                                    font.family: island.monoFont
-                                                    font.pixelSize: Math.round(7 * island.fontScale)
-                                                }
-                                            }
-
-                                            Text {
-                                                Layout.fillWidth: true
-                                                text: messageRow.modelData.body
-                                                color: island.mutedColor
-                                                font.family: island.monoFont
-                                                font.pixelSize: Math.round(8 * island.fontScale)
-                                                wrapMode: Text.Wrap
-                                                elide: Text.ElideRight
-                                                maximumLineCount: 3
-                                                textFormat: Text.PlainText
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Text {
-                        anchors.centerIn: parent
-                        visible: !island.notifications || island.notifications.history.length === 0
-                        text: "No notifications"
-                        color: island.mutedColor
-                        font.family: island.monoFont
-                        font.pixelSize: Math.round(10 * island.fontScale)
-                    }
+                    notifications: island.notifications
+                    monoFont: island.monoFont
+                    fontScale: island.fontScale
+                    showImages: island.showNotificationImages
+                    surfaceHighColor: island.surfaceHighColor
+                    fgColor: island.fgColor
+                    mutedColor: island.mutedColor
+                    errorColor: island.errorColor
+                    borderColor: island.borderColor
+                    borderMutedColor: island.borderMutedColor
                 }
             }
         }
@@ -2340,6 +2116,53 @@ Rectangle {
     }
 
 
+
+    RowLayout {
+        id: notificationInhibitOsdRow
+        anchors.fill: parent
+        anchors.leftMargin: 14
+        anchors.rightMargin: 14
+        spacing: 9
+        visible: island.mode === "notificationsOff"
+
+        Item {
+            Layout.preferredWidth: 22
+            Layout.preferredHeight: 22
+
+            Text {
+                anchors.centerIn: parent
+                text: "󰂚"
+                color: island.accentColor
+                font.family: island.monoFont
+                font.pixelSize: Math.round(16 * island.fontScale)
+                font.weight: Font.Medium
+            }
+
+            Text {
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                visible: island.notificationInhibitOsdInhibited
+                text: "󰌾"
+                color: island.mutedColor
+                font.family: island.monoFont
+                font.pixelSize: Math.round(9 * island.fontScale)
+                font.weight: Font.Bold
+            }
+        }
+
+        Text {
+            Layout.fillWidth: true
+            text: island.notificationInhibitOsdInhibited
+                ? "NOTIFICATIONS OFF"
+                : "NOTIFICATIONS ON"
+            color: island.fgColor
+            font.family: island.monoFont
+            font.pixelSize: Math.round(10 * island.fontScale)
+            font.weight: Font.DemiBold
+            horizontalAlignment: Text.AlignRight
+        }
+    }
+
     RowLayout {
         id: layoutOsdRow
         anchors.fill: parent
@@ -2354,14 +2177,6 @@ Rectangle {
             font.family: island.monoFont
             font.pixelSize: Math.round(16 * island.fontScale)
             font.weight: Font.Medium
-        }
-
-        Text {
-            text: "WM LAYOUT"
-            color: island.mutedColor
-            font.family: island.monoFont
-            font.pixelSize: Math.round(9 * island.fontScale)
-            font.weight: Font.DemiBold
         }
 
         Text {
@@ -2439,133 +2254,149 @@ Rectangle {
 
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 28
+            Layout.preferredHeight: 50
             spacing: 8
 
-            Text {
-                text: island.timeText
-                color: island.accentColor
-                font.family: island.monoFont
-                font.pixelSize: Math.round(12 * island.fontScale)
-                font.weight: Font.DemiBold
-                font.letterSpacing: 0.3
-            }
+            Item {
+                Layout.fillWidth: true
+                Layout.preferredWidth: 0
+                implicitHeight: 50
 
-            Text {
-                visible: island.batteryCriticalActive
-                text: island.stats ? island.stats.batteryIcon : "󰂎"
-                color: island.errorColor
-                font.family: island.monoFont
-                font.pixelSize: Math.round(11 * island.fontScale)
-                font.weight: Font.Medium
-            }
+                Row {
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: island.showWorkspaceTags
+                    spacing: 4
 
-            Row {
-                visible: island.showWorkspaceTags
-                spacing: 4
+                    Repeater {
+                        model: island.visibleTags
 
-                Repeater {
-                    model: island.visibleTags
+                        delegate: Rectangle {
+                            id: dashboardTag
 
-                    delegate: Rectangle {
-                        id: dashboardTag
+                            required property var modelData
 
-                        required property var modelData
+                            readonly property var tag: dashboardTag.modelData
+                            readonly property bool active: dashboardTag.tag ? dashboardTag.tag.is_active : false
+                            readonly property bool occupied: dashboardTag.tag ? dashboardTag.tag.client_count > 0 : false
+                            readonly property bool urgent: dashboardTag.tag ? dashboardTag.tag.is_urgent : false
+                            property bool hovered: false
 
-                        readonly property var tag: dashboardTag.modelData
-                        readonly property bool active: dashboardTag.tag ? dashboardTag.tag.is_active : false
-                        readonly property bool occupied: dashboardTag.tag ? dashboardTag.tag.client_count > 0 : false
-                        readonly property bool urgent: dashboardTag.tag ? dashboardTag.tag.is_urgent : false
-                        property bool hovered: false
+                            width: 22
+                            height: 22
+                            radius: 7
+                            color: dashboardTag.active ? island.accentColor : (dashboardTag.hovered ? island.surfaceHighColor : "transparent")
+                            border.width: dashboardTag.active ? 0 : 1
+                            border.color: dashboardTag.urgent
+                                ? island.errorColor
+                                : (dashboardTag.occupied ? island.borderColor : island.borderMutedColor)
 
-                        width: 22
-                        height: 22
-                        radius: 7
-                        color: dashboardTag.active ? island.accentColor : (dashboardTag.hovered ? island.surfaceHighColor : "transparent")
-                        border.width: dashboardTag.active ? 0 : 1
-                        border.color: dashboardTag.urgent
-                            ? island.errorColor
-                            : (dashboardTag.occupied ? island.borderColor : island.borderMutedColor)
+                            Text {
+                                anchors.centerIn: parent
+                                text: dashboardTag.tag ? dashboardTag.tag.index : ""
+                                color: dashboardTag.active ? island.onAccentColor : (dashboardTag.occupied ? island.fgColor : island.mutedColor)
+                                font.family: island.monoFont
+                                font.pixelSize: Math.round(10 * island.fontScale)
+                                font.weight: dashboardTag.active ? Font.Bold : Font.Medium
+                            }
 
-                        Text {
-                            anchors.centerIn: parent
-                            text: dashboardTag.tag ? dashboardTag.tag.index : ""
-                            color: dashboardTag.active ? island.onAccentColor : (dashboardTag.occupied ? island.fgColor : island.mutedColor)
-                            font.family: island.monoFont
-                            font.pixelSize: Math.round(10 * island.fontScale)
-                            font.weight: dashboardTag.active ? Font.Bold : Font.Medium
-                        }
+                            Rectangle {
+                                visible: island.showOccupiedIndicator && dashboardTag.occupied && !dashboardTag.active
+                                width: 3
+                                height: 3
+                                radius: 2
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                anchors.bottom: parent.bottom
+                                anchors.bottomMargin: 2
+                                color: island.accentColor
+                            }
 
-                        Rectangle {
-                            visible: island.showOccupiedIndicator && dashboardTag.occupied && !dashboardTag.active
-                            width: 3
-                            height: 3
-                            radius: 2
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            anchors.bottom: parent.bottom
-                            anchors.bottomMargin: 2
-                            color: island.accentColor
-                        }
+                            HoverHandler {
+                                onHoveredChanged: dashboardTag.hovered = hovered
+                            }
 
-                        HoverHandler {
-                            onHoveredChanged: dashboardTag.hovered = hovered
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            acceptedButtons: Qt.LeftButton
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: island.mango.switchTag(dashboardTag.tag.index)
+                            MouseArea {
+                                anchors.fill: parent
+                                acceptedButtons: Qt.LeftButton
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: island.mango.switchTag(dashboardTag.tag.index)
+                            }
                         }
                     }
                 }
             }
 
-            RowLayout {
+            ColumnLayout {
+                Layout.alignment: Qt.AlignVCenter
+                spacing: 1
+
+                RowLayout {
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 4
+
+                    Text {
+                        text: island.timeText
+                        color: island.accentColor
+                        font.family: island.monoFont
+                        font.pixelSize: Math.round(12 * island.fontScale)
+                        font.weight: Font.DemiBold
+                        font.letterSpacing: 0.3
+                    }
+
+                    Text {
+                        visible: island.batteryCriticalActive
+                        text: island.stats ? island.stats.batteryIcon : "󰂎"
+                        color: island.errorColor
+                        font.family: island.monoFont
+                        font.pixelSize: Math.round(11 * island.fontScale)
+                        font.weight: Font.Medium
+                    }
+                }
+
+                RowLayout {
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 5
+
+                    IconImage {
+                        visible: island.showWindowInfo && island.appIconSource.length > 0
+                        source: island.appIconSource
+                        implicitSize: 18
+                        Layout.preferredWidth: 18
+                        Layout.preferredHeight: 18
+                        Layout.alignment: Qt.AlignVCenter
+                    }
+
+                    Text {
+                        visible: island.showWindowInfo
+                        Layout.maximumWidth: 96
+                        text: island.windowTitle
+                        color: island.fgColor
+                        font.family: island.monoFont
+                        font.pixelSize: Math.round(10 * island.fontScale)
+                        font.weight: Font.Medium
+                        elide: Text.ElideRight
+                        maximumLineCount: 1
+                    }
+
+                    Text {
+                        text: island.layoutSymbol
+                        color: island.tertiaryColor
+                        font.family: island.monoFont
+                        font.pixelSize: Math.round(10 * island.fontScale)
+                        font.weight: Font.Bold
+                    }
+                }
+            }
+
+            Item {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 26
-                spacing: 6
-
-                IconImage {
-                    visible: island.showWindowInfo && island.appIconSource.length > 0
-                    source: island.appIconSource
-                    implicitSize: 20
-                    Layout.preferredWidth: 20
-                    Layout.preferredHeight: 20
-                    Layout.alignment: Qt.AlignVCenter
-                }
-
-                Text {
-                    visible: island.showWindowInfo
-                    Layout.fillWidth: false
-                    Layout.maximumWidth: 80
-                    text: island.windowTitle
-                    color: island.fgColor
-                    font.family: island.monoFont
-                    font.pixelSize: Math.round(11 * island.fontScale)
-                    font.weight: Font.Medium
-                    elide: Text.ElideRight
-                    maximumLineCount: 1
-                }
-
-                Text {
-                    text: "LAYOUT"
-                    color: island.mutedColor
-                    font.family: island.monoFont
-                    font.pixelSize: Math.round(8 * island.fontScale)
-                    font.weight: Font.DemiBold
-                }
-
-                Text {
-                    text: island.layoutSymbol
-                    color: island.tertiaryColor
-                    font.family: island.monoFont
-                    font.pixelSize: Math.round(10 * island.fontScale)
-                    font.weight: Font.Bold
-                }
+                Layout.preferredWidth: 0
+                implicitHeight: 50
 
                 Row {
                     id: trayRow
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
                     spacing: 4
 
                     Repeater {
@@ -2582,10 +2413,6 @@ Rectangle {
                             host: island
                         }
                     }
-                }
-
-                Item {
-                    Layout.fillWidth: true
                 }
             }
         }
@@ -3311,7 +3138,7 @@ Rectangle {
                 spacing: 6
 
                 Text {
-                    text: "NOTIFICATIONS"
+                    text: "NOTIFICATION CENTER"
                     color: island.mutedColor
                     font.family: island.monoFont
                     font.pixelSize: Math.round(9 * island.fontScale)
@@ -3329,192 +3156,41 @@ Rectangle {
                     Layout.fillWidth: true
                 }
 
-                Item {
-                    id: bellItem
-
-                    Layout.preferredWidth: 22
-                    Layout.preferredHeight: 22
+                Text {
+                    text: "CLEAR"
+                    color: clearHover.hovered ? island.accentColor : island.mutedColor
+                    font.family: island.monoFont
+                    font.pixelSize: Math.round(8 * island.fontScale)
+                    font.weight: Font.DemiBold
 
                     HoverHandler {
-                        id: bellHover
-                    }
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "󰂚"
-                        color: bellHover.hovered ? island.accentColor : island.fgColor
-                        font.family: island.monoFont
-                        font.pixelSize: Math.round(14 * island.fontScale)
-                        font.weight: Font.Medium
-                    }
-
-                    Rectangle {
-                        visible: island.notifications && island.notifications.unreadCount > 0
-                        width: 14
-                        height: 14
-                        radius: 7
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-                        anchors.rightMargin: -4
-                        anchors.topMargin: -4
-                        color: island.errorColor
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: island.notifications && island.notifications.unreadCount > 9
-                                ? "9+"
-                                : (island.notifications ? island.notifications.unreadCount : "")
-                            color: island.onAccentColor
-                            font.family: island.monoFont
-                            font.pixelSize: Math.round(7 * island.fontScale)
-                            font.weight: Font.Bold
-                        }
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: island.toggleNotificationCenter()
-                    }
-                }
-            }
-
-            Repeater {
-                model: island.notifications ? island.notifications.history.slice(0, 2) : []
-
-                delegate: RowLayout {
-                    id: dashboardNotification
-
-                    required property var modelData
-
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 30
-                    spacing: 5
-
-                    Rectangle {
-                        Layout.preferredWidth: 16
-                        Layout.preferredHeight: 16
-                        Layout.alignment: Qt.AlignVCenter
-                        radius: 4
-                        color: island.surfaceHighColor
-                        clip: true
-
-                        Image {
-                            id: dashboardNotificationImage
-                            anchors.fill: parent
-                            source: dashboardNotification.modelData.image
-                            sourceSize.width: 16
-                            sourceSize.height: 16
-                            fillMode: Image.PreserveAspectCrop
-                            asynchronous: true
-                            cache: true
-                            visible: island.showNotificationImages
-                                && dashboardNotification.modelData.image.length > 0
-                                && status === Image.Ready
-                        }
-
-                        IconImage {
-                            id: dashboardNotificationIcon
-                            anchors.centerIn: parent
-                            visible: !dashboardNotificationImage.visible
-                            source: island.notifications
-                                ? island.notifications.resolveIcon(dashboardNotification.modelData.appIcon)
-                                : ""
-                            implicitSize: 11
-                        }
-
-                        Text {
-                            anchors.centerIn: parent
-                            visible: !dashboardNotificationImage.visible && dashboardNotificationIcon.status !== Image.Ready
-                            text: "󰂚"
-                            color: island.mutedColor
-                            font.family: island.monoFont
-                            font.pixelSize: Math.round(9 * island.fontScale)
-                        }
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 0
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 5
-
-                            Text {
-                                Layout.fillWidth: true
-                                text: dashboardNotification.modelData.summary.length > 0
-                                    ? dashboardNotification.modelData.summary
-                                    : dashboardNotification.modelData.appName
-                                color: island.fgColor
-                                font.family: island.monoFont
-                                font.pixelSize: Math.round(9 * island.fontScale)
-                                elide: Text.ElideRight
-                                maximumLineCount: 1
-                                textFormat: Text.PlainText
-                            }
-
-                            Rectangle {
-                                visible: dashboardNotification.modelData.urgency === NotificationUrgency.Critical
-                                width: 5
-                                height: 5
-                                radius: 3
-                                color: island.errorColor
-                            }
-
-                            Text {
-                                text: Qt.formatTime(new Date(dashboardNotification.modelData.timestamp), "hh:mm")
-                                color: island.borderColor
-                                font.family: island.monoFont
-                                font.pixelSize: Math.round(8 * island.fontScale)
-                            }
-                        }
-
-                        Text {
-                            Layout.fillWidth: true
-                            visible: dashboardNotification.modelData.body.length > 0
-                            text: dashboardNotification.modelData.body
-                            color: island.mutedColor
-                            font.family: island.monoFont
-                            font.pixelSize: Math.round(8 * island.fontScale)
-                            elide: Text.ElideRight
-                            maximumLineCount: 1
-                            textFormat: Text.PlainText
-                        }
+                        id: clearHover
                     }
 
                     TapHandler {
                         acceptedButtons: Qt.LeftButton
-                        onTapped: island.toggleNotificationCenter()
+                        onTapped: {
+                            if (island.notifications)
+                                island.notifications.clearAll();
+                            island.releaseHoverKeyboard();
+                        }
                     }
                 }
             }
 
-            Item {
-                visible: !island.notifications || island.notifications.history.length === 0
+            NotificationList {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-
-                Column {
-                    anchors.centerIn: parent
-                    spacing: 5
-
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: "󰂚"
-                        color: island.borderColor
-                        font.family: island.monoFont
-                        font.pixelSize: Math.round(20 * island.fontScale)
-                    }
-
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: "No notifications"
-                        color: island.borderColor
-                        font.family: island.monoFont
-                        font.pixelSize: Math.round(8 * island.fontScale)
-                    }
-                }
+                notifications: island.notifications
+                monoFont: island.monoFont
+                fontScale: island.fontScale
+                showImages: island.showNotificationImages
+                surfaceHighColor: island.surfaceHighColor
+                fgColor: island.fgColor
+                mutedColor: island.mutedColor
+                errorColor: island.errorColor
+                borderColor: island.borderColor
+                borderMutedColor: island.borderMutedColor
             }
         }
 

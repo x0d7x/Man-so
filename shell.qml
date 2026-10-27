@@ -121,7 +121,11 @@ ShellRoot {
             top: 6
         }
 
-        implicitHeight: 520
+        implicitHeight: Math.max(
+            520,
+            Math.min(
+                root.targetScreen ? root.targetScreen.height - 12 : 900,
+                Math.ceil(island.height * island.uiScale) + 12))
         color: "transparent"
         exclusiveZone: 34
         aboveWindows: true
@@ -216,6 +220,18 @@ ShellRoot {
 
         function clearNotifications(): void {
             notifications.clearAll();
+        }
+
+        function inhibitNotifications(): void {
+            notifications.setInhibited(true);
+        }
+
+        function uninhibitNotifications(): void {
+            notifications.setInhibited(false);
+        }
+
+        function notificationsInhibited(): bool {
+            return notifications.inhibited;
         }
 
         function toggleSettings(): void {
