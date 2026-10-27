@@ -8,34 +8,56 @@ Scope {
     signal activityChanged()
 
     property bool enabled: true
+    property string currentBlock: ""
+    property int currentId: -1
     property bool currentNodeVideo: false
+    property var videoNodeIds: ({})
+
+    function trigger() {
+        if (root.enabled)
+            root.activityChanged();
+    }
 
     function handleLine(line) {
         if (!root.enabled)
             return;
 
         const trimmed = line.trim();
-        if (trimmed.indexOf("added:") === 0
-            || trimmed.indexOf("removed:") === 0
-            || trimmed.indexOf("changed:") === 0) {
+        if (trimmed === "added:" || trimmed === "removed:" || trimmed === "changed:") {
+            root.currentBlock = trimmed.substring(0, trimmed.length - 1);
+            root.currentId = -1;
             root.currentNodeVideo = false;
-            if (trimmed.indexOf("removed:") === 0)
-                root.activityChanged();
+            return;
+        }
+
+        const idMatch = trimmed.match(/^id:\s*(\d+)/);
+        if (idMatch) {
+            root.currentId = Number.parseInt(idMatch[1], 10);
+            if (root.currentBlock === "removed" && root.videoNodeIds[root.currentId]) {
+                delete root.videoNodeIds[root.currentId];
+                root.trigger();
+            }
             return;
         }
 
         if (line.indexOf('media.class = "Stream/Input/Video"') !== -1
             || line.indexOf('media.class = "Video/Source"') !== -1) {
             root.currentNodeVideo = true;
-            root.activityChanged();
+            if (root.currentId >= 0)
+                root.videoNodeIds[root.currentId] = true;
+            root.trigger();
             return;
         }
 
         if (root.currentNodeVideo && trimmed.indexOf("state:") === 0)
-            root.activityChanged();
+            root.trigger();
     }
 
     onEnabledChanged: {
+        root.videoNodeIds = ({});
+        root.currentBlock = "";
+        root.currentId = -1;
+        root.currentNodeVideo = false;
         if (root.enabled) {
             restartTimer.stop();
             if (!monitorProcess.running)
