@@ -14,6 +14,7 @@ Rectangle {
     property var notifications
     property var media
     property var diagnostics
+    property var settings
     property var bluetooth
     property var network
     property var power
@@ -217,6 +218,8 @@ Rectangle {
     function closeSettings() {
         if (!island.settingsOpen)
             return;
+        if (island.settings)
+            island.settings.flush();
         island.settingsOpen = false;
         island.releaseHoverKeyboard();
     }
@@ -2759,6 +2762,7 @@ Rectangle {
         onAccentColor: island.onAccentColor
         borderMutedColor: island.borderMutedColor
         diagnostics: island.diagnostics
+        settings: island.settings
         onCloseRequested: island.closeSettings()
     }
 

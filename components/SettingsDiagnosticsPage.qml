@@ -5,6 +5,7 @@ Item {
     id: page
 
     property var diagnostics
+    property var settings
     property string monoFont
     property color fgColor
     property color mutedColor
@@ -66,6 +67,28 @@ Item {
             }
 
             Item { implicitHeight: 3 }
+
+            SettingsInfoRow {
+                Layout.fillWidth: true
+                label: "Settings file"
+                value: page.settings ? page.settings.configPath : "—"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                surfaceHighColor: page.surfaceHighColor
+            }
+
+            SettingsInfoRow {
+                Layout.fillWidth: true
+                label: "Settings state"
+                value: page.settings
+                    ? (page.settings.lastError.length > 0 ? page.settings.lastError : (page.settings.initialized ? "Loaded" : "Loading"))
+                    : "—"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                surfaceHighColor: page.surfaceHighColor
+            }
 
             SettingsInfoRow {
                 Layout.fillWidth: true

@@ -14,6 +14,7 @@ FocusScope {
     property color onAccentColor
     property color borderMutedColor
     property var diagnostics
+    property var settings
 
     property int currentPage: 0
     readonly property var navItems: [
@@ -247,6 +248,7 @@ FocusScope {
                     anchors.fill: parent
                     visible: panel.currentPage === 1
                     diagnostics: panel.diagnostics
+                    settings: panel.settings
                     monoFont: panel.monoFont
                     fgColor: panel.fgColor
                     mutedColor: panel.mutedColor
@@ -266,11 +268,31 @@ FocusScope {
         panel.currentPage = Math.min(panel.navItems.length - 1, panel.currentPage + 1);
     }
 
+    function syncPageFromSettings() {
+        if (!panel.settings)
+            return;
+        const next = Math.max(0, Math.min(panel.navItems.length - 1, panel.settings.settingsPage));
+        if (panel.currentPage !== next)
+            panel.currentPage = next;
+    }
+
+    onSettingsChanged: syncPageFromSettings()
+
     onCurrentPageChanged: {
+        if (panel.settings && panel.settings.settingsPage !== panel.currentPage)
+            panel.settings.settingsPage = panel.currentPage;
         if (!pageContainer)
             return;
         pageContainer.opacity = 0;
         pageFade.restart();
+    }
+
+    Connections {
+        target: panel.settings
+
+        function onSettingsPageChanged() {
+            panel.syncPageFromSettings();
+        }
     }
 
     NumberAnimation {
@@ -299,7 +321,9 @@ FocusScope {
     Keys.onEscapePressed: panel.closeRequested()
 
     onVisibleChanged: {
-        if (panel.visible)
+        if (panel.visible) {
+            panel.syncPageFromSettings();
             Qt.callLater(() => panel.forceActiveFocus());
+        }
     }
 }

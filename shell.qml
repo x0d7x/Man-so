@@ -48,6 +48,10 @@ ShellRoot {
         id: diagnostics
     }
 
+    SettingsState {
+        id: settings
+    }
+
     BluetoothState {
         id: bluetooth
     }
@@ -104,6 +108,7 @@ ShellRoot {
             notifications: notifications
             media: media
             diagnostics: diagnostics
+            settings: settings
             bluetooth: bluetooth
             network: network
             power: power
