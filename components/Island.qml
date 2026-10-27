@@ -120,10 +120,13 @@ Rectangle {
         return island.resolveIcon("application-x-executable");
     }
 
+    readonly property bool hoverExpansionEnabled: island.settings ? island.settings.hoverExpansion : true
+    readonly property int animationDuration: island.settings ? island.settings.animationDuration : 220
+
     readonly property bool needsKeyboard: island.settingsOpen
         || island.wifiMenuOpen || island.bluetoothMenuOpen
         || (island.notifications && island.notifications.centerOpen)
-        || (island.pointerHovered && !island.suppressHoverKeyboard)
+        || (island.pointerHovered && island.hoverExpansionEnabled && !island.suppressHoverKeyboard)
 
     readonly property string mode: {
         if (island.settingsOpen)
@@ -136,7 +139,7 @@ Rectangle {
             return "volume";
         if (island.media && island.media.visible)
             return "media";
-        if (island.pointerHovered || island.wifiMenuOpen
+        if ((island.pointerHovered && island.hoverExpansionEnabled) || island.wifiMenuOpen
             || island.bluetoothMenuOpen || (island.notifications && island.notifications.centerOpen))
             return "expanded";
         if (island.transientActive)
@@ -492,14 +495,14 @@ Rectangle {
 
     Behavior on width {
         NumberAnimation {
-            duration: 220
+            duration: island.animationDuration
             easing.type: Easing.OutCubic
         }
     }
 
     Behavior on height {
         NumberAnimation {
-            duration: 180
+            duration: Math.round(island.animationDuration * 0.82)
             easing.type: Easing.OutCubic
         }
     }

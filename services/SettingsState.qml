@@ -6,6 +6,8 @@ Scope {
     id: root
 
     property int settingsPage: 0
+    property bool hoverExpansion: true
+    property int animationDuration: 220
     property bool initialized: false
     property bool loading: false
     property string lastError: ""
@@ -23,12 +25,26 @@ Scope {
         const page = Number(value);
         if (!Number.isFinite(page))
             return 0;
-        return Math.max(0, Math.min(1, Math.round(page)));
+        return Math.max(0, Math.min(2, Math.round(page)));
+    }
+
+    function clampAnimationDuration(value) {
+        const duration = Number(value);
+        if (!Number.isFinite(duration))
+            return 220;
+        return Math.max(80, Math.min(600, Math.round(duration / 10) * 10));
+    }
+
+    function resetGeneral() {
+        root.hoverExpansion = true;
+        root.animationDuration = 220;
     }
 
     function applyDefaults() {
         root.loading = true;
         root.settingsPage = 0;
+        root.hoverExpansion = true;
+        root.animationDuration = 220;
         root.loading = false;
         root.initialized = true;
     }
@@ -37,14 +53,22 @@ Scope {
         root.loading = true;
         if (!text || text.trim().length === 0) {
             root.settingsPage = 0;
+            root.hoverExpansion = true;
+            root.animationDuration = 220;
             root.lastError = "Settings file is empty; using defaults";
         } else {
             try {
                 const parsed = JSON.parse(text);
-                root.settingsPage = root.clampPage(parsed.settingsPage);
+                const version = Number(parsed.version) || 1;
+                const rawPage = Number(parsed.settingsPage) || 0;
+                root.settingsPage = version < 2 ? root.clampPage(rawPage + 1) : root.clampPage(rawPage);
+                root.hoverExpansion = parsed.hoverExpansion === undefined ? true : !!parsed.hoverExpansion;
+                root.animationDuration = root.clampAnimationDuration(parsed.animationDuration);
                 root.lastError = "";
             } catch (error) {
                 root.settingsPage = 0;
+                root.hoverExpansion = true;
+                root.animationDuration = 220;
                 root.lastError = "Malformed settings; using defaults";
             }
         }
@@ -54,8 +78,10 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 1,
-            "settingsPage": root.settingsPage
+            "version": 2,
+            "settingsPage": root.settingsPage,
+            "hoverExpansion": root.hoverExpansion,
+            "animationDuration": root.animationDuration
         };
     }
 
@@ -75,6 +101,16 @@ Scope {
     }
 
     onSettingsPageChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onHoverExpansionChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onAnimationDurationChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }
