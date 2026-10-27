@@ -8,15 +8,47 @@ Row {
     property string itemType
     property var host
 
-    spacing: 4
+    spacing: 3
 
-    Text {
+    Row {
+        visible: item.itemType === "time"
+        spacing: 4
+
+        Text {
+            text: item.host ? item.host.timeText : ""
+            color: item.host ? item.host.accentColor : "transparent"
+            font.family: item.host ? item.host.monoFont : ""
+            font.pixelSize: item.host ? Math.round(13 * item.host.fontScale) : 13
+            font.weight: Font.DemiBold
+            font.letterSpacing: 0.3
+        }
+
+        Text {
+            visible: item.host && item.host.batteryCriticalActive
+            text: item.host && item.host.stats ? item.host.stats.batteryIcon : "󰂎"
+            color: item.host ? item.host.errorColor : "transparent"
+            font.family: item.host ? item.host.monoFont : ""
+            font.pixelSize: item.host ? Math.round(11 * item.host.fontScale) : 11
+            font.weight: Font.Medium
+        }
+    }
+
+    Rectangle {
         visible: item.itemType === "workspace"
-        text: item.host ? item.host.workspaceText : ""
+        implicitWidth: workspaceText.implicitWidth + 10
+        height: item.host ? Math.round(18 * item.host.fontScale) : 18
+        radius: 6
         color: item.host ? item.host.accentColor : "transparent"
-        font.family: item.host ? item.host.monoFont : ""
-        font.pixelSize: item.host ? Math.round(10 * item.host.fontScale) : 10
-        font.weight: Font.DemiBold
+
+        Text {
+            id: workspaceText
+            anchors.centerIn: parent
+            text: item.host ? item.host.workspaceText : ""
+            color: item.host ? item.host.onAccentColor : "transparent"
+            font.family: item.host ? item.host.monoFont : ""
+            font.pixelSize: item.host ? Math.round(9 * item.host.fontScale) : 9
+            font.weight: Font.Bold
+        }
     }
 
     IconImage {
@@ -34,43 +66,96 @@ Row {
         font.weight: Font.Bold
     }
 
-    Text {
+    Row {
         visible: item.itemType === "cpu"
-        text: "󰻠 " + (item.host && item.host.stats ? item.host.stats.cpuText : "--")
-        color: item.host ? item.host.fgColor : "transparent"
-        font.family: item.host ? item.host.monoFont : ""
-        font.pixelSize: item.host ? Math.round(9 * item.host.fontScale) : 9
-        font.weight: Font.Medium
+        spacing: 3
+
+        Text {
+            text: "󰻠"
+            color: item.host ? item.host.mutedColor : "transparent"
+            font.family: item.host ? item.host.monoFont : ""
+            font.pixelSize: item.host ? Math.round(11 * item.host.fontScale) : 11
+            font.weight: Font.Medium
+        }
+
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: item.host && item.host.stats ? item.host.stats.cpuText : "--"
+            color: item.host ? item.host.fgColor : "transparent"
+            font.family: item.host ? item.host.monoFont : ""
+            font.pixelSize: item.host ? Math.round(9 * item.host.fontScale) : 9
+            font.weight: Font.Medium
+        }
     }
 
-    Text {
+    Row {
         visible: item.itemType === "ram"
-        text: "󰍛 " + (item.host && item.host.stats ? item.host.stats.memText : "--")
-        color: item.host ? item.host.fgColor : "transparent"
-        font.family: item.host ? item.host.monoFont : ""
-        font.pixelSize: item.host ? Math.round(9 * item.host.fontScale) : 9
-        font.weight: Font.Medium
+        spacing: 3
+
+        Text {
+            text: "󰍛"
+            color: item.host ? item.host.mutedColor : "transparent"
+            font.family: item.host ? item.host.monoFont : ""
+            font.pixelSize: item.host ? Math.round(11 * item.host.fontScale) : 11
+            font.weight: Font.Medium
+        }
+
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: item.host && item.host.stats ? item.host.stats.memText : "--"
+            color: item.host ? item.host.fgColor : "transparent"
+            font.family: item.host ? item.host.monoFont : ""
+            font.pixelSize: item.host ? Math.round(9 * item.host.fontScale) : 9
+            font.weight: Font.Medium
+        }
     }
 
-    Text {
+    Row {
         visible: item.itemType === "temp"
-        text: "󰔏 " + (item.host && item.host.stats ? item.host.stats.tempText : "--")
-        color: item.host ? item.host.fgColor : "transparent"
-        font.family: item.host ? item.host.monoFont : ""
-        font.pixelSize: item.host ? Math.round(9 * item.host.fontScale) : 9
-        font.weight: Font.Medium
+        spacing: 3
+
+        Text {
+            text: "󰔏"
+            color: item.host ? item.host.mutedColor : "transparent"
+            font.family: item.host ? item.host.monoFont : ""
+            font.pixelSize: item.host ? Math.round(11 * item.host.fontScale) : 11
+            font.weight: Font.Medium
+        }
+
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: item.host && item.host.stats ? item.host.stats.tempText : "--"
+            color: item.host ? item.host.fgColor : "transparent"
+            font.family: item.host ? item.host.monoFont : ""
+            font.pixelSize: item.host ? Math.round(9 * item.host.fontScale) : 9
+            font.weight: Font.Medium
+        }
     }
 
-    Text {
+    Row {
         visible: item.itemType === "battery"
-        text: (item.host && item.host.stats ? item.host.stats.batteryIcon : "󰂎") + " "
-            + (item.host && item.host.stats ? item.host.stats.batteryText : "--")
-        color: item.host && item.host.batteryCriticalActive
-            ? item.host.errorColor
-            : (item.host && item.host.batteryWarningActive ? item.host.accentColor : item.host.fgColor)
-        font.family: item.host ? item.host.monoFont : ""
-        font.pixelSize: item.host ? Math.round(9 * item.host.fontScale) : 9
-        font.weight: Font.Medium
+        spacing: 3
+
+        Text {
+            text: item.host && item.host.stats ? item.host.stats.batteryIcon : "󰂎"
+            color: item.host && item.host.batteryCriticalActive
+                ? item.host.errorColor
+                : (item.host && item.host.batteryWarningActive ? item.host.accentColor : item.host.secondaryColor)
+            font.family: item.host ? item.host.monoFont : ""
+            font.pixelSize: item.host ? Math.round(11 * item.host.fontScale) : 11
+            font.weight: Font.Medium
+        }
+
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: item.host && item.host.stats ? item.host.stats.batteryText : "--"
+            color: item.host && item.host.batteryCriticalActive
+                ? item.host.errorColor
+                : (item.host && item.host.batteryWarningActive ? item.host.accentColor : item.host.fgColor)
+            font.family: item.host ? item.host.monoFont : ""
+            font.pixelSize: item.host ? Math.round(9 * item.host.fontScale) : 9
+            font.weight: Font.Medium
+        }
     }
 
     Text {
@@ -104,16 +189,30 @@ Row {
         font.weight: Font.Medium
     }
 
-    Text {
+    Row {
         visible: item.itemType === "volume"
-        text: (item.host && item.host.volume ? item.host.volume.icon : "󰖁") + " "
-            + (item.host && item.host.volume ? item.host.volume.levelText : "--")
-        color: item.host && item.host.volume && item.host.volume.muted
-            ? item.host.mutedColor
-            : item.host.accentColor
-        font.family: item.host ? item.host.monoFont : ""
-        font.pixelSize: item.host ? Math.round(9 * item.host.fontScale) : 9
-        font.weight: Font.DemiBold
+        spacing: 3
+
+        Text {
+            text: item.host && item.host.volume ? item.host.volume.icon : "󰖁"
+            color: item.host && item.host.volume && item.host.volume.muted
+                ? item.host.mutedColor
+                : item.host.accentColor
+            font.family: item.host ? item.host.monoFont : ""
+            font.pixelSize: item.host ? Math.round(12 * item.host.fontScale) : 12
+            font.weight: Font.Medium
+        }
+
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: item.host && item.host.volume ? item.host.volume.levelText : "--"
+            color: item.host && item.host.volume && item.host.volume.muted
+                ? item.host.mutedColor
+                : item.host.fgColor
+            font.family: item.host ? item.host.monoFont : ""
+            font.pixelSize: item.host ? Math.round(9 * item.host.fontScale) : 9
+            font.weight: Font.DemiBold
+        }
     }
 
     Text {

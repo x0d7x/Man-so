@@ -139,7 +139,9 @@ Rectangle {
     readonly property string workspaceVisibility: island.settings ? island.settings.workspaceVisibility : "all"
     readonly property bool showOccupiedIndicator: island.settings ? island.settings.showOccupiedIndicator : true
     readonly property bool includeUrgentWorkspaces: island.settings ? island.settings.includeUrgentWorkspaces : true
-    readonly property var collapsedItems: island.settings ? island.settings.collapsedItems : []
+    readonly property var collapsedItems: island.settings ? island.settings.collapsedItems : ["time"]
+    readonly property int collapsedItemSpacing: island.settings ? island.settings.collapsedItemSpacing : 4
+    readonly property int collapsedPadding: island.settings ? island.settings.collapsedPadding : 14
     readonly property var visibleTags: {
         const list = island.tags;
         if (island.workspaceVisibility === "active") {
@@ -202,7 +204,7 @@ Rectangle {
         if (island.mode === "volume")
             return 250;
         if (island.mode === "collapsed")
-            return Math.max(84, Math.round(collapsedRow.implicitWidth + 28));
+            return Math.max(84, Math.round(collapsedRow.implicitWidth + island.collapsedPadding * 2));
         return 84;
     }
 
@@ -1906,26 +1908,8 @@ Rectangle {
     Row {
         id: collapsedRow
         anchors.centerIn: parent
-        spacing: 4
+        spacing: island.collapsedItemSpacing
         visible: island.mode === "collapsed"
-
-        Text {
-            text: island.timeText
-            color: island.accentColor
-            font.family: island.monoFont
-            font.pixelSize: Math.round(13 * island.fontScale)
-            font.weight: Font.DemiBold
-            font.letterSpacing: 0.4
-        }
-
-        Text {
-            visible: island.batteryCriticalActive
-            text: island.stats ? island.stats.batteryIcon : "󰂎"
-            color: island.errorColor
-            font.family: island.monoFont
-            font.pixelSize: Math.round(11 * island.fontScale)
-            font.weight: Font.Medium
-        }
 
         Repeater {
             model: island.collapsedItems

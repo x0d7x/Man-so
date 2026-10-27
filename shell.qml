@@ -178,5 +178,6 @@ ShellRoot {
         function toggleSettings(): void {
             island.toggleSettings();
         }
+
     }
 }

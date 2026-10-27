@@ -12,6 +12,7 @@ Item {
     property color onAccentColor
     property color surfaceHighColor
 
+    readonly property var clockOption: { "key": "time", "label": "Clock", "icon": "󰥔" }
     readonly property var collapsedOptions: [
         { "key": "workspace", "label": "Workspace", "icon": "󰅬" },
         { "key": "window", "label": "Window", "icon": "󰖲" },
@@ -28,6 +29,16 @@ Item {
         { "key": "notifications", "label": "Notifications", "icon": "󰂚" },
         { "key": "tray", "label": "Tray", "icon": "󰀻" }
     ]
+
+    function optionInfo(key) {
+        if (key === "time")
+            return page.clockOption;
+        for (let i = 0; i < page.collapsedOptions.length; ++i) {
+            if (page.collapsedOptions[i].key === key)
+                return page.collapsedOptions[i];
+        }
+        return { "key": key, "label": key, "icon": "" };
+    }
 
     Flickable {
         anchors.fill: parent
@@ -220,6 +231,145 @@ Item {
                             onClicked: if (page.settings) page.settings.toggleCollapsedItem(collapsedChip.modelData.key)
                         }
                     }
+                }
+            }
+
+            Text {
+                text: "ORDER"
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.5
+            }
+
+            Text {
+                Layout.fillWidth: true
+                text: "Move items, including the clock, left or right."
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 8
+            }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 4
+
+                Repeater {
+                    model: page.settings ? page.settings.collapsedItems : ["time"]
+
+                    delegate: Rectangle {
+                        id: orderRow
+
+                        required property string modelData
+                        required property int index
+
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 27
+                        radius: 7
+                        color: Qt.rgba(page.surfaceHighColor.r, page.surfaceHighColor.g, page.surfaceHighColor.b, 0.35)
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 6
+                            spacing: 6
+
+                            Text {
+                                text: page.optionInfo(orderRow.modelData).icon
+                                color: page.accentColor
+                                font.family: page.monoFont
+                                font.pixelSize: 11
+                            }
+
+                            Text {
+                                Layout.fillWidth: true
+                                text: page.optionInfo(orderRow.modelData).label
+                                color: page.fgColor
+                                font.family: page.monoFont
+                                font.pixelSize: 9
+                                font.weight: Font.DemiBold
+                            }
+
+                            Item {
+                                Layout.preferredWidth: 20
+                                Layout.preferredHeight: 20
+                                opacity: orderRow.index > 0 ? 1 : 0.3
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "←"
+                                    color: page.mutedColor
+                                    font.family: page.monoFont
+                                    font.pixelSize: 11
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: if (page.settings) page.settings.moveCollapsedItem(orderRow.modelData, -1)
+                                }
+                            }
+
+                            Item {
+                                Layout.preferredWidth: 20
+                                Layout.preferredHeight: 20
+                                opacity: page.settings && orderRow.index < page.settings.collapsedItems.length - 1 ? 1 : 0.3
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "→"
+                                    color: page.mutedColor
+                                    font.family: page.monoFont
+                                    font.pixelSize: 11
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: if (page.settings) page.settings.moveCollapsedItem(orderRow.modelData, 1)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            SettingsSlider {
+                Layout.fillWidth: true
+                label: "Item spacing"
+                value: page.settings ? page.settings.collapsedItemSpacing : 4
+                from: 0
+                to: 12
+                step: 1
+                suffix: " px"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                surfaceHighColor: page.surfaceHighColor
+                onMoved: value => {
+                    if (page.settings)
+                        page.settings.collapsedItemSpacing = value;
+                }
+            }
+
+            SettingsSlider {
+                Layout.fillWidth: true
+                label: "Pill padding"
+                value: page.settings ? page.settings.collapsedPadding : 14
+                from: 8
+                to: 24
+                step: 1
+                suffix: " px"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                surfaceHighColor: page.surfaceHighColor
+                onMoved: value => {
+                    if (page.settings)
+                        page.settings.collapsedPadding = value;
                 }
             }
 

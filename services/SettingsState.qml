@@ -27,7 +27,9 @@ Scope {
     property string workspaceVisibility: "all"
     property bool showOccupiedIndicator: true
     property bool includeUrgentWorkspaces: true
-    property var collapsedItems: []
+    property var collapsedItems: ["time"]
+    property int collapsedItemSpacing: 4
+    property int collapsedPadding: 14
     property bool initialized: false
     property bool loading: false
     property string lastError: ""
@@ -113,19 +115,21 @@ Scope {
     }
 
     readonly property var collapsedItemKeys: [
-        "workspace", "window", "layout", "cpu", "ram", "temp", "battery",
+        "time", "workspace", "window", "layout", "cpu", "ram", "temp", "battery",
         "wifi", "bluetooth", "power", "volume", "media", "notifications", "tray"
     ]
 
     function sanitizeCollapsedItems(value) {
-        if (!Array.isArray(value))
-            return [];
         const result = [];
-        for (let i = 0; i < value.length; ++i) {
-            const key = String(value[i]);
-            if (root.collapsedItemKeys.indexOf(key) !== -1 && result.indexOf(key) === -1)
-                result.push(key);
+        if (Array.isArray(value)) {
+            for (let i = 0; i < value.length; ++i) {
+                const key = String(value[i]);
+                if (root.collapsedItemKeys.indexOf(key) !== -1 && result.indexOf(key) === -1)
+                    result.push(key);
+            }
         }
+        if (result.indexOf("time") === -1)
+            result.unshift("time");
         return result;
     }
 
@@ -134,7 +138,7 @@ Scope {
     }
 
     function toggleCollapsedItem(key) {
-        if (root.collapsedItemKeys.indexOf(key) === -1)
+        if (key === "time" || root.collapsedItemKeys.indexOf(key) === -1)
             return;
         const list = root.collapsedItems.slice();
         const index = list.indexOf(key);
@@ -145,8 +149,21 @@ Scope {
         root.collapsedItems = list;
     }
 
+    function moveCollapsedItem(key, delta) {
+        const list = root.collapsedItems.slice();
+        const index = list.indexOf(key);
+        const target = index + delta;
+        if (index < 0 || target < 0 || target >= list.length)
+            return;
+        list[index] = list[target];
+        list[target] = key;
+        root.collapsedItems = list;
+    }
+
     function resetCollapsedItems() {
-        root.collapsedItems = [];
+        root.collapsedItems = ["time"];
+        root.collapsedItemSpacing = 4;
+        root.collapsedPadding = 14;
     }
 
     function resetMango() {
@@ -195,7 +212,9 @@ Scope {
         root.workspaceVisibility = "all";
         root.showOccupiedIndicator = true;
         root.includeUrgentWorkspaces = true;
-        root.collapsedItems = [];
+        root.collapsedItems = ["time"];
+        root.collapsedItemSpacing = 4;
+        root.collapsedPadding = 14;
         root.showWorkspaceTags = true;
         root.showWindowInfo = true;
         root.showSystemStats = true;
@@ -277,7 +296,7 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 11,
+            "version": 12,
             "settingsPage": root.settingsPage,
             "hoverExpansion": root.hoverExpansion,
             "animationDuration": root.animationDuration,
@@ -292,6 +311,8 @@ Scope {
             "showOccupiedIndicator": root.showOccupiedIndicator,
             "includeUrgentWorkspaces": root.includeUrgentWorkspaces,
             "collapsedItems": root.collapsedItems,
+            "collapsedItemSpacing": root.collapsedItemSpacing,
+            "collapsedPadding": root.collapsedPadding,
             "showWorkspaceTags": root.showWorkspaceTags,
             "showWindowInfo": root.showWindowInfo,
             "showSystemStats": root.showSystemStats,
@@ -385,6 +406,16 @@ Scope {
     }
 
     onCollapsedItemsChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onCollapsedItemSpacingChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onCollapsedPaddingChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }
