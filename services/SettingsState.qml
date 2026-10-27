@@ -24,6 +24,9 @@ Scope {
     property int batteryCriticalThreshold: 10
     property int fontSize: 11
     property int uiScale: 100
+    property string workspaceVisibility: "all"
+    property bool showOccupiedIndicator: true
+    property bool includeUrgentWorkspaces: true
     property bool initialized: false
     property bool loading: false
     property string lastError: ""
@@ -41,7 +44,7 @@ Scope {
         const page = Number(value);
         if (!Number.isFinite(page))
             return 0;
-        return Math.max(0, Math.min(5, Math.round(page)));
+        return Math.max(0, Math.min(6, Math.round(page)));
     }
 
     function clampAnimationDuration(value) {
@@ -104,6 +107,16 @@ Scope {
         return Math.max(1, Math.min(20, Math.round(level)));
     }
 
+    function clampWorkspaceVisibility(value) {
+        return value === "occupied" || value === "active" ? value : "all";
+    }
+
+    function resetMango() {
+        root.workspaceVisibility = "all";
+        root.showOccupiedIndicator = true;
+        root.includeUrgentWorkspaces = true;
+    }
+
     function resetPower() {
         root.cpuRefreshInterval = 300;
         root.batteryWarningThreshold = 20;
@@ -141,6 +154,9 @@ Scope {
         root.fontFamily = "JetBrainsMono Nerd Font Mono";
         root.fontSize = 11;
         root.uiScale = 100;
+        root.workspaceVisibility = "all";
+        root.showOccupiedIndicator = true;
+        root.includeUrgentWorkspaces = true;
         root.showWorkspaceTags = true;
         root.showWindowInfo = true;
         root.showSystemStats = true;
@@ -167,13 +183,15 @@ Scope {
                 const version = Number(parsed.version) || 1;
                 const rawPage = Number(parsed.settingsPage) || 0;
                 if (version < 2) {
-                    root.settingsPage = root.clampPage(rawPage + 4);
+                    root.settingsPage = root.clampPage(rawPage + 5);
                 } else if (version < 3) {
-                    root.settingsPage = root.clampPage(rawPage === 0 ? 0 : rawPage + 3);
+                    root.settingsPage = root.clampPage(rawPage === 0 ? 0 : rawPage + 4);
                 } else if (version < 5) {
-                    root.settingsPage = root.clampPage(rawPage <= 1 ? rawPage : rawPage + 2);
+                    root.settingsPage = root.clampPage(rawPage <= 1 ? rawPage : rawPage + 3);
                 } else if (version < 6) {
-                    root.settingsPage = root.clampPage(rawPage <= 2 ? rawPage : rawPage + 1);
+                    root.settingsPage = root.clampPage(rawPage <= 2 ? rawPage : rawPage + 2);
+                } else if (version < 10) {
+                    root.settingsPage = root.clampPage(rawPage <= 3 ? rawPage : rawPage + 1);
                 } else {
                     root.settingsPage = root.clampPage(rawPage);
                 }
@@ -192,6 +210,9 @@ Scope {
                 root.uiScale = parsed.uiScale === undefined
                     ? 100
                     : Math.max(85, Math.min(115, Math.round(Number(parsed.uiScale) / 5) * 5));
+                root.workspaceVisibility = root.clampWorkspaceVisibility(parsed.workspaceVisibility);
+                root.showOccupiedIndicator = parsed.showOccupiedIndicator === undefined ? true : !!parsed.showOccupiedIndicator;
+                root.includeUrgentWorkspaces = parsed.includeUrgentWorkspaces === undefined ? true : !!parsed.includeUrgentWorkspaces;
                 root.showWorkspaceTags = parsed.showWorkspaceTags === undefined ? true : !!parsed.showWorkspaceTags;
                 root.showWindowInfo = parsed.showWindowInfo === undefined ? true : !!parsed.showWindowInfo;
                 root.showSystemStats = parsed.showSystemStats === undefined ? true : !!parsed.showSystemStats;
@@ -217,7 +238,7 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 9,
+            "version": 10,
             "settingsPage": root.settingsPage,
             "hoverExpansion": root.hoverExpansion,
             "animationDuration": root.animationDuration,
@@ -228,6 +249,9 @@ Scope {
             "fontFamily": root.fontFamily,
             "fontSize": root.fontSize,
             "uiScale": root.uiScale,
+            "workspaceVisibility": root.workspaceVisibility,
+            "showOccupiedIndicator": root.showOccupiedIndicator,
+            "includeUrgentWorkspaces": root.includeUrgentWorkspaces,
             "showWorkspaceTags": root.showWorkspaceTags,
             "showWindowInfo": root.showWindowInfo,
             "showSystemStats": root.showSystemStats,
@@ -301,6 +325,21 @@ Scope {
     }
 
     onUiScaleChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onWorkspaceVisibilityChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onShowOccupiedIndicatorChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onIncludeUrgentWorkspacesChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }

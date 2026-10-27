@@ -136,6 +136,20 @@ Rectangle {
     readonly property bool showMedia: island.settings ? island.settings.showMedia : true
     readonly property bool showVolume: island.settings ? island.settings.showVolume : true
     readonly property bool showNotifications: island.settings ? island.settings.showNotifications : true
+    readonly property string workspaceVisibility: island.settings ? island.settings.workspaceVisibility : "all"
+    readonly property bool showOccupiedIndicator: island.settings ? island.settings.showOccupiedIndicator : true
+    readonly property bool includeUrgentWorkspaces: island.settings ? island.settings.includeUrgentWorkspaces : true
+    readonly property var visibleTags: {
+        const list = island.tags;
+        if (island.workspaceVisibility === "active") {
+            return list.filter(tag => tag && (tag.is_active || (island.includeUrgentWorkspaces && tag.is_urgent)));
+        }
+        if (island.workspaceVisibility === "occupied") {
+            return list.filter(tag => tag && (tag.client_count > 0 || tag.is_active
+                || (island.includeUrgentWorkspaces && tag.is_urgent)));
+        }
+        return list;
+    }
     readonly property int batteryWarningThreshold: island.settings ? island.settings.batteryWarningThreshold : 20
     readonly property int batteryCriticalThreshold: island.settings ? island.settings.batteryCriticalThreshold : 10
     readonly property bool batteryCharging: island.stats
@@ -2062,16 +2076,17 @@ Rectangle {
                 spacing: 4
 
                 Repeater {
-                    model: 5
+                    model: island.visibleTags
 
-                    Rectangle {
+                    delegate: Rectangle {
                         id: dashboardTag
 
-                        required property int index
+                        required property var modelData
 
-                        readonly property var tag: island.tags.length > dashboardTag.index ? island.tags[dashboardTag.index] : null
-                        readonly property bool active: dashboardTag.tag ? dashboardTag.tag.is_active : (dashboardTag.index + 1 === Number(island.workspaceText))
+                        readonly property var tag: dashboardTag.modelData
+                        readonly property bool active: dashboardTag.tag ? dashboardTag.tag.is_active : false
                         readonly property bool occupied: dashboardTag.tag ? dashboardTag.tag.client_count > 0 : false
+                        readonly property bool urgent: dashboardTag.tag ? dashboardTag.tag.is_urgent : false
                         property bool hovered: false
 
                         width: 22
@@ -2079,11 +2094,13 @@ Rectangle {
                         radius: 7
                         color: dashboardTag.active ? island.accentColor : (dashboardTag.hovered ? island.surfaceHighColor : "transparent")
                         border.width: dashboardTag.active ? 0 : 1
-                        border.color: dashboardTag.occupied ? island.borderColor : island.borderMutedColor
+                        border.color: dashboardTag.urgent
+                            ? island.errorColor
+                            : (dashboardTag.occupied ? island.borderColor : island.borderMutedColor)
 
                         Text {
                             anchors.centerIn: parent
-                            text: dashboardTag.index + 1
+                            text: dashboardTag.tag ? dashboardTag.tag.index : ""
                             color: dashboardTag.active ? island.onAccentColor : (dashboardTag.occupied ? island.fgColor : island.mutedColor)
                             font.family: island.monoFont
                             font.pixelSize: Math.round(10 * island.fontScale)
@@ -2091,13 +2108,14 @@ Rectangle {
                         }
 
                         Rectangle {
+                            visible: island.showOccupiedIndicator && dashboardTag.occupied && !dashboardTag.active
                             width: 3
                             height: 3
                             radius: 2
                             anchors.horizontalCenter: parent.horizontalCenter
                             anchors.bottom: parent.bottom
                             anchors.bottomMargin: 2
-                            color: dashboardTag.occupied && !dashboardTag.active ? island.accentColor : "transparent"
+                            color: island.accentColor
                         }
 
                         HoverHandler {
@@ -2108,7 +2126,7 @@ Rectangle {
                             anchors.fill: parent
                             acceptedButtons: Qt.LeftButton
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: island.mango.switchTag(dashboardTag.index + 1)
+                            onClicked: island.mango.switchTag(dashboardTag.tag.index)
                         }
                     }
                 }

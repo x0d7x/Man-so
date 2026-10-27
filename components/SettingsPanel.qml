@@ -24,6 +24,7 @@ FocusScope {
         { "label": "Appearance", "icon": "󰏘" },
         { "label": "Modules", "icon": "󰍜" },
         { "label": "Power", "icon": "󰾅" },
+        { "label": "MangoWM", "icon": "󰖯" },
         { "label": "About", "icon": "󰋼" },
         { "label": "Diagnostics", "icon": "󰓅" }
     ]
@@ -288,9 +289,21 @@ FocusScope {
                     surfaceHighColor: panel.surfaceHighColor
                 }
 
-                SettingsAboutPage {
+                SettingsMangoPage {
                     anchors.fill: parent
                     visible: panel.currentPage === 4
+                    settings: panel.settings
+                    monoFont: panel.monoFont
+                    fgColor: panel.fgColor
+                    mutedColor: panel.mutedColor
+                    accentColor: panel.accentColor
+                    onAccentColor: panel.onAccentColor
+                    surfaceHighColor: panel.surfaceHighColor
+                }
+
+                SettingsAboutPage {
+                    anchors.fill: parent
+                    visible: panel.currentPage === 5
                     diagnostics: panel.diagnostics
                     monoFont: panel.monoFont
                     fgColor: panel.fgColor
@@ -301,7 +314,7 @@ FocusScope {
 
                 SettingsDiagnosticsPage {
                     anchors.fill: parent
-                    visible: panel.currentPage === 5
+                    visible: panel.currentPage === 6
                     diagnostics: panel.diagnostics
                     settings: panel.settings
                     monoFont: panel.monoFont
