@@ -183,6 +183,122 @@ Item {
             }
 
             Text {
+                text: "MODULE DETAILS"
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.5
+            }
+
+            Text {
+                Layout.fillWidth: true
+                text: "Fine-tune audio, network, and display behavior."
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 8
+                wrapMode: Text.Wrap
+            }
+
+            Text {
+                text: "AUDIO"
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.5
+            }
+
+            SettingsSlider {
+                Layout.fillWidth: true
+                label: "Volume step"
+                value: page.settings ? page.settings.volumeStep : 2
+                from: 1
+                to: 10
+                step: 1
+                suffix: "%"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                surfaceHighColor: page.surfaceHighColor
+                onMoved: value => {
+                    if (page.settings)
+                        page.settings.volumeStep = value;
+                }
+            }
+
+            SettingsSlider {
+                Layout.fillWidth: true
+                label: "Volume OSD duration"
+                value: page.settings ? page.settings.volumeOsdTimeout : 1500
+                from: 800
+                to: 4000
+                step: 100
+                suffix: " ms"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                surfaceHighColor: page.surfaceHighColor
+                onMoved: value => {
+                    if (page.settings)
+                        page.settings.volumeOsdTimeout = value;
+                }
+            }
+
+            Text {
+                text: "NETWORK"
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.5
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Wi-Fi network name"
+                description: "Show the active network name next to the Wi-Fi icon."
+                checked: page.settings ? page.settings.showNetworkName : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: if (page.settings) page.settings.showNetworkName = !page.settings.showNetworkName
+            }
+
+            Text {
+                text: "DISPLAY"
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.5
+            }
+
+            SettingsSlider {
+                Layout.fillWidth: true
+                label: "Brightness OSD duration"
+                value: page.settings ? page.settings.brightnessOsdTimeout : 1500
+                from: 800
+                to: 4000
+                step: 100
+                suffix: " ms"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                surfaceHighColor: page.surfaceHighColor
+                onMoved: value => {
+                    if (page.settings)
+                        page.settings.brightnessOsdTimeout = value;
+                }
+            }
+
+            Text {
                 text: "CLOCK ITEMS"
                 color: page.mutedColor
                 font.family: page.monoFont

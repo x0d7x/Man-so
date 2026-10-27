@@ -10,6 +10,10 @@ Scope {
     property int animationDuration: 220
     property bool showKeyboardOsd: true
     property int keyboardOsdTimeout: 1500
+    property int volumeStep: 2
+    property int volumeOsdTimeout: 1500
+    property int brightnessOsdTimeout: 1500
+    property bool showNetworkName: true
     property int backgroundOpacity: 100
     property int cornerRadius: 17
     property bool borderVisible: true
@@ -114,11 +118,22 @@ Scope {
         return Math.max(1, Math.min(20, Math.round(level)));
     }
 
-    function clampKeyboardOsdTimeout(value) {
+    function clampOsdTimeout(value) {
         const timeout = Number(value);
         if (!Number.isFinite(timeout))
             return 1500;
         return Math.max(800, Math.min(4000, Math.round(timeout / 100) * 100));
+    }
+
+    function clampKeyboardOsdTimeout(value) {
+        return root.clampOsdTimeout(value);
+    }
+
+    function clampVolumeStep(value) {
+        const step = Number(value);
+        if (!Number.isFinite(step))
+            return 2;
+        return Math.max(1, Math.min(10, Math.round(step)));
     }
 
     function clampWorkspaceVisibility(value) {
@@ -212,6 +227,10 @@ Scope {
         root.showBrightness = true;
         root.showExternalBrightness = true;
         root.showNotifications = true;
+        root.volumeStep = 2;
+        root.volumeOsdTimeout = 1500;
+        root.brightnessOsdTimeout = 1500;
+        root.showNetworkName = true;
     }
 
     function resetKeyboard() {
@@ -236,6 +255,10 @@ Scope {
         root.animationDuration = 220;
         root.showKeyboardOsd = true;
         root.keyboardOsdTimeout = 1500;
+        root.volumeStep = 2;
+        root.volumeOsdTimeout = 1500;
+        root.brightnessOsdTimeout = 1500;
+        root.showNetworkName = true;
         root.backgroundOpacity = 100;
         root.cornerRadius = 17;
         root.borderVisible = true;
@@ -325,6 +348,10 @@ Scope {
                 root.batteryCriticalThreshold = root.clampBatteryCritical(parsed.batteryCriticalThreshold);
                 root.showKeyboardOsd = parsed.showKeyboardOsd === undefined ? true : !!parsed.showKeyboardOsd;
                 root.keyboardOsdTimeout = root.clampKeyboardOsdTimeout(parsed.keyboardOsdTimeout);
+                root.volumeStep = root.clampVolumeStep(parsed.volumeStep);
+                root.volumeOsdTimeout = root.clampOsdTimeout(parsed.volumeOsdTimeout);
+                root.brightnessOsdTimeout = root.clampOsdTimeout(parsed.brightnessOsdTimeout);
+                root.showNetworkName = parsed.showNetworkName === undefined ? true : !!parsed.showNetworkName;
                 if (root.batteryCriticalThreshold > root.batteryWarningThreshold)
                     root.batteryCriticalThreshold = root.batteryWarningThreshold;
                 root.lastError = "";
@@ -341,12 +368,16 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 15,
+            "version": 16,
             "settingsPage": root.settingsPage,
             "hoverExpansion": root.hoverExpansion,
             "animationDuration": root.animationDuration,
             "showKeyboardOsd": root.showKeyboardOsd,
             "keyboardOsdTimeout": root.keyboardOsdTimeout,
+            "volumeStep": root.volumeStep,
+            "volumeOsdTimeout": root.volumeOsdTimeout,
+            "brightnessOsdTimeout": root.brightnessOsdTimeout,
+            "showNetworkName": root.showNetworkName,
             "backgroundOpacity": root.backgroundOpacity,
             "cornerRadius": root.cornerRadius,
             "borderVisible": root.borderVisible,
@@ -515,6 +546,26 @@ Scope {
     }
 
     onKeyboardOsdTimeoutChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onVolumeStepChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onVolumeOsdTimeoutChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onBrightnessOsdTimeoutChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onShowNetworkNameChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }

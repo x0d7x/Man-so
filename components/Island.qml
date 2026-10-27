@@ -138,6 +138,7 @@ Rectangle {
     readonly property bool showSystemStats: island.settings ? island.settings.showSystemStats : true
     readonly property bool showMedia: island.settings ? island.settings.showMedia : true
     readonly property bool showVolume: island.settings ? island.settings.showVolume : true
+    readonly property bool showNetworkName: island.settings ? island.settings.showNetworkName : true
     readonly property bool showBrightness: island.settings ? island.settings.showBrightness : true
     readonly property bool showExternalBrightness: island.settings ? island.settings.showExternalBrightness : true
     readonly property bool showNotifications: island.settings ? island.settings.showNotifications : true
@@ -2406,6 +2407,7 @@ Rectangle {
                     }
 
                     Text {
+                        visible: island.showNetworkName
                         text: island.network ? island.network.label : "--"
                         width: Math.min(implicitWidth, 72)
                         color: island.network && island.network.connected ? island.fgColor : island.mutedColor

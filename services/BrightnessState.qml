@@ -13,6 +13,7 @@ Scope {
     property bool initialized: false
     property bool available: false
     property bool visible: false
+    property int osdTimeout: 1500
     property int pendingPercent: -1
     property string lastError: ""
 
@@ -100,6 +101,11 @@ Scope {
         writeProcess.running = true;
     }
 
+    onOsdTimeoutChanged: {
+        if (root.visible)
+            hideTimer.restart();
+    }
+
     Component.onCompleted: discoverProcess.running = true
 
     Process {
@@ -177,7 +183,7 @@ Scope {
 
     Timer {
         id: hideTimer
-        interval: 1500
+        interval: root.osdTimeout
         onTriggered: root.visible = false
     }
 

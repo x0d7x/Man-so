@@ -13,6 +13,7 @@ Scope {
     property bool pendingShow: false
     property int pendingLevel: -1
     property int step: 2
+    property int osdTimeout: 1500
     property string deviceText: ""
 
     readonly property string levelText: root.level < 0 ? "--" : (root.muted ? "MUTE" : root.level + "%")
@@ -140,6 +141,11 @@ Scope {
         root.requestUpdate(true);
     }
 
+    onOsdTimeoutChanged: {
+        if (root.visible)
+            hideTimer.restart();
+    }
+
     Component.onCompleted: root.requestUpdate(false)
 
     Process {
@@ -180,7 +186,7 @@ Scope {
 
     Timer {
         id: hideTimer
-        interval: 1500
+        interval: root.osdTimeout
         onTriggered: root.visible = false
     }
 

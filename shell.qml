@@ -35,10 +35,13 @@ ShellRoot {
 
     VolumeState {
         id: volume
+        step: settings.volumeStep
+        osdTimeout: settings.volumeOsdTimeout
     }
 
     BrightnessState {
         id: brightness
+        osdTimeout: settings.brightnessOsdTimeout
     }
 
     DdcBrightnessState {
