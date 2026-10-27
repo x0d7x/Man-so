@@ -27,6 +27,7 @@ Scope {
     property string workspaceVisibility: "all"
     property bool showOccupiedIndicator: true
     property bool includeUrgentWorkspaces: true
+    property var collapsedItems: []
     property bool initialized: false
     property bool loading: false
     property string lastError: ""
@@ -111,6 +112,43 @@ Scope {
         return value === "occupied" || value === "active" ? value : "all";
     }
 
+    readonly property var collapsedItemKeys: [
+        "workspace", "window", "layout", "cpu", "ram", "temp", "battery",
+        "wifi", "bluetooth", "power", "volume", "media", "notifications", "tray"
+    ]
+
+    function sanitizeCollapsedItems(value) {
+        if (!Array.isArray(value))
+            return [];
+        const result = [];
+        for (let i = 0; i < value.length; ++i) {
+            const key = String(value[i]);
+            if (root.collapsedItemKeys.indexOf(key) !== -1 && result.indexOf(key) === -1)
+                result.push(key);
+        }
+        return result;
+    }
+
+    function hasCollapsedItem(key) {
+        return root.collapsedItems.indexOf(key) !== -1;
+    }
+
+    function toggleCollapsedItem(key) {
+        if (root.collapsedItemKeys.indexOf(key) === -1)
+            return;
+        const list = root.collapsedItems.slice();
+        const index = list.indexOf(key);
+        if (index === -1)
+            list.push(key);
+        else
+            list.splice(index, 1);
+        root.collapsedItems = list;
+    }
+
+    function resetCollapsedItems() {
+        root.collapsedItems = [];
+    }
+
     function resetMango() {
         root.workspaceVisibility = "all";
         root.showOccupiedIndicator = true;
@@ -157,6 +195,7 @@ Scope {
         root.workspaceVisibility = "all";
         root.showOccupiedIndicator = true;
         root.includeUrgentWorkspaces = true;
+        root.collapsedItems = [];
         root.showWorkspaceTags = true;
         root.showWindowInfo = true;
         root.showSystemStats = true;
@@ -238,7 +277,7 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 10,
+            "version": 11,
             "settingsPage": root.settingsPage,
             "hoverExpansion": root.hoverExpansion,
             "animationDuration": root.animationDuration,
@@ -252,6 +291,7 @@ Scope {
             "workspaceVisibility": root.workspaceVisibility,
             "showOccupiedIndicator": root.showOccupiedIndicator,
             "includeUrgentWorkspaces": root.includeUrgentWorkspaces,
+            "collapsedItems": root.collapsedItems,
             "showWorkspaceTags": root.showWorkspaceTags,
             "showWindowInfo": root.showWindowInfo,
             "showSystemStats": root.showSystemStats,
@@ -340,6 +380,11 @@ Scope {
     }
 
     onIncludeUrgentWorkspacesChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onCollapsedItemsChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }

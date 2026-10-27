@@ -12,6 +12,23 @@ Item {
     property color onAccentColor
     property color surfaceHighColor
 
+    readonly property var collapsedOptions: [
+        { "key": "workspace", "label": "Workspace", "icon": "󰅬" },
+        { "key": "window", "label": "Window", "icon": "󰖲" },
+        { "key": "layout", "label": "Layout", "icon": "󰕴" },
+        { "key": "cpu", "label": "CPU", "icon": "󰻠" },
+        { "key": "ram", "label": "RAM", "icon": "󰍛" },
+        { "key": "temp", "label": "Temp", "icon": "󰔏" },
+        { "key": "battery", "label": "Battery", "icon": "󰁹" },
+        { "key": "wifi", "label": "Wi-Fi", "icon": "󰤨" },
+        { "key": "bluetooth", "label": "Bluetooth", "icon": "󰂯" },
+        { "key": "power", "label": "Power", "icon": "󰾅" },
+        { "key": "volume", "label": "Volume", "icon": "󰕾" },
+        { "key": "media", "label": "Media", "icon": "󰎆" },
+        { "key": "notifications", "label": "Notifications", "icon": "󰂚" },
+        { "key": "tray", "label": "Tray", "icon": "󰀻" }
+    ]
+
     Flickable {
         anchors.fill: parent
         clip: true
@@ -124,6 +141,88 @@ Item {
                 onToggled: if (page.settings) page.settings.showNotifications = !page.settings.showNotifications
             }
 
+            Text {
+                text: "CLOCK ITEMS"
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.5
+            }
+
+            Text {
+                Layout.fillWidth: true
+                text: "Selected items appear next to the clock in the collapsed Island. Selection order is preserved."
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 8
+                wrapMode: Text.Wrap
+            }
+
+            GridLayout {
+                Layout.fillWidth: true
+                columns: 2
+                columnSpacing: 6
+                rowSpacing: 6
+
+                Repeater {
+                    model: page.collapsedOptions
+
+                    delegate: Rectangle {
+                        id: collapsedChip
+
+                        required property var modelData
+
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 28
+                        radius: 7
+                        color: page.settings && page.settings.hasCollapsedItem(collapsedChip.modelData.key)
+                            ? page.accentColor
+                            : (collapsedHover.hovered
+                                ? Qt.rgba(page.surfaceHighColor.r, page.surfaceHighColor.g, page.surfaceHighColor.b, 0.8)
+                                : Qt.rgba(page.surfaceHighColor.r, page.surfaceHighColor.g, page.surfaceHighColor.b, 0.4))
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 8
+                            spacing: 6
+
+                            Text {
+                                text: collapsedChip.modelData.icon
+                                color: page.settings && page.settings.hasCollapsedItem(collapsedChip.modelData.key)
+                                    ? page.onAccentColor
+                                    : page.accentColor
+                                font.family: page.monoFont
+                                font.pixelSize: 12
+                            }
+
+                            Text {
+                                Layout.fillWidth: true
+                                text: collapsedChip.modelData.label
+                                color: page.settings && page.settings.hasCollapsedItem(collapsedChip.modelData.key)
+                                    ? page.onAccentColor
+                                    : page.fgColor
+                                font.family: page.monoFont
+                                font.pixelSize: 9
+                                font.weight: Font.DemiBold
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        HoverHandler {
+                            id: collapsedHover
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: if (page.settings) page.settings.toggleCollapsedItem(collapsedChip.modelData.key)
+                        }
+                    }
+                }
+            }
+
             Item { implicitHeight: 2 }
 
             Rectangle {
@@ -150,7 +249,12 @@ Item {
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: if (page.settings) page.settings.resetModules()
+                    onClicked: {
+                        if (page.settings) {
+                            page.settings.resetModules();
+                            page.settings.resetCollapsedItems();
+                        }
+                    }
                 }
             }
         }
