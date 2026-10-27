@@ -1,12 +1,12 @@
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.Pipewire
 import QtQuick
 
 Scope {
     id: root
 
     property var pulseEvents: null
-    property var pipewireEvents: null
     property bool enabled: true
     property bool microphoneEnabled: true
     property bool screenEnabled: true
@@ -16,12 +16,46 @@ Scope {
     property var microphoneApps: []
     property string lastError: ""
     property bool pendingQuery: false
-    property bool screenKnown: false
-    property bool screenActive: false
-    property int screenSessionCount: 0
-    property var screenApps: []
-    property string screenError: ""
-    property bool pendingScreenQuery: false
+
+    readonly property var screenNodes: {
+        if (!root.enabled || !root.screenEnabled || !Pipewire.ready)
+            return [];
+        return Pipewire.nodes.values.filter(node => {
+            if (!node || !node.ready)
+                return false;
+            const properties = node.properties || {};
+            return properties["media.class"] === "Stream/Input/Video"
+                && String(properties["media.role"] || "").toLowerCase() === "screen";
+        });
+    }
+    readonly property var screenApps: {
+        const applications = [];
+        const seen = {};
+        for (let i = 0; i < root.screenNodes.length; ++i) {
+            const node = root.screenNodes[i];
+            const properties = node.properties || {};
+            const appName = properties["application.name"]
+                || properties["media.name"]
+                || node.name
+                || "Unknown application";
+            const key = String(appName).toLowerCase();
+            if (!seen[key]) {
+                seen[key] = true;
+                applications.push(String(appName));
+            }
+        }
+        return applications;
+    }
+    readonly property bool screenKnown: root.enabled && root.screenEnabled ? Pipewire.ready : false
+    readonly property bool screenActive: root.screenNodes.length > 0
+    readonly property int screenSessionCount: root.screenNodes.length
+    readonly property string screenError: (root.enabled && root.screenEnabled && !Pipewire.ready)
+        ? "PipeWire service is not ready"
+        : ""
+
+    PwObjectTracker {
+        objects: (root.enabled && root.screenEnabled) ? Pipewire.nodes.values : []
+    }
 
     readonly property string summary: {
         if (!root.enabled)
@@ -41,16 +75,8 @@ Scope {
         root.microphoneKnown = false;
     }
 
-    function clearScreenState() {
-        root.screenActive = false;
-        root.screenSessionCount = 0;
-        root.screenApps = [];
-        root.screenKnown = false;
-    }
-
     function clearState() {
         root.clearMicrophoneState();
-        root.clearScreenState();
     }
 
     function refresh() {
@@ -62,17 +88,6 @@ Scope {
         }
         root.pendingQuery = false;
         queryProcess.running = true;
-    }
-
-    function refreshScreen() {
-        if (!root.enabled || !root.screenEnabled)
-            return;
-        if (screenProcess.running) {
-            root.pendingScreenQuery = true;
-            return;
-        }
-        root.pendingScreenQuery = false;
-        screenProcess.running = true;
     }
 
     function evaluate(text) {
@@ -152,67 +167,6 @@ Scope {
         root.lastError = "";
     }
 
-    function evaluateScreen(text) {
-        if (!root.enabled || !root.screenEnabled)
-            return;
-
-        let nodes = null;
-        try {
-            nodes = JSON.parse(text);
-        } catch (error) {
-            root.screenKnown = false;
-            root.screenError = "Cannot parse PipeWire data";
-            return;
-        }
-        if (!Array.isArray(nodes)) {
-            root.screenKnown = false;
-            root.screenError = "Cannot parse PipeWire data";
-            return;
-        }
-
-        const applications = [];
-        const seen = {};
-        let sessions = 0;
-
-        for (let i = 0; i < nodes.length; ++i) {
-            const item = nodes[i];
-            if (!item || item.type !== "PipeWire:Interface:Node")
-                continue;
-            const info = item.info || {};
-            const properties = info.props || {};
-            if (properties["media.class"] !== "Stream/Input/Video")
-                continue;
-            if (info.state !== "running")
-                continue;
-            if (String(properties["media.role"] || "").toLowerCase() !== "screen")
-                continue;
-
-            const appName = properties["application.name"]
-                || properties["application.process.binary"]
-                || properties["node.name"]
-                || "Unknown application";
-            const key = String(appName).toLowerCase();
-            ++sessions;
-            if (!seen[key]) {
-                seen[key] = true;
-                applications.push(String(appName));
-            }
-        }
-
-        root.screenKnown = true;
-        root.screenActive = sessions > 0;
-        root.screenSessionCount = sessions;
-        root.screenApps = applications;
-        root.screenError = "";
-    }
-
-    function handlePipewireActivity() {
-        if (!root.enabled || !root.screenEnabled)
-            return;
-        if (!screenRefreshTimer.running)
-            screenRefreshTimer.restart();
-    }
-
     function handlePulseEvent(line) {
         if (!root.enabled || !root.microphoneEnabled)
             return;
@@ -226,16 +180,12 @@ Scope {
     onEnabledChanged: {
         if (!root.enabled) {
             refreshTimer.stop();
-            screenRefreshTimer.stop();
             root.clearState();
             root.lastError = "";
-            root.screenError = "";
             return;
         }
         if (root.microphoneEnabled)
             root.refresh();
-        if (root.screenEnabled)
-            root.refreshScreen();
     }
 
     onMicrophoneEnabledChanged: {
@@ -248,20 +198,7 @@ Scope {
         root.refresh();
     }
 
-    onScreenEnabledChanged: {
-        if (!root.screenEnabled) {
-            screenRefreshTimer.stop();
-            root.clearScreenState();
-            root.screenError = "";
-            return;
-        }
-        root.refreshScreen();
-    }
-
-    Component.onCompleted: {
-        root.refresh();
-        root.refreshScreen();
-    }
+    Component.onCompleted: root.refresh()
 
     Connections {
         target: root.pulseEvents ? root.pulseEvents : null
@@ -274,14 +211,6 @@ Scope {
             if (root.enabled && root.microphoneEnabled
                 && root.pulseEvents && root.pulseEvents.connected)
                 root.refresh();
-        }
-    }
-
-    Connections {
-        target: root.pipewireEvents ? root.pipewireEvents : null
-
-        function onActivityChanged() {
-            root.handlePipewireActivity();
         }
     }
 
@@ -304,31 +233,9 @@ Scope {
         }
     }
 
-    Process {
-        id: screenProcess
-        command: ["pw-dump"]
-
-        stdout: StdioCollector {
-            onStreamFinished: root.evaluateScreen(this.text)
-        }
-
-        onExited: {
-            if (root.pendingScreenQuery) {
-                root.pendingScreenQuery = false;
-                screenRefreshTimer.restart();
-            }
-        }
-    }
-
     Timer {
         id: refreshTimer
         interval: 120
         onTriggered: root.refresh()
-    }
-
-    Timer {
-        id: screenRefreshTimer
-        interval: 250
-        onTriggered: root.refreshScreen()
     }
 }

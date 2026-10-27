@@ -61,15 +61,9 @@ ShellRoot {
         maxHistory: settings.notificationHistoryLimit
     }
 
-    PipewireEvents {
-        id: pipewireEvents
-        enabled: settings.privacyEnabled && settings.privacyScreenEnabled
-    }
-
     PrivacyState {
         id: privacy
         pulseEvents: pulseEvents
-        pipewireEvents: pipewireEvents
         enabled: settings.privacyEnabled
         microphoneEnabled: settings.privacyMicrophoneEnabled
         screenEnabled: settings.privacyScreenEnabled
@@ -223,6 +217,7 @@ ShellRoot {
         function toggleSettings(): void {
             island.toggleSettings();
         }
+
 
         function privacyStatus(): string {
             return "microphoneKnown=" + privacy.microphoneKnown

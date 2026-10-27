@@ -245,116 +245,161 @@ FocusScope {
                 Layout.fillHeight: true
                 opacity: 1
 
-                SettingsGeneralPage {
+                Loader {
                     anchors.fill: parent
-                    visible: panel.currentPage === 0
-                    settings: panel.settings
-                    monoFont: panel.monoFont
-                    fgColor: panel.fgColor
-                    mutedColor: panel.mutedColor
-                    accentColor: panel.accentColor
-                    onAccentColor: panel.onAccentColor
-                    surfaceHighColor: panel.surfaceHighColor
+                    active: panel.visible && panel.currentPage === 0
+                    sourceComponent: Component {
+                        SettingsGeneralPage {
+                            anchors.fill: parent
+                            settings: panel.settings
+                            monoFont: panel.monoFont
+                            fgColor: panel.fgColor
+                            mutedColor: panel.mutedColor
+                            accentColor: panel.accentColor
+                            onAccentColor: panel.onAccentColor
+                            surfaceHighColor: panel.surfaceHighColor
+                        }
+                    }
                 }
 
-                SettingsAppearancePage {
+                Loader {
                     anchors.fill: parent
-                    visible: panel.currentPage === 1
-                    settings: panel.settings
-                    onFontSelectorRequested: panel.fontSelectorOpen = true
-                    monoFont: panel.monoFont
-                    fgColor: panel.fgColor
-                    mutedColor: panel.mutedColor
-                    accentColor: panel.accentColor
-                    onAccentColor: panel.onAccentColor
-                    surfaceHighColor: panel.surfaceHighColor
+                    active: panel.visible && panel.currentPage === 1
+                    sourceComponent: Component {
+                        SettingsAppearancePage {
+                            anchors.fill: parent
+                            settings: panel.settings
+                            onFontSelectorRequested: panel.fontSelectorOpen = true
+                            monoFont: panel.monoFont
+                            fgColor: panel.fgColor
+                            mutedColor: panel.mutedColor
+                            accentColor: panel.accentColor
+                            onAccentColor: panel.onAccentColor
+                            surfaceHighColor: panel.surfaceHighColor
+                        }
+                    }
                 }
 
-                SettingsModulesPage {
+                Loader {
                     anchors.fill: parent
-                    visible: panel.currentPage === 2
-                    settings: panel.settings
-                    monoFont: panel.monoFont
-                    fgColor: panel.fgColor
-                    mutedColor: panel.mutedColor
-                    accentColor: panel.accentColor
-                    onAccentColor: panel.onAccentColor
-                    surfaceHighColor: panel.surfaceHighColor
+                    active: panel.visible && panel.currentPage === 2
+                    sourceComponent: Component {
+                        SettingsModulesPage {
+                            anchors.fill: parent
+                            settings: panel.settings
+                            monoFont: panel.monoFont
+                            fgColor: panel.fgColor
+                            mutedColor: panel.mutedColor
+                            accentColor: panel.accentColor
+                            onAccentColor: panel.onAccentColor
+                            surfaceHighColor: panel.surfaceHighColor
+                        }
+                    }
                 }
 
-                SettingsPowerPage {
+                Loader {
                     anchors.fill: parent
-                    visible: panel.currentPage === 3
-                    settings: panel.settings
-                    monoFont: panel.monoFont
-                    fgColor: panel.fgColor
-                    mutedColor: panel.mutedColor
-                    accentColor: panel.accentColor
-                    onAccentColor: panel.onAccentColor
-                    surfaceHighColor: panel.surfaceHighColor
+                    active: panel.visible && panel.currentPage === 3
+                    sourceComponent: Component {
+                        SettingsPowerPage {
+                            anchors.fill: parent
+                            settings: panel.settings
+                            monoFont: panel.monoFont
+                            fgColor: panel.fgColor
+                            mutedColor: panel.mutedColor
+                            accentColor: panel.accentColor
+                            onAccentColor: panel.onAccentColor
+                            surfaceHighColor: panel.surfaceHighColor
+                        }
+                    }
                 }
 
-                SettingsMangoPage {
+                Loader {
                     anchors.fill: parent
-                    visible: panel.currentPage === 4
-                    settings: panel.settings
-                    monoFont: panel.monoFont
-                    fgColor: panel.fgColor
-                    mutedColor: panel.mutedColor
-                    accentColor: panel.accentColor
-                    onAccentColor: panel.onAccentColor
-                    surfaceHighColor: panel.surfaceHighColor
+                    active: panel.visible && panel.currentPage === 4
+                    sourceComponent: Component {
+                        SettingsMangoPage {
+                            anchors.fill: parent
+                            settings: panel.settings
+                            monoFont: panel.monoFont
+                            fgColor: panel.fgColor
+                            mutedColor: panel.mutedColor
+                            accentColor: panel.accentColor
+                            onAccentColor: panel.onAccentColor
+                            surfaceHighColor: panel.surfaceHighColor
+                        }
+                    }
                 }
 
-                SettingsKeyboardPage {
+                Loader {
                     anchors.fill: parent
-                    visible: panel.currentPage === 5
-                    settings: panel.settings
-                    keyboardLayout: panel.keyboardLayout
-                    monoFont: panel.monoFont
-                    fgColor: panel.fgColor
-                    mutedColor: panel.mutedColor
-                    accentColor: panel.accentColor
-                    onAccentColor: panel.onAccentColor
-                    surfaceHighColor: panel.surfaceHighColor
+                    active: panel.visible && panel.currentPage === 5
+                    sourceComponent: Component {
+                        SettingsKeyboardPage {
+                            anchors.fill: parent
+                            settings: panel.settings
+                            keyboardLayout: panel.keyboardLayout
+                            monoFont: panel.monoFont
+                            fgColor: panel.fgColor
+                            mutedColor: panel.mutedColor
+                            accentColor: panel.accentColor
+                            onAccentColor: panel.onAccentColor
+                            surfaceHighColor: panel.surfaceHighColor
+                        }
+                    }
                 }
 
-                SettingsPrivacyPage {
+                Loader {
                     anchors.fill: parent
-                    visible: panel.currentPage === 6
-                    settings: panel.settings
-                    privacy: panel.privacy
-                    monoFont: panel.monoFont
-                    fgColor: panel.fgColor
-                    mutedColor: panel.mutedColor
-                    accentColor: panel.accentColor
-                    onAccentColor: panel.onAccentColor
-                    surfaceHighColor: panel.surfaceHighColor
-                    errorColor: panel.errorColor
+                    active: panel.visible && panel.currentPage === 6
+                    sourceComponent: Component {
+                        SettingsPrivacyPage {
+                            anchors.fill: parent
+                            settings: panel.settings
+                            privacy: panel.privacy
+                            monoFont: panel.monoFont
+                            fgColor: panel.fgColor
+                            mutedColor: panel.mutedColor
+                            accentColor: panel.accentColor
+                            onAccentColor: panel.onAccentColor
+                            surfaceHighColor: panel.surfaceHighColor
+                            errorColor: panel.errorColor
+                        }
+                    }
                 }
 
-                SettingsAboutPage {
+                Loader {
                     anchors.fill: parent
-                    visible: panel.currentPage === 7
-                    diagnostics: panel.diagnostics
-                    monoFont: panel.monoFont
-                    fgColor: panel.fgColor
-                    mutedColor: panel.mutedColor
-                    accentColor: panel.accentColor
-                    surfaceHighColor: panel.surfaceHighColor
+                    active: panel.visible && panel.currentPage === 7
+                    sourceComponent: Component {
+                        SettingsAboutPage {
+                            anchors.fill: parent
+                            diagnostics: panel.diagnostics
+                            monoFont: panel.monoFont
+                            fgColor: panel.fgColor
+                            mutedColor: panel.mutedColor
+                            accentColor: panel.accentColor
+                            surfaceHighColor: panel.surfaceHighColor
+                        }
+                    }
                 }
 
-                SettingsDiagnosticsPage {
+                Loader {
                     anchors.fill: parent
-                    visible: panel.currentPage === 8
-                    diagnostics: panel.diagnostics
-                    settings: panel.settings
-                    monoFont: panel.monoFont
-                    fgColor: panel.fgColor
-                    mutedColor: panel.mutedColor
-                    accentColor: panel.accentColor
-                    onAccentColor: panel.onAccentColor
-                    surfaceHighColor: panel.surfaceHighColor
+                    active: panel.visible && panel.currentPage === 8
+                    sourceComponent: Component {
+                        SettingsDiagnosticsPage {
+                            anchors.fill: parent
+                            diagnostics: panel.diagnostics
+                            settings: panel.settings
+                            monoFont: panel.monoFont
+                            fgColor: panel.fgColor
+                            mutedColor: panel.mutedColor
+                            accentColor: panel.accentColor
+                            onAccentColor: panel.onAccentColor
+                            surfaceHighColor: panel.surfaceHighColor
+                        }
+                    }
                 }
             }
         }
@@ -405,24 +450,30 @@ FocusScope {
         easing.type: Easing.OutCubic
     }
 
-    SettingsFontSelector {
+    Loader {
         anchors.fill: parent
-        visible: panel.fontSelectorOpen
-        currentFont: panel.settings ? panel.settings.fontFamily : ""
-        monoFont: panel.monoFont
-        bgColor: panel.bgColor
-        surfaceHighColor: panel.surfaceHighColor
-        fgColor: panel.fgColor
-        mutedColor: panel.mutedColor
-        accentColor: panel.accentColor
-        onAccentColor: panel.onAccentColor
-        borderMutedColor: panel.borderMutedColor
-        onSelected: family => {
-            if (panel.settings)
-                panel.settings.fontFamily = family;
-            panel.fontSelectorOpen = false;
+        active: panel.visible && panel.fontSelectorOpen
+        sourceComponent: Component {
+            SettingsFontSelector {
+                anchors.fill: parent
+                visible: panel.fontSelectorOpen
+                currentFont: panel.settings ? panel.settings.fontFamily : ""
+                monoFont: panel.monoFont
+                bgColor: panel.bgColor
+                surfaceHighColor: panel.surfaceHighColor
+                fgColor: panel.fgColor
+                mutedColor: panel.mutedColor
+                accentColor: panel.accentColor
+                onAccentColor: panel.onAccentColor
+                borderMutedColor: panel.borderMutedColor
+                onSelected: family => {
+                    if (panel.settings)
+                        panel.settings.fontFamily = family;
+                    panel.fontSelectorOpen = false;
+                }
+                onCloseRequested: panel.fontSelectorOpen = false
+            }
         }
-        onCloseRequested: panel.fontSelectorOpen = false
     }
 
     Shortcut {

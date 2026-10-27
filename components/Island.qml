@@ -3309,23 +3309,29 @@ Rectangle {
         }
     }
 
-    SettingsPanel {
+    Loader {
         anchors.fill: parent
-        visible: island.mode === "settings"
-        monoFont: island.monoFont
-        surfaceHighColor: island.surfaceHighColor
-        fgColor: island.fgColor
-        mutedColor: island.mutedColor
-        accentColor: island.accentColor
-        onAccentColor: island.onAccentColor
-        errorColor: island.errorColor
-        borderMutedColor: island.borderMutedColor
-        bgColor: island.bgColor
-        diagnostics: island.diagnostics
-        settings: island.settings
-        privacy: island.privacy
-        keyboardLayout: island.keyboardLayout
-        onCloseRequested: island.closeSettings()
+        active: island.mode === "settings"
+        sourceComponent: Component {
+            SettingsPanel {
+                anchors.fill: parent
+                visible: true
+                monoFont: island.monoFont
+                surfaceHighColor: island.surfaceHighColor
+                fgColor: island.fgColor
+                mutedColor: island.mutedColor
+                accentColor: island.accentColor
+                onAccentColor: island.onAccentColor
+                errorColor: island.errorColor
+                borderMutedColor: island.borderMutedColor
+                bgColor: island.bgColor
+                diagnostics: island.diagnostics
+                settings: island.settings
+                privacy: island.privacy
+                keyboardLayout: island.keyboardLayout
+                onCloseRequested: island.closeSettings()
+            }
+        }
     }
 
 }
