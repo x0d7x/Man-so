@@ -16,6 +16,7 @@ FocusScope {
     property color borderMutedColor
     property var diagnostics
     property var settings
+    property var keyboardLayout
     property bool fontSelectorOpen: false
 
     property int currentPage: 0
@@ -25,6 +26,7 @@ FocusScope {
         { "label": "Modules", "icon": "󰍜" },
         { "label": "Power", "icon": "󰾅" },
         { "label": "MangoWM", "icon": "󰖯" },
+        { "label": "Keyboard", "icon": "󰌌" },
         { "label": "About", "icon": "󰋼" },
         { "label": "Diagnostics", "icon": "󰓅" }
     ]
@@ -301,9 +303,22 @@ FocusScope {
                     surfaceHighColor: panel.surfaceHighColor
                 }
 
-                SettingsAboutPage {
+                SettingsKeyboardPage {
                     anchors.fill: parent
                     visible: panel.currentPage === 5
+                    settings: panel.settings
+                    keyboardLayout: panel.keyboardLayout
+                    monoFont: panel.monoFont
+                    fgColor: panel.fgColor
+                    mutedColor: panel.mutedColor
+                    accentColor: panel.accentColor
+                    onAccentColor: panel.onAccentColor
+                    surfaceHighColor: panel.surfaceHighColor
+                }
+
+                SettingsAboutPage {
+                    anchors.fill: parent
+                    visible: panel.currentPage === 6
                     diagnostics: panel.diagnostics
                     monoFont: panel.monoFont
                     fgColor: panel.fgColor
@@ -314,7 +329,7 @@ FocusScope {
 
                 SettingsDiagnosticsPage {
                     anchors.fill: parent
-                    visible: panel.currentPage === 6
+                    visible: panel.currentPage === 7
                     diagnostics: panel.diagnostics
                     settings: panel.settings
                     monoFont: panel.monoFont

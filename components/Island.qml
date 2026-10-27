@@ -17,6 +17,7 @@ Rectangle {
     property var media
     property var diagnostics
     property var settings
+    property var keyboardLayout
     property var bluetooth
     property var network
     property var power
@@ -186,6 +187,8 @@ Rectangle {
             return "volume";
         if (island.brightness && island.brightness.visible)
             return "brightness";
+        if (island.keyboardLayout && island.keyboardLayout.visible)
+            return "keyboardLayout";
         if (island.media && island.media.visible)
             return "media";
         if ((island.pointerHovered && island.hoverExpansionEnabled) || island.wifiMenuOpen
@@ -211,6 +214,8 @@ Rectangle {
             return 250;
         if (island.mode === "brightness")
             return 250;
+        if (island.mode === "keyboardLayout")
+            return 300;
         if (island.mode === "collapsed")
             return Math.max(84, Math.round(collapsedRow.implicitWidth + island.collapsedPadding * 2));
         return 84;
@@ -2086,6 +2091,49 @@ Rectangle {
     }
 
     RowLayout {
+        id: keyboardLayoutRow
+        anchors.fill: parent
+        anchors.leftMargin: 12
+        anchors.rightMargin: 12
+        spacing: 8
+        visible: island.mode === "keyboardLayout"
+
+        Text {
+            text: "󰌌"
+            color: island.accentColor
+            font.family: island.monoFont
+            font.pixelSize: Math.round(16 * island.fontScale)
+            font.weight: Font.Medium
+        }
+
+        Text {
+            text: "LAYOUT"
+            color: island.mutedColor
+            font.family: island.monoFont
+            font.pixelSize: Math.round(9 * island.fontScale)
+            font.weight: Font.DemiBold
+        }
+
+        Text {
+            Layout.fillWidth: true
+            text: island.keyboardLayout ? island.keyboardLayout.currentLabel : "—"
+            color: island.fgColor
+            font.family: island.monoFont
+            font.pixelSize: Math.round(11 * island.fontScale)
+            font.weight: Font.DemiBold
+            elide: Text.ElideRight
+            horizontalAlignment: Text.AlignRight
+        }
+
+        Text {
+            text: island.keyboardLayout ? island.keyboardLayout.positionText : ""
+            color: island.mutedColor
+            font.family: island.monoFont
+            font.pixelSize: Math.round(8 * island.fontScale)
+        }
+    }
+
+    RowLayout {
         id: transientRow
         anchors.fill: parent
         anchors.leftMargin: 14
@@ -3123,6 +3171,7 @@ Rectangle {
         bgColor: island.bgColor
         diagnostics: island.diagnostics
         settings: island.settings
+        keyboardLayout: island.keyboardLayout
         onCloseRequested: island.closeSettings()
     }
 

@@ -8,6 +8,8 @@ Scope {
     property int settingsPage: 0
     property bool hoverExpansion: true
     property int animationDuration: 220
+    property bool showKeyboardOsd: true
+    property int keyboardOsdTimeout: 1500
     property int backgroundOpacity: 100
     property int cornerRadius: 17
     property bool borderVisible: true
@@ -49,7 +51,7 @@ Scope {
         const page = Number(value);
         if (!Number.isFinite(page))
             return 0;
-        return Math.max(0, Math.min(6, Math.round(page)));
+        return Math.max(0, Math.min(7, Math.round(page)));
     }
 
     function clampAnimationDuration(value) {
@@ -110,6 +112,13 @@ Scope {
         if (!Number.isFinite(level))
             return 10;
         return Math.max(1, Math.min(20, Math.round(level)));
+    }
+
+    function clampKeyboardOsdTimeout(value) {
+        const timeout = Number(value);
+        if (!Number.isFinite(timeout))
+            return 1500;
+        return Math.max(800, Math.min(4000, Math.round(timeout / 100) * 100));
     }
 
     function clampWorkspaceVisibility(value) {
@@ -205,6 +214,11 @@ Scope {
         root.showNotifications = true;
     }
 
+    function resetKeyboard() {
+        root.showKeyboardOsd = true;
+        root.keyboardOsdTimeout = 1500;
+    }
+
     function resetAppearance() {
         root.backgroundOpacity = 100;
         root.cornerRadius = 17;
@@ -220,6 +234,8 @@ Scope {
         root.settingsPage = 0;
         root.hoverExpansion = true;
         root.animationDuration = 220;
+        root.showKeyboardOsd = true;
+        root.keyboardOsdTimeout = 1500;
         root.backgroundOpacity = 100;
         root.cornerRadius = 17;
         root.borderVisible = true;
@@ -260,19 +276,21 @@ Scope {
                 const parsed = JSON.parse(text);
                 const version = Number(parsed.version) || 1;
                 const rawPage = Number(parsed.settingsPage) || 0;
+                let migratedPage = rawPage;
                 if (version < 2) {
-                    root.settingsPage = root.clampPage(rawPage + 5);
+                    migratedPage = rawPage + 5;
                 } else if (version < 3) {
-                    root.settingsPage = root.clampPage(rawPage === 0 ? 0 : rawPage + 4);
+                    migratedPage = rawPage === 0 ? 0 : rawPage + 4;
                 } else if (version < 5) {
-                    root.settingsPage = root.clampPage(rawPage <= 1 ? rawPage : rawPage + 3);
+                    migratedPage = rawPage <= 1 ? rawPage : rawPage + 3;
                 } else if (version < 6) {
-                    root.settingsPage = root.clampPage(rawPage <= 2 ? rawPage : rawPage + 2);
+                    migratedPage = rawPage <= 2 ? rawPage : rawPage + 2;
                 } else if (version < 10) {
-                    root.settingsPage = root.clampPage(rawPage <= 3 ? rawPage : rawPage + 1);
-                } else {
-                    root.settingsPage = root.clampPage(rawPage);
+                    migratedPage = rawPage <= 3 ? rawPage : rawPage + 1;
                 }
+                if (version < 15 && migratedPage >= 5)
+                    migratedPage += 1;
+                root.settingsPage = root.clampPage(migratedPage);
                 root.hoverExpansion = parsed.hoverExpansion === undefined ? true : !!parsed.hoverExpansion;
                 root.animationDuration = root.clampAnimationDuration(parsed.animationDuration);
                 root.backgroundOpacity = root.clampBackgroundOpacity(parsed.backgroundOpacity);
@@ -305,6 +323,8 @@ Scope {
                 root.cpuRefreshInterval = root.clampCpuRefreshInterval(parsed.cpuRefreshInterval);
                 root.batteryWarningThreshold = root.clampBatteryWarning(parsed.batteryWarningThreshold);
                 root.batteryCriticalThreshold = root.clampBatteryCritical(parsed.batteryCriticalThreshold);
+                root.showKeyboardOsd = parsed.showKeyboardOsd === undefined ? true : !!parsed.showKeyboardOsd;
+                root.keyboardOsdTimeout = root.clampKeyboardOsdTimeout(parsed.keyboardOsdTimeout);
                 if (root.batteryCriticalThreshold > root.batteryWarningThreshold)
                     root.batteryCriticalThreshold = root.batteryWarningThreshold;
                 root.lastError = "";
@@ -321,10 +341,12 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 14,
+            "version": 15,
             "settingsPage": root.settingsPage,
             "hoverExpansion": root.hoverExpansion,
             "animationDuration": root.animationDuration,
+            "showKeyboardOsd": root.showKeyboardOsd,
+            "keyboardOsdTimeout": root.keyboardOsdTimeout,
             "backgroundOpacity": root.backgroundOpacity,
             "cornerRadius": root.cornerRadius,
             "borderVisible": root.borderVisible,
@@ -482,7 +504,17 @@ Scope {
             saveTimer.restart();
     }
 
+    onShowKeyboardOsdChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
     onShowNotificationsChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onKeyboardOsdTimeoutChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }

@@ -61,6 +61,12 @@ ShellRoot {
         id: settings
     }
 
+    KeyboardLayoutState {
+        id: keyboardLayout
+        osdEnabled: settings.showKeyboardOsd
+        osdTimeout: settings.keyboardOsdTimeout
+    }
+
     BluetoothState {
         id: bluetooth
     }
@@ -120,6 +126,7 @@ ShellRoot {
             media: media
             diagnostics: diagnostics
             settings: settings
+            keyboardLayout: keyboardLayout
             bluetooth: bluetooth
             network: network
             power: power
