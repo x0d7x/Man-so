@@ -44,6 +44,10 @@ ShellRoot {
         id: media
     }
 
+    DiagnosticsState {
+        id: diagnostics
+    }
+
     BluetoothState {
         id: bluetooth
     }
@@ -99,6 +103,7 @@ ShellRoot {
             volume: volume
             notifications: notifications
             media: media
+            diagnostics: diagnostics
             bluetooth: bluetooth
             network: network
             power: power
@@ -167,5 +172,6 @@ ShellRoot {
         function toggleSettings(): void {
             island.toggleSettings();
         }
+
     }
 }

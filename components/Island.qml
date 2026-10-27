@@ -13,6 +13,7 @@ Rectangle {
     property var volume
     property var notifications
     property var media
+    property var diagnostics
     property var bluetooth
     property var network
     property var power
@@ -2757,6 +2758,7 @@ Rectangle {
         accentColor: island.accentColor
         onAccentColor: island.onAccentColor
         borderMutedColor: island.borderMutedColor
+        diagnostics: island.diagnostics
         onCloseRequested: island.closeSettings()
     }
 

@@ -13,6 +13,13 @@ FocusScope {
     property color accentColor
     property color onAccentColor
     property color borderMutedColor
+    property var diagnostics
+
+    property int currentPage: 0
+    readonly property var navItems: [
+        { "label": "About", "icon": "󰋼" },
+        { "label": "Diagnostics", "icon": "󰓅" }
+    ]
 
     anchors.fill: parent
     focus: visible
@@ -115,44 +122,165 @@ FocusScope {
             color: panel.borderMutedColor
         }
 
-        Rectangle {
+        RowLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            radius: 12
-            color: Qt.rgba(panel.surfaceHighColor.r, panel.surfaceHighColor.g, panel.surfaceHighColor.b, 0.32)
-            border.width: 1
-            border.color: Qt.rgba(panel.borderMutedColor.r, panel.borderMutedColor.g, panel.borderMutedColor.b, 0.35)
+            spacing: 10
 
-            Column {
-                anchors.centerIn: parent
-                spacing: 9
-
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "󰒓"
-                    color: panel.accentColor
-                    font.family: panel.monoFont
-                    font.pixelSize: 34
-                }
+            ColumnLayout {
+                Layout.fillWidth: false
+                Layout.minimumWidth: 112
+                Layout.preferredWidth: 112
+                Layout.maximumWidth: 112
+                Layout.fillHeight: true
+                spacing: 5
 
                 Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Settings Center"
-                    color: panel.fgColor
-                    font.family: panel.monoFont
-                    font.pixelSize: 15
-                    font.weight: Font.DemiBold
-                }
-
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Section navigation and configuration will be added next."
+                    text: "CATEGORIES"
                     color: panel.mutedColor
                     font.family: panel.monoFont
-                    font.pixelSize: 9
+                    font.pixelSize: 7
+                    font.weight: Font.DemiBold
+                    font.letterSpacing: 0.5
+                    Layout.leftMargin: 8
+                    Layout.bottomMargin: 2
+                }
+
+                Repeater {
+                    model: panel.navItems
+
+                    delegate: Rectangle {
+                        id: navItem
+
+                        required property var modelData
+                        required property int index
+
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 32
+                        radius: 8
+                        color: panel.currentPage === navItem.index
+                            ? panel.accentColor
+                            : (navHover.hovered
+                                ? Qt.rgba(panel.surfaceHighColor.r, panel.surfaceHighColor.g, panel.surfaceHighColor.b, 0.75)
+                                : "transparent")
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 9
+                            anchors.rightMargin: 9
+                            spacing: 7
+
+                            Text {
+                                text: navItem.modelData.icon
+                                color: panel.currentPage === navItem.index
+                                    ? panel.onAccentColor
+                                    : panel.accentColor
+                                font.family: panel.monoFont
+                                font.pixelSize: 13
+                            }
+
+                            Text {
+                                Layout.fillWidth: true
+                                text: navItem.modelData.label
+                                color: panel.currentPage === navItem.index
+                                    ? panel.onAccentColor
+                                    : panel.fgColor
+                                font.family: panel.monoFont
+                                font.pixelSize: 10
+                                font.weight: panel.currentPage === navItem.index
+                                    ? Font.DemiBold
+                                    : Font.Normal
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        HoverHandler {
+                            id: navHover
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: panel.currentPage = navItem.index
+                        }
+                    }
+                }
+
+                Item {
+                    Layout.fillHeight: true
+                }
+
+                Text {
+                    Layout.leftMargin: 8
+                    text: "man-qs"
+                    color: panel.borderMutedColor
+                    font.family: panel.monoFont
+                    font.pixelSize: 8
+                }
+            }
+
+            Rectangle {
+                Layout.fillHeight: true
+                Layout.preferredWidth: 1
+                color: panel.borderMutedColor
+            }
+
+            Item {
+                id: pageContainer
+
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                opacity: 1
+
+                SettingsAboutPage {
+                    anchors.fill: parent
+                    visible: panel.currentPage === 0
+                    diagnostics: panel.diagnostics
+                    monoFont: panel.monoFont
+                    fgColor: panel.fgColor
+                    mutedColor: panel.mutedColor
+                    accentColor: panel.accentColor
+                    surfaceHighColor: panel.surfaceHighColor
+                }
+
+                SettingsDiagnosticsPage {
+                    anchors.fill: parent
+                    visible: panel.currentPage === 1
+                    diagnostics: panel.diagnostics
+                    monoFont: panel.monoFont
+                    fgColor: panel.fgColor
+                    mutedColor: panel.mutedColor
+                    accentColor: panel.accentColor
+                    onAccentColor: panel.onAccentColor
+                    surfaceHighColor: panel.surfaceHighColor
                 }
             }
         }
+    }
+
+    Keys.onUpPressed: {
+        panel.currentPage = Math.max(0, panel.currentPage - 1);
+    }
+
+    Keys.onDownPressed: {
+        panel.currentPage = Math.min(panel.navItems.length - 1, panel.currentPage + 1);
+    }
+
+    onCurrentPageChanged: {
+        if (!pageContainer)
+            return;
+        pageContainer.opacity = 0;
+        pageFade.restart();
+    }
+
+    NumberAnimation {
+        id: pageFade
+        target: pageContainer
+        property: "opacity"
+        from: 0
+        to: 1
+        duration: 150
+        easing.type: Easing.OutCubic
     }
 
     Shortcut {
