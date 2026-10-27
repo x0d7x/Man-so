@@ -68,6 +68,15 @@ Item {
 
             Item { implicitHeight: 3 }
 
+            Text {
+                text: "CONFIGURATION"
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.5
+            }
+
             SettingsInfoRow {
                 Layout.fillWidth: true
                 label: "Settings file"
@@ -90,10 +99,19 @@ Item {
                 surfaceHighColor: page.surfaceHighColor
             }
 
+            Text {
+                text: "SYSTEM"
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.5
+            }
+
             SettingsInfoRow {
                 Layout.fillWidth: true
-                label: "Tools"
-                value: page.diagnostics ? page.diagnostics.toolStatus : "—"
+                label: "Hostname"
+                value: page.diagnostics ? page.diagnostics.hostname : "—"
                 monoFont: page.monoFont
                 fgColor: page.fgColor
                 mutedColor: page.mutedColor
@@ -102,8 +120,89 @@ Item {
 
             SettingsInfoRow {
                 Layout.fillWidth: true
-                label: "Backlight"
-                value: page.diagnostics ? page.diagnostics.backlightStatus : "—"
+                label: "System"
+                value: page.diagnostics
+                    ? page.diagnostics.osName + (page.diagnostics.kernelVersion.length > 0 ? " · " + page.diagnostics.kernelVersion : "")
+                    : "—"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                surfaceHighColor: page.surfaceHighColor
+            }
+
+            SettingsInfoRow {
+                Layout.fillWidth: true
+                label: "Uptime"
+                value: page.diagnostics ? page.diagnostics.uptimeText : "—"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                surfaceHighColor: page.surfaceHighColor
+            }
+
+            SettingsInfoRow {
+                Layout.fillWidth: true
+                label: "Load average"
+                value: page.diagnostics ? page.diagnostics.loadAverage : "—"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                surfaceHighColor: page.surfaceHighColor
+            }
+
+            SettingsInfoRow {
+                Layout.fillWidth: true
+                label: "Memory"
+                value: page.diagnostics ? page.diagnostics.memoryText : "—"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                surfaceHighColor: page.surfaceHighColor
+            }
+
+            SettingsInfoRow {
+                Layout.fillWidth: true
+                label: "Quickshell"
+                value: page.diagnostics ? page.diagnostics.quickshellVersion : "—"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                surfaceHighColor: page.surfaceHighColor
+            }
+
+            SettingsInfoRow {
+                Layout.fillWidth: true
+                label: "MangoWM"
+                value: page.diagnostics ? page.diagnostics.mangoVersion : "—"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                surfaceHighColor: page.surfaceHighColor
+            }
+
+            Text {
+                text: "SESSION"
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.5
+            }
+
+            SettingsInfoRow {
+                Layout.fillWidth: true
+                label: "Session"
+                value: page.diagnostics ? page.diagnostics.sessionText : "—"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                surfaceHighColor: page.surfaceHighColor
+            }
+
+            SettingsInfoRow {
+                Layout.fillWidth: true
+                label: "Wayland display"
+                value: page.diagnostics ? page.diagnostics.waylandDisplay : "—"
                 monoFont: page.monoFont
                 fgColor: page.fgColor
                 mutedColor: page.mutedColor
@@ -130,10 +229,77 @@ Item {
                 surfaceHighColor: page.surfaceHighColor
             }
 
+            Text {
+                text: "HARDWARE"
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.5
+            }
+
             SettingsInfoRow {
                 Layout.fillWidth: true
-                label: "Notification daemon"
-                value: "Quickshell"
+                label: "Backlight"
+                value: page.diagnostics ? page.diagnostics.backlightStatus : "—"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                surfaceHighColor: page.surfaceHighColor
+            }
+
+            SettingsInfoRow {
+                Layout.fillWidth: true
+                label: "DDC display"
+                value: page.diagnostics ? page.diagnostics.ddcStatus : "—"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                surfaceHighColor: page.surfaceHighColor
+            }
+
+            Text {
+                text: "AUDIO & NETWORK"
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.5
+            }
+
+            SettingsInfoRow {
+                Layout.fillWidth: true
+                label: "Audio output"
+                value: page.diagnostics ? page.diagnostics.audioStatus : "—"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                surfaceHighColor: page.surfaceHighColor
+            }
+
+            SettingsInfoRow {
+                Layout.fillWidth: true
+                label: "Wi-Fi"
+                value: page.diagnostics ? page.diagnostics.networkStatus : "—"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                surfaceHighColor: page.surfaceHighColor
+            }
+
+            Text {
+                text: "SERVICES"
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.5
+            }
+
+            SettingsInfoRow {
+                Layout.fillWidth: true
+                label: "Notifications"
+                value: page.diagnostics ? page.diagnostics.notificationStatus : "—"
                 monoFont: page.monoFont
                 fgColor: page.fgColor
                 mutedColor: page.mutedColor
@@ -153,7 +319,7 @@ Item {
             SettingsInfoRow {
                 Layout.fillWidth: true
                 label: "MPD socket"
-                value: page.diagnostics ? page.diagnostics.mpdSocket : "—"
+                value: page.diagnostics ? page.diagnostics.mpdSummary : "—"
                 monoFont: page.monoFont
                 fgColor: page.fgColor
                 mutedColor: page.mutedColor
@@ -164,6 +330,16 @@ Item {
                 Layout.fillWidth: true
                 label: "Media backend"
                 value: "MPRIS + MPD"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                surfaceHighColor: page.surfaceHighColor
+            }
+
+            SettingsInfoRow {
+                Layout.fillWidth: true
+                label: "Tools"
+                value: page.diagnostics ? page.diagnostics.toolStatus : "—"
                 monoFont: page.monoFont
                 fgColor: page.fgColor
                 mutedColor: page.mutedColor
