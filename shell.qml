@@ -1,5 +1,6 @@
 import Quickshell
 import Quickshell.Io
+import Quickshell.Wayland
 import QtQuick
 
 import "components"
@@ -77,9 +78,9 @@ ShellRoot {
         exclusiveZone: 34
         aboveWindows: true
         WlrLayershell.namespace: "maneso"
-         WlrLayershell.keyboardFocus: island.settingsOpen
-             ? WlrKeyboardFocus.Exclusive
-             : (island.needsKeyboard ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None)
+        WlrLayershell.keyboardFocus: island.settingsOpen
+            ? WlrKeyboardFocus.Exclusive
+            : (island.needsKeyboard ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None)
 
         mask: Region {
             x: Math.round(island.x)
@@ -161,6 +162,10 @@ ShellRoot {
 
         function clearNotifications(): void {
             notifications.clearAll();
+        }
+
+        function toggleSettings(): void {
+            island.toggleSettings();
         }
     }
 }

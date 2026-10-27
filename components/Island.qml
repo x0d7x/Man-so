@@ -27,6 +27,7 @@ Rectangle {
     property bool wifiPasswordOpen: false
     property bool bluetoothMenuOpen: false
     property bool bluetoothPopupReady: false
+    property bool settingsOpen: false
     property string bluetoothInput: ""
     property var wifiSelectedNetwork: null
     property string wifiPasswordText: ""
@@ -117,11 +118,14 @@ Rectangle {
         return island.resolveIcon("application-x-executable");
     }
 
-    readonly property bool needsKeyboard: island.wifiMenuOpen || island.bluetoothMenuOpen
+    readonly property bool needsKeyboard: island.settingsOpen
+        || island.wifiMenuOpen || island.bluetoothMenuOpen
         || (island.notifications && island.notifications.centerOpen)
         || (island.pointerHovered && !island.suppressHoverKeyboard)
 
     readonly property string mode: {
+        if (island.settingsOpen)
+            return "settings";
         if (island.notifications && island.notifications.visible && island.notifications.active)
             return "notification";
         if (island.pinned)
@@ -139,6 +143,8 @@ Rectangle {
     }
 
     readonly property int targetWidth: {
+        if (island.mode === "settings")
+            return 560;
         if (island.mode === "notification")
             return 460;
         if (island.mode === "media")
@@ -153,6 +159,8 @@ Rectangle {
     }
 
     readonly property int targetHeight: {
+        if (island.mode === "settings")
+            return 420;
         if (island.mode === "notification")
             return 104;
         if (island.mode === "media")
@@ -191,6 +199,32 @@ Rectangle {
     function showTransient() {
         island.transientActive = true;
         transientTimer.restart();
+    }
+
+    function openSettings() {
+        if (island.settingsOpen)
+            return;
+        if (island.wifiMenuOpen)
+            island.closeWifiMenu();
+        if (island.bluetoothMenuOpen)
+            island.closeBluetoothMenu();
+        if (island.notifications && island.notifications.centerOpen)
+            island.closeNotificationCenter();
+        island.settingsOpen = true;
+    }
+
+    function closeSettings() {
+        if (!island.settingsOpen)
+            return;
+        island.settingsOpen = false;
+        island.releaseHoverKeyboard();
+    }
+
+    function toggleSettings() {
+        if (island.settingsOpen)
+            island.closeSettings();
+        else
+            island.openSettings();
     }
 
     function closeNotificationCenter() {
@@ -2279,6 +2313,35 @@ Rectangle {
                     }
                 }
             }
+
+            Item {
+                Layout.preferredWidth: 28
+                Layout.preferredHeight: 28
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 8
+                    color: Qt.rgba(island.surfaceHighColor.r, island.surfaceHighColor.g, island.surfaceHighColor.b, settingsMouse.containsMouse ? 0.8 : 0.5)
+                }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "󰒓"
+                    color: settingsMouse.containsMouse ? island.accentColor : island.fgColor
+                    font.family: island.monoFont
+                    font.pixelSize: 14
+                }
+
+                MouseArea {
+                    id: settingsMouse
+
+                    anchors.fill: parent
+                    acceptedButtons: Qt.LeftButton
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: island.toggleSettings()
+                }
+            }
         }
 
         Rectangle {
@@ -2682,6 +2745,19 @@ Rectangle {
             }
         }
 
+    }
+
+    SettingsPanel {
+        anchors.fill: parent
+        visible: island.mode === "settings"
+        monoFont: island.monoFont
+        surfaceHighColor: island.surfaceHighColor
+        fgColor: island.fgColor
+        mutedColor: island.mutedColor
+        accentColor: island.accentColor
+        onAccentColor: island.onAccentColor
+        borderMutedColor: island.borderMutedColor
+        onCloseRequested: island.closeSettings()
     }
 
 }
