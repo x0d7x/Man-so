@@ -23,6 +23,7 @@ Scope {
     property int batteryWarningThreshold: 20
     property int batteryCriticalThreshold: 10
     property int fontSize: 11
+    property int uiScale: 100
     property bool initialized: false
     property bool loading: false
     property string lastError: ""
@@ -125,6 +126,7 @@ Scope {
         root.borderWidth = 1;
         root.fontFamily = "JetBrainsMono Nerd Font Mono";
         root.fontSize = 11;
+        root.uiScale = 100;
     }
 
     function applyDefaults() {
@@ -138,6 +140,7 @@ Scope {
         root.borderWidth = 1;
         root.fontFamily = "JetBrainsMono Nerd Font Mono";
         root.fontSize = 11;
+        root.uiScale = 100;
         root.showWorkspaceTags = true;
         root.showWindowInfo = true;
         root.showSystemStats = true;
@@ -186,6 +189,9 @@ Scope {
                     : (parsed.fontScale !== undefined
                         ? Math.max(9, Math.min(13, Math.round(Number(parsed.fontScale) * 11 / 100)))
                         : 11);
+                root.uiScale = parsed.uiScale === undefined
+                    ? 100
+                    : Math.max(85, Math.min(115, Math.round(Number(parsed.uiScale) / 5) * 5));
                 root.showWorkspaceTags = parsed.showWorkspaceTags === undefined ? true : !!parsed.showWorkspaceTags;
                 root.showWindowInfo = parsed.showWindowInfo === undefined ? true : !!parsed.showWindowInfo;
                 root.showSystemStats = parsed.showSystemStats === undefined ? true : !!parsed.showSystemStats;
@@ -211,7 +217,7 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 8,
+            "version": 9,
             "settingsPage": root.settingsPage,
             "hoverExpansion": root.hoverExpansion,
             "animationDuration": root.animationDuration,
@@ -221,6 +227,7 @@ Scope {
             "borderWidth": root.borderWidth,
             "fontFamily": root.fontFamily,
             "fontSize": root.fontSize,
+            "uiScale": root.uiScale,
             "showWorkspaceTags": root.showWorkspaceTags,
             "showWindowInfo": root.showWindowInfo,
             "showSystemStats": root.showSystemStats,
@@ -289,6 +296,11 @@ Scope {
     }
 
     onFontSizeChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onUiScaleChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }

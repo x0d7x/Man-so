@@ -137,6 +137,25 @@ Item {
 
             SettingsSlider {
                 Layout.fillWidth: true
+                label: "UI scale"
+                value: page.settings ? page.settings.uiScale : 100
+                from: 85
+                to: 115
+                step: 5
+                suffix: "%"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                surfaceHighColor: page.surfaceHighColor
+                onMoved: value => {
+                    if (page.settings)
+                        page.settings.uiScale = value;
+                }
+            }
+
+            SettingsSlider {
+                Layout.fillWidth: true
                 label: "Background opacity"
                 value: page.settings ? page.settings.backgroundOpacity : 100
                 from: 40

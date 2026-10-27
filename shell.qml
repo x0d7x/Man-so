@@ -82,7 +82,7 @@ ShellRoot {
             top: 6
         }
 
-        implicitHeight: 440
+        implicitHeight: 520
         color: "transparent"
         exclusiveZone: 34
         aboveWindows: true
@@ -92,11 +92,11 @@ ShellRoot {
             : (island.needsKeyboard ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None)
 
         mask: Region {
-            x: Math.round(island.x)
+            x: Math.round(island.x + (island.width - island.width * island.uiScale) / 2)
             y: Math.round(island.y)
-            width: Math.round(island.width)
-            height: Math.round(island.height)
-            radius: island.cornerRadius
+            width: Math.round(island.width * island.uiScale)
+            height: Math.round(island.height * island.uiScale)
+            radius: Math.round(island.cornerRadius * island.uiScale)
         }
 
         Island {
@@ -178,6 +178,8 @@ ShellRoot {
         function toggleSettings(): void {
             island.toggleSettings();
         }
+
+
 
 
 

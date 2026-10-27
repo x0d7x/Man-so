@@ -129,6 +129,7 @@ Rectangle {
     readonly property bool borderVisible: island.settings ? island.settings.borderVisible : true
     readonly property int borderThickness: island.settings ? island.settings.borderWidth : 1
     readonly property real fontScale: island.settings ? island.settings.fontSize / 11 : 1
+    readonly property real uiScale: island.settings ? island.settings.uiScale / 100 : 1
     readonly property bool showWorkspaceTags: island.settings ? island.settings.showWorkspaceTags : true
     readonly property bool showWindowInfo: island.settings ? island.settings.showWindowInfo : true
     readonly property bool showSystemStats: island.settings ? island.settings.showSystemStats : true
@@ -513,6 +514,12 @@ Rectangle {
     width: island.targetWidth
     height: island.targetHeight
     radius: island.cornerRadius
+    transform: Scale {
+        origin.x: island.width / 2
+        origin.y: 0
+        xScale: island.uiScale
+        yScale: island.uiScale
+    }
     color: Qt.rgba(island.bgColor.r, island.bgColor.g, island.bgColor.b, island.backgroundOpacity / 100)
     border.width: island.mode === "notification" || island.mode === "media"
         ? 0
@@ -1591,12 +1598,13 @@ Rectangle {
             if (!island.panelWindow)
                 return 0;
             const bell = bellItem.mapToItem(island, 0, 0);
-            const desired = Math.round(island.x + bell.x + bellItem.width / 2 - implicitWidth / 2);
+            const visualLeft = island.x + (island.width - island.width * island.uiScale) / 2;
+            const desired = Math.round(visualLeft + (bell.x + bellItem.width / 2) * island.uiScale - implicitWidth / 2);
             return Math.max(16, Math.min(desired, island.panelWindow.width - implicitWidth - 16));
         }
         anchor.rect.y: {
             const bell = bellItem.mapToItem(island, 0, 0);
-            return Math.round(island.y + bell.y + bellItem.height + 8);
+            return Math.round(island.y + (bell.y + bellItem.height) * island.uiScale + 8);
         }
         visible: false
         grabFocus: true
