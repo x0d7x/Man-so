@@ -13,6 +13,12 @@ Scope {
     property bool borderVisible: true
     property int borderWidth: 1
     property string fontFamily: "JetBrainsMono Nerd Font Mono"
+    property bool showWorkspaceTags: true
+    property bool showWindowInfo: true
+    property bool showSystemStats: true
+    property bool showMedia: true
+    property bool showVolume: true
+    property bool showNotifications: true
     property bool initialized: false
     property bool loading: false
     property string lastError: ""
@@ -30,7 +36,7 @@ Scope {
         const page = Number(value);
         if (!Number.isFinite(page))
             return 0;
-        return Math.max(0, Math.min(3, Math.round(page)));
+        return Math.max(0, Math.min(4, Math.round(page)));
     }
 
     function clampAnimationDuration(value) {
@@ -72,6 +78,15 @@ Scope {
             : "JetBrainsMono Nerd Font Mono";
     }
 
+    function resetModules() {
+        root.showWorkspaceTags = true;
+        root.showWindowInfo = true;
+        root.showSystemStats = true;
+        root.showMedia = true;
+        root.showVolume = true;
+        root.showNotifications = true;
+    }
+
     function resetAppearance() {
         root.backgroundOpacity = 100;
         root.cornerRadius = 17;
@@ -90,6 +105,12 @@ Scope {
         root.borderVisible = true;
         root.borderWidth = 1;
         root.fontFamily = "JetBrainsMono Nerd Font Mono";
+        root.showWorkspaceTags = true;
+        root.showWindowInfo = true;
+        root.showSystemStats = true;
+        root.showMedia = true;
+        root.showVolume = true;
+        root.showNotifications = true;
         root.loading = false;
         root.initialized = true;
     }
@@ -107,9 +128,11 @@ Scope {
                 const version = Number(parsed.version) || 1;
                 const rawPage = Number(parsed.settingsPage) || 0;
                 if (version < 2) {
-                    root.settingsPage = root.clampPage(rawPage + 2);
+                    root.settingsPage = root.clampPage(rawPage + 3);
                 } else if (version < 3) {
-                    root.settingsPage = root.clampPage(rawPage === 0 ? 0 : rawPage + 1);
+                    root.settingsPage = root.clampPage(rawPage === 0 ? 0 : rawPage + 2);
+                } else if (version < 5) {
+                    root.settingsPage = root.clampPage(rawPage <= 1 ? rawPage : rawPage + 1);
                 } else {
                     root.settingsPage = root.clampPage(rawPage);
                 }
@@ -120,6 +143,12 @@ Scope {
                 root.borderVisible = parsed.borderVisible === undefined ? true : !!parsed.borderVisible;
                 root.borderWidth = root.clampBorderWidth(parsed.borderWidth);
                 root.fontFamily = root.clampFontFamily(parsed.fontFamily);
+                root.showWorkspaceTags = parsed.showWorkspaceTags === undefined ? true : !!parsed.showWorkspaceTags;
+                root.showWindowInfo = parsed.showWindowInfo === undefined ? true : !!parsed.showWindowInfo;
+                root.showSystemStats = parsed.showSystemStats === undefined ? true : !!parsed.showSystemStats;
+                root.showMedia = parsed.showMedia === undefined ? true : !!parsed.showMedia;
+                root.showVolume = parsed.showVolume === undefined ? true : !!parsed.showVolume;
+                root.showNotifications = parsed.showNotifications === undefined ? true : !!parsed.showNotifications;
                 root.lastError = "";
             } catch (error) {
                 root.settingsPage = 0;
@@ -134,7 +163,7 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 4,
+            "version": 5,
             "settingsPage": root.settingsPage,
             "hoverExpansion": root.hoverExpansion,
             "animationDuration": root.animationDuration,
@@ -142,7 +171,13 @@ Scope {
             "cornerRadius": root.cornerRadius,
             "borderVisible": root.borderVisible,
             "borderWidth": root.borderWidth,
-            "fontFamily": root.fontFamily
+            "fontFamily": root.fontFamily,
+            "showWorkspaceTags": root.showWorkspaceTags,
+            "showWindowInfo": root.showWindowInfo,
+            "showSystemStats": root.showSystemStats,
+            "showMedia": root.showMedia,
+            "showVolume": root.showVolume,
+            "showNotifications": root.showNotifications
         };
     }
 
@@ -197,6 +232,36 @@ Scope {
     }
 
     onFontFamilyChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onShowWorkspaceTagsChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onShowWindowInfoChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onShowSystemStatsChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onShowMediaChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onShowVolumeChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onShowNotificationsChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }

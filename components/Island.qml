@@ -128,6 +128,12 @@ Rectangle {
     readonly property int cornerRadius: island.settings ? island.settings.cornerRadius : 17
     readonly property bool borderVisible: island.settings ? island.settings.borderVisible : true
     readonly property int borderThickness: island.settings ? island.settings.borderWidth : 1
+    readonly property bool showWorkspaceTags: island.settings ? island.settings.showWorkspaceTags : true
+    readonly property bool showWindowInfo: island.settings ? island.settings.showWindowInfo : true
+    readonly property bool showSystemStats: island.settings ? island.settings.showSystemStats : true
+    readonly property bool showMedia: island.settings ? island.settings.showMedia : true
+    readonly property bool showVolume: island.settings ? island.settings.showVolume : true
+    readonly property bool showNotifications: island.settings ? island.settings.showNotifications : true
 
     readonly property bool needsKeyboard: island.settingsOpen
         || island.wifiMenuOpen || island.bluetoothMenuOpen
@@ -2011,6 +2017,7 @@ Rectangle {
             }
 
             Row {
+                visible: island.showWorkspaceTags
                 spacing: 4
 
                 Repeater {
@@ -2072,7 +2079,7 @@ Rectangle {
                 spacing: 6
 
                 IconImage {
-                    visible: island.appIconSource.length > 0
+                    visible: island.showWindowInfo && island.appIconSource.length > 0
                     source: island.appIconSource
                     implicitSize: 20
                     Layout.preferredWidth: 20
@@ -2081,6 +2088,7 @@ Rectangle {
                 }
 
                 Text {
+                    visible: island.showWindowInfo
                     Layout.fillWidth: false
                     Layout.maximumWidth: 80
                     text: island.windowTitle
@@ -2366,6 +2374,7 @@ Rectangle {
         }
 
         RowLayout {
+            visible: island.showSystemStats
             Layout.alignment: Qt.AlignHCenter
             Layout.preferredHeight: 24
             spacing: 16
@@ -2456,13 +2465,14 @@ Rectangle {
         }
 
         Rectangle {
+            visible: island.showSystemStats
             Layout.fillWidth: true
             Layout.preferredHeight: 1
             color: island.borderMutedColor
         }
 
         MediaCard {
-            visible: island.media && island.media.hasPlayer
+            visible: island.showMedia && island.media && island.media.hasPlayer
             Layout.fillWidth: true
             Layout.preferredHeight: 104
             media: island.media
@@ -2479,12 +2489,14 @@ Rectangle {
         }
 
         Rectangle {
+            visible: island.showMedia && island.media && island.media.hasPlayer
             Layout.fillWidth: true
             Layout.preferredHeight: 1
             color: island.borderMutedColor
         }
 
         RowLayout {
+            visible: island.showVolume
             Layout.alignment: Qt.AlignHCenter
             Layout.preferredHeight: 24
             spacing: 8
@@ -2561,12 +2573,14 @@ Rectangle {
         }
 
         Rectangle {
+            visible: island.showVolume
             Layout.fillWidth: true
             Layout.preferredHeight: 1
             color: island.borderMutedColor
         }
 
         ColumnLayout {
+            visible: island.showNotifications
             Layout.fillWidth: true
             Layout.fillHeight: true
             spacing: 3
@@ -2760,6 +2774,11 @@ Rectangle {
             }
         }
 
+        Item {
+            visible: !island.showNotifications
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+        }
     }
 
     SettingsPanel {
