@@ -8,6 +8,7 @@ Scope {
     property var monitors: ({})
     property string focusedMonitor: ""
     property bool connected: false
+    property var mangoIpc
 
     readonly property var focusedState: root.monitors[root.focusedMonitor] || null
 
@@ -89,28 +90,15 @@ Scope {
     }
 
     function switchTag(index) {
-        Quickshell.execDetached(["mmsg", "dispatch", "view," + index]);
+        if (root.mangoIpc)
+            root.mangoIpc.sendCommand("dispatch view," + index);
     }
 
-    Process {
-        id: allMonitorsProcess
-        command: ["mmsg", "watch", "all-monitors"]
-        running: true
+    Connections {
+        target: root.mangoIpc
 
-        stdout: SplitParser {
-            onRead: data => root.consumeMonitors(data)
-        }
-
-        onExited: {
-            root.connected = false;
-            restartMonitors.restart();
+        function onMonitorsLine(line) {
+            root.consumeMonitors(line);
         }
     }
-
-    Timer {
-        id: restartMonitors
-        interval: 1000
-        onTriggered: allMonitorsProcess.running = true
-    }
-
 }

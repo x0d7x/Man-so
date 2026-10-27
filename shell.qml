@@ -24,8 +24,13 @@ ShellRoot {
         return screens[0];
     }
 
+    MangoIpc {
+        id: mangoIpc
+    }
+
     MangoState {
         id: mango
+        mangoIpc: mangoIpc
     }
 
     SystemStats {
@@ -70,6 +75,9 @@ ShellRoot {
 
     DiagnosticsState {
         id: diagnostics
+        network: network
+        mangoIpc: mangoIpc
+        keyboardState: keyboardLayout
     }
 
     SettingsState {
@@ -78,6 +86,7 @@ ShellRoot {
 
     KeyboardLayoutState {
         id: keyboardLayout
+        mangoIpc: mangoIpc
         osdEnabled: settings.showKeyboardOsd
         osdTimeout: settings.keyboardOsdTimeout
     }
@@ -211,6 +220,7 @@ ShellRoot {
         function toggleSettings(): void {
             island.toggleSettings();
         }
+
 
 
 

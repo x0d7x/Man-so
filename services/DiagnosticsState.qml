@@ -6,18 +6,19 @@ Scope {
     id: root
 
     property string quickshellVersion: ""
-    property string mangoVersion: ""
+    property var mangoIpc
+    property var keyboardState
+    readonly property string mangoVersion: root.mangoIpc ? root.mangoIpc.version : ""
     property string osName: ""
     property string kernelVersion: ""
     property string hostname: ""
     property string uptimeText: ""
     property string loadAverage: ""
     property string memoryText: ""
-    property string keyboardLayout: ""
+    readonly property string keyboardLayout: root.keyboardState ? root.keyboardState.currentName : ""
     property string missingTools: ""
     property string backlightDevices: ""
     property string audioStatus: ""
-    property string networkStatus: ""
     property string notificationStatus: ""
     property string mpdStatus: ""
     property string ddcDisplay: ""
@@ -25,6 +26,15 @@ Scope {
     property int ddcPercent: -1
     property string mpdSocket: "/tmp/mpd_socket"
 
+    property var network
+
+    readonly property string networkStatus: root.network
+        ? (root.network.available
+            ? (root.network.connected
+                ? root.network.activeSsid + " · " + root.network.activeSignal + "%"
+                : (root.network.enabled ? "Disconnected" : "Wi-Fi off"))
+            : "Unavailable")
+        : "Unavailable"
     readonly property string sessionText: (Quickshell.env("XDG_SESSION_TYPE") || "unknown")
         + " · " + (Quickshell.env("XDG_CURRENT_DESKTOP") || "unknown")
     readonly property string waylandDisplay: Quickshell.env("WAYLAND_DISPLAY") || "none"
@@ -116,17 +126,6 @@ Scope {
         root.audioStatus = result;
     }
 
-    function parseNetwork(text) {
-        const lines = text.split("\n");
-        for (let i = 0; i < lines.length; ++i) {
-            const match = lines[i].match(/^yes:(.*):(\d+)$/);
-            if (match) {
-                root.networkStatus = match[1] + " · " + match[2] + "%";
-                return;
-            }
-        }
-        root.networkStatus = "Disconnected";
-    }
 
     function parseBacklight(text) {
         const values = [];
@@ -168,18 +167,12 @@ Scope {
     function refresh() {
         if (!quickshellVersionProcess.running)
             quickshellVersionProcess.running = true;
-        if (!mangoVersionProcess.running)
-            mangoVersionProcess.running = true;
         if (!kernelProcess.running)
             kernelProcess.running = true;
-        if (!keyboardLayoutProcess.running)
-            keyboardLayoutProcess.running = true;
         if (!toolsProcess.running)
             toolsProcess.running = true;
         if (!audioProcess.running)
             audioProcess.running = true;
-        if (!networkProcess.running)
-            networkProcess.running = true;
         if (!notificationProcess.running)
             notificationProcess.running = true;
         if (!mpdProcess.running)
@@ -236,18 +229,6 @@ Scope {
     }
 
     Process {
-        id: mangoVersionProcess
-        command: ["mmsg", "get", "version"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const data = root.parseJson(this.text);
-                if (data && data.version)
-                    root.mangoVersion = data.version;
-            }
-        }
-    }
-
-    Process {
         id: kernelProcess
         command: ["uname", "-r"]
         stdout: StdioCollector {
@@ -256,22 +237,10 @@ Scope {
     }
 
     Process {
-        id: keyboardLayoutProcess
-        command: ["mmsg", "get", "keyboardlayout"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const data = root.parseJson(this.text);
-                if (data && data.layout)
-                    root.keyboardLayout = data.layout;
-            }
-        }
-    }
-
-    Process {
         id: toolsProcess
         command: [
             "sh", "-c",
-            "for c in ddcutil brightnessctl ncat ffmpeg pactl wpctl notify-send nmcli; do command -v \"$c\" >/dev/null || printf '%s ' \"$c\"; done"
+            "for c in ddcutil brightnessctl ncat ffmpeg pactl wpctl notify-send; do command -v \"$c\" >/dev/null || printf '%s ' \"$c\"; done"
         ]
         stdout: StdioCollector {
             onStreamFinished: root.missingTools = this.text.trim()
@@ -286,14 +255,6 @@ Scope {
         ]
         stdout: StdioCollector {
             onStreamFinished: root.parseAudio(this.text)
-        }
-    }
-
-    Process {
-        id: networkProcess
-        command: ["nmcli", "-t", "-f", "active,ssid,signal", "dev", "wifi"]
-        stdout: StdioCollector {
-            onStreamFinished: root.parseNetwork(this.text)
         }
     }
 

@@ -13,6 +13,7 @@ Scope {
     property bool osdEnabled: true
     property int osdTimeout: 1500
     property string lastError: ""
+    property var mangoIpc
 
     readonly property string currentLabel: root.currentName.length > 0 ? root.currentName : "—"
     readonly property string positionText: root.currentIndex >= 0 && root.layouts.length > 0
@@ -127,7 +128,8 @@ Scope {
     function switchTo(layout) {
         if (!layout || typeof layout.code !== "string" || layout.code.length === 0)
             return;
-        Quickshell.execDetached(["mmsg", "dispatch", "switch_keyboard_layout," + layout.code]);
+        if (root.mangoIpc)
+            root.mangoIpc.sendCommand("dispatch switch_keyboard_layout," + layout.code);
     }
 
     function switchNext() {
@@ -150,7 +152,6 @@ Scope {
     Component.onCompleted: {
         configFile.reload();
         rulesFile.reload();
-        watchProcess.running = true;
     }
 
     FileView {
@@ -169,24 +170,12 @@ Scope {
         onLoadFailed: root.lastError = "Cannot read XKB layout list"
     }
 
-    Process {
-        id: watchProcess
-        command: ["mmsg", "watch", "keyboardlayout"]
-        running: true
+    Connections {
+        target: root.mangoIpc
 
-        stdout: SplitParser {
-            onRead: line => root.consumeLayout(line)
+        function onKeyboardLine(line) {
+            root.consumeLayout(line);
         }
-
-        onExited: {
-            restartTimer.restart();
-        }
-    }
-
-    Timer {
-        id: restartTimer
-        interval: 1000
-        onTriggered: watchProcess.running = true
     }
 
     Timer {
