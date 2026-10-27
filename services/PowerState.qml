@@ -1,16 +1,24 @@
 import Quickshell
-import Quickshell.Io
+import Quickshell.Services.UPower
 import QtQuick
 
 Scope {
     id: root
 
-    property string profile: "unknown"
-    property bool changing: false
-    property string pendingProfile: ""
-    property string lastError: ""
-
-    readonly property bool busy: root.changing
+    readonly property int profileValue: PowerProfiles.profile
+    readonly property string profile: {
+        if (PowerProfiles.profile === PowerProfile.Performance)
+            return "performance";
+        if (PowerProfiles.profile === PowerProfile.Balanced)
+            return "balanced";
+        if (PowerProfiles.profile === PowerProfile.PowerSaver)
+            return "power-saver";
+        return "unknown";
+    }
+    readonly property bool changing: false
+    readonly property bool busy: false
+    readonly property string pendingProfile: ""
+    readonly property string lastError: ""
 
     readonly property string label: {
         if (root.profile === "performance")
@@ -31,76 +39,18 @@ Scope {
         return "󰓅";
     }
 
-    function refresh() {
-        if (!statusProcess.running)
-            statusProcess.running = true;
-    }
-
-    function profileName(text) {
-        const value = text.trim();
-        if (value === "performance" || value === "balanced" || value === "power-saver")
-            return value;
-        return "unknown";
-    }
-
     function cycle() {
         const order = ["performance", "balanced", "power-saver"];
         const index = order.indexOf(root.profile);
-        const next = order[(index + 1 + order.length) % order.length];
-        root.setProfile(next);
+        root.setProfile(order[(index + 1 + order.length) % order.length]);
     }
 
     function setProfile(name) {
-        if (root.changing) {
-            root.pendingProfile = name;
-            return;
-        }
-
-        root.changing = true;
-        root.lastError = "";
-        setProcess.command = ["tlpctl", name];
-        setProcess.running = true;
+        if (name === "performance")
+            PowerProfiles.profile = PowerProfile.Performance;
+        else if (name === "balanced")
+            PowerProfiles.profile = PowerProfile.Balanced;
+        else if (name === "power-saver")
+            PowerProfiles.profile = PowerProfile.PowerSaver;
     }
-
-    Process {
-        id: statusProcess
-        command: ["tlpctl", "get"]
-
-        stdout: StdioCollector {
-            onStreamFinished: root.profile = root.profileName(this.text)
-        }
-    }
-
-    Process {
-        id: setProcess
-
-        stdout: StdioCollector {
-            onStreamFinished: {
-                if (this.text.trim().length > 0 && this.text.indexOf("Error") !== -1)
-                    root.lastError = this.text.trim();
-            }
-        }
-
-        onExited: exitCode => {
-            root.changing = false;
-            if (root.pendingProfile.length > 0) {
-                const next = root.pendingProfile;
-                root.pendingProfile = "";
-                root.setProfile(next);
-                return;
-            }
-            if (exitCode !== 0)
-                root.lastError = "TLP command failed";
-            root.refresh();
-        }
-    }
-
-    Timer {
-        interval: 5000
-        running: true
-        repeat: true
-        onTriggered: root.refresh()
-    }
-
-    Component.onCompleted: root.refresh()
 }

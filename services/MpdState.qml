@@ -30,6 +30,10 @@ Scope {
     property var statusFields: ({})
     property var songFields: ({})
     property string pendingCommand: ""
+    property var controlQueue: []
+    property string controlMode: ""
+    property int controlResponses: 0
+    property string controlBuffer: ""
     property int artworkId: -1
     property string pendingArtworkPath: ""
     property int pendingArtworkId: -1
@@ -121,21 +125,28 @@ Scope {
     }
 
     function requestUpdate() {
-        if (!refreshProcess.running)
-            refreshProcess.running = true;
+        root.enqueueControl("status\ncurrentsong");
+    }
+
+    function enqueueControl(command) {
+        root.controlQueue.push(command);
+        root.processControlQueue();
+    }
+
+    function processControlQueue() {
+        if (!controlSocket.connected || root.controlMode.length > 0 || root.controlQueue.length === 0)
+            return;
+
+        const command = root.controlQueue.shift();
+        root.controlMode = command.indexOf("status") === 0 ? "status" : "command";
+        root.controlResponses = 0;
+        root.controlBuffer = "";
+        controlSocket.write(command + "\n");
+        controlSocket.flush();
     }
 
     function sendCommand(command) {
-        if (controlProcess.running) {
-            root.pendingCommand = command;
-            return;
-        }
-
-        controlProcess.command = [
-            "sh", "-c",
-            "printf '" + command + "\\nclose\\n' | ncat -U " + root.socketPath
-        ];
-        controlProcess.running = true;
+        root.enqueueControl(command);
     }
 
     function togglePlaying() {
@@ -176,7 +187,8 @@ Scope {
 
     function handleIdleLine(line) {
         if (line.indexOf("OK MPD") === 0) {
-            idleProcess.write("idle player\n");
+            idleSocket.write("idle player\n");
+            idleSocket.flush();
             return;
         }
         if (line.indexOf("changed:") === 0) {
@@ -187,35 +199,71 @@ Scope {
             if (root.changed)
                 root.requestUpdate();
             root.changed = false;
-            idleProcess.write("idle player\n");
+            idleSocket.write("idle player\n");
+            idleSocket.flush();
         }
     }
 
-    Process {
-        id: idleProcess
-        command: ["ncat", "-U", root.socketPath]
-        stdinEnabled: true
-        running: true
+    function handleControlLine(line) {
+        if (line.indexOf("OK MPD") === 0)
+            return;
 
-        stdout: SplitParser {
-            onRead: data => root.handleIdleLine(data)
-        }
-
-        onExited: {
-            root.connected = false;
-            idleRestart.restart();
+        if (root.controlMode === "status") {
+            if (line === "OK") {
+                root.controlResponses += 1;
+                if (root.controlResponses >= 2) {
+                    root.parseResponse(root.controlBuffer + "\nOK");
+                    root.controlMode = "";
+                    root.controlBuffer = "";
+                    root.controlResponses = 0;
+                    root.processControlQueue();
+                } else {
+                    root.controlBuffer += "OK\n";
+                }
+            } else {
+                root.controlBuffer += line + "\n";
+            }
+        } else if (root.controlMode === "command") {
+            if (line === "OK" || line.indexOf("ACK") === 0) {
+                root.controlMode = "";
+                root.processControlQueue();
+            }
         }
     }
 
-    Process {
-        id: refreshProcess
-        command: [
-            "sh", "-c",
-            "printf 'status\\ncurrentsong\\nclose\\n' | ncat -U " + root.socketPath
-        ]
+    Socket {
+        id: idleSocket
+        path: root.socketPath
+        connected: true
+        parser: SplitParser {
+            onRead: line => root.handleIdleLine(line)
+        }
 
-        stdout: StdioCollector {
-            onStreamFinished: root.parseResponse(this.text)
+        onConnectionStateChanged: {
+            if (!connected && root.socketPath.length > 0)
+                idleRestart.restart();
+        }
+    }
+
+    Socket {
+        id: controlSocket
+        path: root.socketPath
+        connected: true
+        parser: SplitParser {
+            onRead: line => root.handleControlLine(line)
+        }
+
+        onConnectionStateChanged: {
+            if (connected) {
+                controlRetry.stop();
+                root.processControlQueue();
+            } else {
+                root.controlMode = "";
+                root.controlBuffer = "";
+                root.controlResponses = 0;
+                if (root.socketPath.length > 0)
+                    controlRetry.restart();
+            }
         }
     }
 
@@ -238,22 +286,16 @@ Scope {
         }
     }
 
-    Process {
-        id: controlProcess
-
-        onExited: {
-            if (root.pendingCommand.length > 0) {
-                const command = root.pendingCommand;
-                root.pendingCommand = "";
-                root.sendCommand(command);
-            }
-        }
-    }
-
     Timer {
         id: idleRestart
         interval: 1000
-        onTriggered: idleProcess.running = true
+        onTriggered: idleSocket.connected = true
+    }
+
+    Timer {
+        id: controlRetry
+        interval: 1000
+        onTriggered: controlSocket.connected = true
     }
 
     Component.onCompleted: root.requestUpdate()

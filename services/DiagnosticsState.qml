@@ -240,7 +240,7 @@ Scope {
         id: toolsProcess
         command: [
             "sh", "-c",
-            "for c in ddcutil brightnessctl ncat ffmpeg pactl wpctl notify-send; do command -v \"$c\" >/dev/null || printf '%s ' \"$c\"; done"
+            "for c in ddcutil brightnessctl ffmpeg wpctl notify-send; do command -v \"$c\" >/dev/null || printf '%s ' \"$c\"; done"
         ]
         stdout: StdioCollector {
             onStreamFinished: root.missingTools = this.text.trim()
