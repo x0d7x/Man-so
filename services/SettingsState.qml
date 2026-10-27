@@ -6,7 +6,7 @@ Scope {
     id: root
 
     property int settingsPage: 0
-    property bool hoverExpansion: true
+    property string expansionMode: "hover"
     property int animationDuration: 220
     property bool showKeyboardOsd: true
     property int keyboardOsdTimeout: 1500
@@ -83,7 +83,7 @@ Scope {
     }
 
     function resetGeneral() {
-        root.hoverExpansion = true;
+        root.expansionMode = "hover";
         root.animationDuration = 220;
     }
 
@@ -316,7 +316,7 @@ Scope {
     function applyDefaults() {
         root.loading = true;
         root.settingsPage = 0;
-        root.hoverExpansion = true;
+        root.expansionMode = "hover";
         root.animationDuration = 220;
         root.showKeyboardOsd = true;
         root.keyboardOsdTimeout = 1500;
@@ -373,7 +373,7 @@ Scope {
         root.loading = true;
         if (!text || text.trim().length === 0) {
             root.settingsPage = 0;
-            root.hoverExpansion = true;
+            root.expansionMode = "hover";
             root.animationDuration = 220;
             root.lastError = "Settings file is empty; using defaults";
         } else {
@@ -398,7 +398,9 @@ Scope {
                 if (version < 19 && migratedPage >= 6)
                     migratedPage += 1;
                 root.settingsPage = root.clampPage(migratedPage);
-                root.hoverExpansion = parsed.hoverExpansion === undefined ? true : !!parsed.hoverExpansion;
+                root.expansionMode = parsed.expansionMode === "click" || parsed.expansionMode === "hover"
+                    ? parsed.expansionMode
+                    : (parsed.hoverExpansion === false ? "click" : "hover");
                 root.animationDuration = root.clampAnimationDuration(parsed.animationDuration);
                 root.backgroundOpacity = root.clampBackgroundOpacity(parsed.backgroundOpacity);
                 root.cornerRadius = root.clampCornerRadius(parsed.cornerRadius);
@@ -458,7 +460,7 @@ Scope {
                 root.lastError = "";
             } catch (error) {
                 root.settingsPage = 0;
-                root.hoverExpansion = true;
+                root.expansionMode = "hover";
                 root.animationDuration = 220;
                 root.lastError = "Malformed settings; using defaults";
             }
@@ -469,9 +471,9 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 20,
+            "version": 21,
             "settingsPage": root.settingsPage,
-            "hoverExpansion": root.hoverExpansion,
+            "expansionMode": root.expansionMode,
             "animationDuration": root.animationDuration,
             "showKeyboardOsd": root.showKeyboardOsd,
             "keyboardOsdTimeout": root.keyboardOsdTimeout,
@@ -543,7 +545,7 @@ Scope {
             saveTimer.restart();
     }
 
-    onHoverExpansionChanged: {
+    onExpansionModeChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }

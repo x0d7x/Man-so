@@ -1,3 +1,4 @@
+//@ pragma UseQApplication
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -220,10 +221,6 @@ ShellRoot {
         function toggleSettings(): void {
             island.toggleSettings();
         }
-
-
-
-
 
         function privacyStatus(): string {
             return "microphoneKnown=" + privacy.microphoneKnown

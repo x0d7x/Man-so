@@ -15,6 +15,7 @@ Scope {
     property int minTimeout: 2200
     property int maxTimeout: 12000
     property int maxHistory: 50
+    property var expandedGroups: ({})
 
     readonly property bool hasActive: root.active !== null
     readonly property bool activeCritical: root.active
@@ -33,6 +34,46 @@ Scope {
     }
     readonly property string activeAppIcon: root.active ? root.active.appIcon : ""
     readonly property string activeImage: root.imageSource(root.active)
+    readonly property var groups: {
+        const grouped = [];
+        const byKey = {};
+        for (let i = 0; i < root.history.length; ++i) {
+            const note = root.history[i];
+            const key = root.groupKey(note);
+            let group = byKey[key];
+            if (!group) {
+                group = {
+                    "key": key,
+                    "appName": note.appName || "Unknown app",
+                    "appIcon": note.appIcon || "",
+                    "items": [],
+                    "count": 0,
+                    "expanded": root.expandedGroups[key] === true
+                };
+                byKey[key] = group;
+                grouped.push(group);
+            }
+            group.items.push(note);
+            group.count += 1;
+        }
+        return grouped;
+    }
+
+    function groupKey(notification) {
+        const appName = (notification && notification.appName ? notification.appName : "").trim().toLowerCase();
+        if (appName.length > 0)
+            return appName;
+        const appIcon = (notification && notification.appIcon ? notification.appIcon : "").trim().toLowerCase();
+        return appIcon.length > 0 ? "icon:" + appIcon : "unknown";
+    }
+
+    function toggleGroup(key) {
+        if (!key)
+            return;
+        const next = Object.assign({}, root.expandedGroups);
+        next[key] = !next[key];
+        root.expandedGroups = next;
+    }
 
     function isCritical(notification) {
         return notification && notification.urgency === NotificationUrgency.Critical;
@@ -218,6 +259,7 @@ Scope {
         root.unreadCount = 0;
         root.visible = false;
         root.centerOpen = false;
+        root.expandedGroups = ({});
         displayTimer.stop();
 
         if (current)

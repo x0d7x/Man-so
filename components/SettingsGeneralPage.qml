@@ -12,6 +12,11 @@ Item {
     property color onAccentColor
     property color surfaceHighColor
 
+    readonly property var expansionOptions: [
+        { "key": "hover", "label": "Hover" },
+        { "key": "click", "label": "Click" }
+    ]
+
     Flickable {
         anchors.fill: parent
         clip: true
@@ -39,27 +44,68 @@ Item {
                 font.pixelSize: 9
             }
 
-            SettingsToggleRow {
+            Text {
+                text: "EXPAND ISLAND"
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.5
+            }
+
+            RowLayout {
                 Layout.fillWidth: true
-                label: "Hover expansion"
-                description: "Open the dashboard when the pointer enters the Island."
-                checked: page.settings ? page.settings.hoverExpansion : true
-                monoFont: page.monoFont
-                fgColor: page.fgColor
-                mutedColor: page.mutedColor
-                accentColor: page.accentColor
-                onAccentColor: page.onAccentColor
-                surfaceHighColor: page.surfaceHighColor
-                onToggled: {
-                    if (page.settings)
-                        page.settings.hoverExpansion = !page.settings.hoverExpansion;
+                spacing: 6
+
+                Repeater {
+                    model: page.expansionOptions
+
+                    delegate: Rectangle {
+                        id: expansionButton
+
+                        required property var modelData
+
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 28
+                        radius: 7
+                        color: page.settings && page.settings.expansionMode === expansionButton.modelData.key
+                            ? page.accentColor
+                            : (expansionHover.hovered
+                                ? Qt.rgba(page.surfaceHighColor.r, page.surfaceHighColor.g, page.surfaceHighColor.b, 0.8)
+                                : Qt.rgba(page.surfaceHighColor.r, page.surfaceHighColor.g, page.surfaceHighColor.b, 0.4))
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: expansionButton.modelData.label
+                            color: page.settings && page.settings.expansionMode === expansionButton.modelData.key
+                                ? page.onAccentColor
+                                : page.fgColor
+                            font.family: page.monoFont
+                            font.pixelSize: 9
+                            font.weight: Font.DemiBold
+                        }
+
+                        HoverHandler {
+                            id: expansionHover
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (page.settings)
+                                    page.settings.expansionMode = expansionButton.modelData.key;
+                            }
+                        }
+                    }
                 }
             }
 
             Text {
                 Layout.fillWidth: true
-                visible: page.settings && !page.settings.hoverExpansion
-                text: "Hover expansion is off. Click the collapsed Island to pin it open."
+                text: page.settings && page.settings.expansionMode === "click"
+                    ? "Click the collapsed Island to pin it open. Hovering does not expand it."
+                    : "Hover the Island to expand it; click to pin it open."
                 color: page.mutedColor
                 font.family: page.monoFont
                 font.pixelSize: 8

@@ -294,6 +294,14 @@ Row {
             font.pixelSize: item.host ? Math.round(8 * item.host.fontScale) : 8
             font.weight: Font.Bold
         }
+
+        TapHandler {
+            acceptedButtons: Qt.LeftButton
+            onTapped: {
+                if (item.host)
+                    item.host.toggleNotificationCenter();
+            }
+        }
     }
 
     Row {
@@ -303,15 +311,14 @@ Row {
         Repeater {
             model: SystemTray.items
 
-            delegate: Image {
+            delegate: TrayIcon {
                 required property var modelData
+
                 width: item.host ? Math.round(15 * item.host.fontScale) : 15
                 height: width
-                source: item.host ? item.host.trayIconSource(modelData) : ""
-                sourceSize.width: 16
-                sourceSize.height: 16
-                fillMode: Image.PreserveAspectFit
-                smooth: true
+                trayItem: modelData
+                host: item.host
+                compact: true
             }
         }
     }
