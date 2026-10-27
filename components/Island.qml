@@ -142,6 +142,16 @@ Rectangle {
     readonly property bool showBrightness: island.settings ? island.settings.showBrightness : true
     readonly property bool showExternalBrightness: island.settings ? island.settings.showExternalBrightness : true
     readonly property bool showNotifications: island.settings ? island.settings.showNotifications : true
+    readonly property bool showCpuStat: island.settings ? island.settings.showCpuStat : true
+    readonly property bool showRamStat: island.settings ? island.settings.showRamStat : true
+    readonly property bool showTempStat: island.settings ? island.settings.showTempStat : true
+    readonly property bool showBatteryStat: island.settings ? island.settings.showBatteryStat : true
+    readonly property bool hasVisibleStats: island.showCpuStat || island.showRamStat
+        || island.showTempStat || island.showBatteryStat
+    readonly property bool showMediaArtwork: island.settings ? island.settings.showMediaArtwork : true
+    readonly property bool showMediaProgress: island.settings ? island.settings.showMediaProgress : true
+    readonly property bool showNotificationImages: island.settings ? island.settings.showNotificationImages : true
+    readonly property bool showBluetoothStatus: island.settings ? island.settings.showBluetoothStatus : true
     readonly property string workspaceVisibility: island.settings ? island.settings.workspaceVisibility : "all"
     readonly property bool showOccupiedIndicator: island.settings ? island.settings.showOccupiedIndicator : true
     readonly property bool includeUrgentWorkspaces: island.settings ? island.settings.includeUrgentWorkspaces : true
@@ -2467,6 +2477,7 @@ Rectangle {
                     }
 
                     Text {
+                        visible: island.showBluetoothStatus
                         text: island.bluetooth ? island.bluetooth.label : "--"
                         color: island.bluetooth && island.bluetooth.enabled ? island.fgColor : island.mutedColor
                         font.family: island.monoFont
@@ -2581,12 +2592,13 @@ Rectangle {
         }
 
         RowLayout {
-            visible: island.showSystemStats
+            visible: island.showSystemStats && island.hasVisibleStats
             Layout.alignment: Qt.AlignHCenter
             Layout.preferredHeight: 24
             spacing: 16
 
             Row {
+                visible: island.showCpuStat
                 spacing: 3
 
                 Text {
@@ -2607,6 +2619,7 @@ Rectangle {
             }
 
             Row {
+                visible: island.showRamStat
                 spacing: 3
 
                 Text {
@@ -2627,6 +2640,7 @@ Rectangle {
             }
 
             Row {
+                visible: island.showTempStat
                 spacing: 3
 
                 Text {
@@ -2647,6 +2661,7 @@ Rectangle {
             }
 
             Row {
+                visible: island.showBatteryStat
                 spacing: 3
 
                 Text {
@@ -2672,7 +2687,7 @@ Rectangle {
         }
 
         Rectangle {
-            visible: island.showSystemStats
+            visible: island.showSystemStats && island.hasVisibleStats
             Layout.fillWidth: true
             Layout.preferredHeight: 1
             color: island.borderMutedColor
@@ -2683,6 +2698,8 @@ Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 104
             media: island.media
+            showArtwork: island.showMediaArtwork
+            showProgress: island.showMediaProgress
             fontScale: island.fontScale
             monoFont: island.monoFont
             bgColor: island.bgColor
@@ -3066,7 +3083,9 @@ Rectangle {
                             fillMode: Image.PreserveAspectCrop
                             asynchronous: true
                             cache: true
-                            visible: dashboardNotification.modelData.image.length > 0 && status === Image.Ready
+                            visible: island.showNotificationImages
+                                && dashboardNotification.modelData.image.length > 0
+                                && status === Image.Ready
                         }
 
                         IconImage {

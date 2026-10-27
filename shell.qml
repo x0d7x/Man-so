@@ -52,10 +52,13 @@ ShellRoot {
 
     NotificationState {
         id: notifications
+        defaultTimeout: settings.notificationOsdTimeout
+        maxHistory: settings.notificationHistoryLimit
     }
 
     MediaState {
         id: media
+        hideDelay: settings.mediaOsdTimeout
     }
 
     DiagnosticsState {

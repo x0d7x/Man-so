@@ -29,6 +29,17 @@ Scope {
     property bool showBrightness: true
     property bool showExternalBrightness: true
     property bool showNotifications: true
+    property bool showCpuStat: true
+    property bool showRamStat: true
+    property bool showTempStat: true
+    property bool showBatteryStat: true
+    property bool showMediaArtwork: true
+    property bool showMediaProgress: true
+    property int mediaOsdTimeout: 4000
+    property int notificationOsdTimeout: 6000
+    property int notificationHistoryLimit: 50
+    property bool showNotificationImages: true
+    property bool showBluetoothStatus: true
     property int cpuRefreshInterval: 300
     property int batteryWarningThreshold: 20
     property int batteryCriticalThreshold: 10
@@ -145,6 +156,27 @@ Scope {
         return Math.max(2000, Math.min(15000, Math.round(interval / 1000) * 1000));
     }
 
+    function clampMediaOsdTimeout(value) {
+        const timeout = Number(value);
+        if (!Number.isFinite(timeout))
+            return 4000;
+        return Math.max(1000, Math.min(10000, Math.round(timeout / 100) * 100));
+    }
+
+    function clampNotificationOsdTimeout(value) {
+        const timeout = Number(value);
+        if (!Number.isFinite(timeout))
+            return 6000;
+        return Math.max(2200, Math.min(12000, Math.round(timeout / 100) * 100));
+    }
+
+    function clampNotificationHistoryLimit(value) {
+        const limit = Number(value);
+        if (!Number.isFinite(limit))
+            return 50;
+        return Math.max(10, Math.min(100, Math.round(limit / 5) * 5));
+    }
+
     function clampWorkspaceVisibility(value) {
         return value === "occupied" || value === "active" ? value : "all";
     }
@@ -242,6 +274,17 @@ Scope {
         root.ddcSyncEnabled = true;
         root.ddcSyncInterval = 5000;
         root.showNetworkName = true;
+        root.showCpuStat = true;
+        root.showRamStat = true;
+        root.showTempStat = true;
+        root.showBatteryStat = true;
+        root.showMediaArtwork = true;
+        root.showMediaProgress = true;
+        root.mediaOsdTimeout = 4000;
+        root.notificationOsdTimeout = 6000;
+        root.notificationHistoryLimit = 50;
+        root.showNotificationImages = true;
+        root.showBluetoothStatus = true;
     }
 
     function resetKeyboard() {
@@ -272,6 +315,17 @@ Scope {
         root.ddcSyncEnabled = true;
         root.ddcSyncInterval = 5000;
         root.showNetworkName = true;
+        root.showCpuStat = true;
+        root.showRamStat = true;
+        root.showTempStat = true;
+        root.showBatteryStat = true;
+        root.showMediaArtwork = true;
+        root.showMediaProgress = true;
+        root.mediaOsdTimeout = 4000;
+        root.notificationOsdTimeout = 6000;
+        root.notificationHistoryLimit = 50;
+        root.showNotificationImages = true;
+        root.showBluetoothStatus = true;
         root.backgroundOpacity = 100;
         root.cornerRadius = 17;
         root.borderVisible = true;
@@ -367,6 +421,17 @@ Scope {
                 root.ddcSyncEnabled = parsed.ddcSyncEnabled === undefined ? true : !!parsed.ddcSyncEnabled;
                 root.ddcSyncInterval = root.clampDdcSyncInterval(parsed.ddcSyncInterval);
                 root.showNetworkName = parsed.showNetworkName === undefined ? true : !!parsed.showNetworkName;
+                root.showCpuStat = parsed.showCpuStat === undefined ? true : !!parsed.showCpuStat;
+                root.showRamStat = parsed.showRamStat === undefined ? true : !!parsed.showRamStat;
+                root.showTempStat = parsed.showTempStat === undefined ? true : !!parsed.showTempStat;
+                root.showBatteryStat = parsed.showBatteryStat === undefined ? true : !!parsed.showBatteryStat;
+                root.showMediaArtwork = parsed.showMediaArtwork === undefined ? true : !!parsed.showMediaArtwork;
+                root.showMediaProgress = parsed.showMediaProgress === undefined ? true : !!parsed.showMediaProgress;
+                root.mediaOsdTimeout = root.clampMediaOsdTimeout(parsed.mediaOsdTimeout);
+                root.notificationOsdTimeout = root.clampNotificationOsdTimeout(parsed.notificationOsdTimeout);
+                root.notificationHistoryLimit = root.clampNotificationHistoryLimit(parsed.notificationHistoryLimit);
+                root.showNotificationImages = parsed.showNotificationImages === undefined ? true : !!parsed.showNotificationImages;
+                root.showBluetoothStatus = parsed.showBluetoothStatus === undefined ? true : !!parsed.showBluetoothStatus;
                 if (root.batteryCriticalThreshold > root.batteryWarningThreshold)
                     root.batteryCriticalThreshold = root.batteryWarningThreshold;
                 root.lastError = "";
@@ -383,7 +448,7 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 17,
+            "version": 18,
             "settingsPage": root.settingsPage,
             "hoverExpansion": root.hoverExpansion,
             "animationDuration": root.animationDuration,
@@ -416,6 +481,17 @@ Scope {
             "showBrightness": root.showBrightness,
             "showExternalBrightness": root.showExternalBrightness,
             "showNotifications": root.showNotifications,
+            "showCpuStat": root.showCpuStat,
+            "showRamStat": root.showRamStat,
+            "showTempStat": root.showTempStat,
+            "showBatteryStat": root.showBatteryStat,
+            "showMediaArtwork": root.showMediaArtwork,
+            "showMediaProgress": root.showMediaProgress,
+            "mediaOsdTimeout": root.mediaOsdTimeout,
+            "notificationOsdTimeout": root.notificationOsdTimeout,
+            "notificationHistoryLimit": root.notificationHistoryLimit,
+            "showNotificationImages": root.showNotificationImages,
+            "showBluetoothStatus": root.showBluetoothStatus,
             "cpuRefreshInterval": root.cpuRefreshInterval,
             "batteryWarningThreshold": root.batteryWarningThreshold,
             "batteryCriticalThreshold": root.batteryCriticalThreshold
@@ -593,6 +669,61 @@ Scope {
     }
 
     onShowNetworkNameChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onShowCpuStatChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onShowRamStatChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onShowTempStatChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onShowBatteryStatChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onShowMediaArtworkChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onShowMediaProgressChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onMediaOsdTimeoutChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onNotificationOsdTimeoutChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onNotificationHistoryLimitChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onShowNotificationImagesChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onShowBluetoothStatusChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }

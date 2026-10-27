@@ -6,6 +6,8 @@ Rectangle {
     id: card
 
     property var media
+    property bool showArtwork: true
+    property bool showProgress: true
     property string monoFont
     property real fontScale: 1
     property color bgColor
@@ -30,6 +32,7 @@ Rectangle {
         spacing: 10
 
         Rectangle {
+            visible: card.showArtwork
             Layout.preferredWidth: 64
             Layout.preferredHeight: 64
             Layout.alignment: Qt.AlignVCenter
@@ -107,7 +110,7 @@ Rectangle {
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 6
-                visible: card.media && card.media.length > 0
+                visible: card.showProgress && card.media && card.media.length > 0
 
                 Text {
                     text: card.media ? card.media.positionText : "0:00"

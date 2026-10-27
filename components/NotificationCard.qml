@@ -6,6 +6,7 @@ Rectangle {
     id: card
 
     property var notifications
+    property bool showImages: true
     property string monoFont
     property real fontScale: 1
     property color bgColor
@@ -58,7 +59,8 @@ Rectangle {
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 cache: true
-                visible: card.notifications && card.notifications.activeImage.length > 0
+                visible: card.showImages && card.notifications
+                    && card.notifications.activeImage.length > 0
                     && status === Image.Ready
             }
 

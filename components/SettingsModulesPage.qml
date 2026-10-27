@@ -193,7 +193,7 @@ Item {
 
             Text {
                 Layout.fillWidth: true
-                text: "Fine-tune audio, network, and display behavior."
+                text: "Fine-tune audio, network, display, system, media, notifications, and Bluetooth behavior."
                 color: page.mutedColor
                 font.family: page.monoFont
                 font.pixelSize: 8
@@ -550,6 +550,211 @@ Item {
                     if (page.settings)
                         page.settings.ddcSyncInterval = value;
                 }
+            }
+
+            Text {
+                text: "SYSTEM STATS"
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.5
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "CPU"
+                description: "Show CPU usage in the dashboard stats row."
+                checked: page.settings ? page.settings.showCpuStat : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: if (page.settings) page.settings.showCpuStat = !page.settings.showCpuStat
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Memory"
+                description: "Show memory usage in the dashboard stats row."
+                checked: page.settings ? page.settings.showRamStat : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: if (page.settings) page.settings.showRamStat = !page.settings.showRamStat
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Temperature"
+                description: "Show temperature in the dashboard stats row."
+                checked: page.settings ? page.settings.showTempStat : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: if (page.settings) page.settings.showTempStat = !page.settings.showTempStat
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Battery"
+                description: "Show battery state in the dashboard stats row."
+                checked: page.settings ? page.settings.showBatteryStat : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: if (page.settings) page.settings.showBatteryStat = !page.settings.showBatteryStat
+            }
+
+            Text {
+                text: "MEDIA"
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.5
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Album artwork"
+                description: "Show cover art in the dashboard media card and OSD."
+                checked: page.settings ? page.settings.showMediaArtwork : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: if (page.settings) page.settings.showMediaArtwork = !page.settings.showMediaArtwork
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Playback progress"
+                description: "Show the seek position and progress bar."
+                checked: page.settings ? page.settings.showMediaProgress : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: if (page.settings) page.settings.showMediaProgress = !page.settings.showMediaProgress
+            }
+
+            SettingsSlider {
+                Layout.fillWidth: true
+                label: "Media OSD duration"
+                value: page.settings ? page.settings.mediaOsdTimeout : 4000
+                from: 1000
+                to: 10000
+                step: 100
+                suffix: " ms"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                surfaceHighColor: page.surfaceHighColor
+                onMoved: value => {
+                    if (page.settings)
+                        page.settings.mediaOsdTimeout = value;
+                }
+            }
+
+            Text {
+                text: "NOTIFICATIONS"
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.5
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Notification images"
+                description: "Show image attachments in notification cards."
+                checked: page.settings ? page.settings.showNotificationImages : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: if (page.settings) page.settings.showNotificationImages = !page.settings.showNotificationImages
+            }
+
+            SettingsSlider {
+                Layout.fillWidth: true
+                label: "Notification OSD duration"
+                value: page.settings ? page.settings.notificationOsdTimeout : 6000
+                from: 2200
+                to: 12000
+                step: 100
+                suffix: " ms"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                surfaceHighColor: page.surfaceHighColor
+                onMoved: value => {
+                    if (page.settings)
+                        page.settings.notificationOsdTimeout = value;
+                }
+            }
+
+            SettingsSlider {
+                Layout.fillWidth: true
+                label: "Notification history limit"
+                value: page.settings ? page.settings.notificationHistoryLimit : 50
+                from: 10
+                to: 100
+                step: 5
+                suffix: ""
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                surfaceHighColor: page.surfaceHighColor
+                onMoved: value => {
+                    if (page.settings)
+                        page.settings.notificationHistoryLimit = value;
+                }
+            }
+
+            Text {
+                text: "BLUETOOTH"
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.5
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Status text"
+                description: "Show the Bluetooth status label next to the icon."
+                checked: page.settings ? page.settings.showBluetoothStatus : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: if (page.settings) page.settings.showBluetoothStatus = !page.settings.showBluetoothStatus
             }
 
             Item { implicitHeight: 2 }

@@ -241,6 +241,11 @@ Scope {
         root.centerOpen = false;
     }
 
+    onMaxHistoryChanged: {
+        if (root.history.length > root.maxHistory)
+            root.history = root.history.slice(0, root.maxHistory);
+    }
+
     Connections {
         target: root.active
 
