@@ -135,7 +135,8 @@ Scope {
     FileView {
         id: currentFile
         path: ""
-        watchChanges: false
+        watchChanges: true
+        onFileChanged: currentFile.reload()
         onTextChanged: root.readCurrent(currentFile.text())
         onLoadFailed: root.lastError = "Cannot read brightness"
     }
@@ -146,23 +147,6 @@ Scope {
         watchChanges: false
         onTextChanged: root.readMaximum(maximumFile.text())
         onLoadFailed: root.lastError = "Cannot read maximum brightness"
-    }
-
-    Process {
-        id: udevProcess
-        command: ["udevadm", "monitor", "--udev", "--subsystem-match=backlight"]
-        running: true
-
-        stdout: SplitParser {
-            onRead: line => {
-                if (line.indexOf("backlight") !== -1) {
-                    currentFile.reload();
-                    maximumFile.reload();
-                }
-            }
-        }
-
-        onExited: udevRestart.restart()
     }
 
     Process {
@@ -185,11 +169,5 @@ Scope {
         id: hideTimer
         interval: root.osdTimeout
         onTriggered: root.visible = false
-    }
-
-    Timer {
-        id: udevRestart
-        interval: 1000
-        onTriggered: udevProcess.running = true
     }
 }

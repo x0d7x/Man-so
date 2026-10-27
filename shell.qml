@@ -33,10 +33,6 @@ ShellRoot {
         settings: settings
     }
 
-    PulseEvents {
-        id: pulseEvents
-    }
-
     VolumeState {
         id: volume
         step: settings.volumeStep
@@ -62,7 +58,6 @@ ShellRoot {
 
     PrivacyState {
         id: privacy
-        pulseEvents: pulseEvents
         enabled: settings.privacyEnabled
         microphoneEnabled: settings.privacyMicrophoneEnabled
         screenEnabled: settings.privacyScreenEnabled
@@ -216,6 +211,7 @@ ShellRoot {
         function toggleSettings(): void {
             island.toggleSettings();
         }
+
 
 
 

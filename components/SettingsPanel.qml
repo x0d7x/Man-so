@@ -450,30 +450,24 @@ FocusScope {
         easing.type: Easing.OutCubic
     }
 
-    Loader {
+    SettingsFontSelector {
         anchors.fill: parent
-        active: panel.visible && panel.fontSelectorOpen
-        sourceComponent: Component {
-            SettingsFontSelector {
-                anchors.fill: parent
-                visible: panel.fontSelectorOpen
-                currentFont: panel.settings ? panel.settings.fontFamily : ""
-                monoFont: panel.monoFont
-                bgColor: panel.bgColor
-                surfaceHighColor: panel.surfaceHighColor
-                fgColor: panel.fgColor
-                mutedColor: panel.mutedColor
-                accentColor: panel.accentColor
-                onAccentColor: panel.onAccentColor
-                borderMutedColor: panel.borderMutedColor
-                onSelected: family => {
-                    if (panel.settings)
-                        panel.settings.fontFamily = family;
-                    panel.fontSelectorOpen = false;
-                }
-                onCloseRequested: panel.fontSelectorOpen = false
-            }
+        visible: panel.fontSelectorOpen
+        currentFont: panel.settings ? panel.settings.fontFamily : ""
+        monoFont: panel.monoFont
+        bgColor: panel.bgColor
+        surfaceHighColor: panel.surfaceHighColor
+        fgColor: panel.fgColor
+        mutedColor: panel.mutedColor
+        accentColor: panel.accentColor
+        onAccentColor: panel.onAccentColor
+        borderMutedColor: panel.borderMutedColor
+        onSelected: family => {
+            if (panel.settings)
+                panel.settings.fontFamily = family;
+            panel.fontSelectorOpen = false;
         }
+        onCloseRequested: panel.fontSelectorOpen = false
     }
 
     Shortcut {
