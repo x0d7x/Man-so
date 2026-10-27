@@ -23,6 +23,7 @@ FocusScope {
         { "label": "General", "icon": "󰒓" },
         { "label": "Appearance", "icon": "󰏘" },
         { "label": "Modules", "icon": "󰍜" },
+        { "label": "Power", "icon": "󰾅" },
         { "label": "About", "icon": "󰋼" },
         { "label": "Diagnostics", "icon": "󰓅" }
     ]
@@ -275,9 +276,21 @@ FocusScope {
                     surfaceHighColor: panel.surfaceHighColor
                 }
 
-                SettingsAboutPage {
+                SettingsPowerPage {
                     anchors.fill: parent
                     visible: panel.currentPage === 3
+                    settings: panel.settings
+                    monoFont: panel.monoFont
+                    fgColor: panel.fgColor
+                    mutedColor: panel.mutedColor
+                    accentColor: panel.accentColor
+                    onAccentColor: panel.onAccentColor
+                    surfaceHighColor: panel.surfaceHighColor
+                }
+
+                SettingsAboutPage {
+                    anchors.fill: parent
+                    visible: panel.currentPage === 4
                     diagnostics: panel.diagnostics
                     monoFont: panel.monoFont
                     fgColor: panel.fgColor
@@ -288,7 +301,7 @@ FocusScope {
 
                 SettingsDiagnosticsPage {
                     anchors.fill: parent
-                    visible: panel.currentPage === 4
+                    visible: panel.currentPage === 5
                     diagnostics: panel.diagnostics
                     settings: panel.settings
                     monoFont: panel.monoFont

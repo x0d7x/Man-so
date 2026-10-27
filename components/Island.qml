@@ -134,6 +134,19 @@ Rectangle {
     readonly property bool showMedia: island.settings ? island.settings.showMedia : true
     readonly property bool showVolume: island.settings ? island.settings.showVolume : true
     readonly property bool showNotifications: island.settings ? island.settings.showNotifications : true
+    readonly property int batteryWarningThreshold: island.settings ? island.settings.batteryWarningThreshold : 20
+    readonly property int batteryCriticalThreshold: island.settings ? island.settings.batteryCriticalThreshold : 10
+    readonly property bool batteryCharging: island.stats
+        && (island.stats.batteryStatus === "Charging" || island.stats.batteryStatus === "Full")
+    readonly property bool batteryCriticalActive: (island.settings && island.settings.batteryCriticalPreview)
+        || (island.stats
+            && island.stats.batteryPercent >= 0
+            && island.stats.batteryPercent <= island.batteryCriticalThreshold
+            && !island.batteryCharging)
+    readonly property bool batteryWarningActive: island.stats
+        && island.stats.batteryPercent >= 0
+        && island.stats.batteryPercent <= island.batteryWarningThreshold
+        && !island.batteryCharging
 
     readonly property bool needsKeyboard: island.settingsOpen
         || island.wifiMenuOpen || island.bluetoothMenuOpen
@@ -1866,7 +1879,7 @@ Rectangle {
     Row {
         id: collapsedRow
         anchors.centerIn: parent
-        spacing: 0
+        spacing: 4
         visible: island.mode === "collapsed"
 
         Text {
@@ -1876,6 +1889,15 @@ Rectangle {
             font.pixelSize: 13
             font.weight: Font.DemiBold
             font.letterSpacing: 0.4
+        }
+
+        Text {
+            visible: island.batteryCriticalActive
+            text: island.stats ? island.stats.batteryIcon : "󰂎"
+            color: island.errorColor
+            font.family: island.monoFont
+            font.pixelSize: 11
+            font.weight: Font.Medium
         }
     }
 
@@ -2014,6 +2036,15 @@ Rectangle {
                 font.pixelSize: 12
                 font.weight: Font.DemiBold
                 font.letterSpacing: 0.3
+            }
+
+            Text {
+                visible: island.batteryCriticalActive
+                text: island.stats ? island.stats.batteryIcon : "󰂎"
+                color: island.errorColor
+                font.family: island.monoFont
+                font.pixelSize: 11
+                font.weight: Font.Medium
             }
 
             Row {
@@ -2444,9 +2475,9 @@ Rectangle {
 
                 Text {
                     text: island.stats ? island.stats.batteryIcon : "󰂎"
-                    color: island.stats && island.stats.batteryPercent >= 0 && island.stats.batteryPercent <= 20
+                    color: island.batteryCriticalActive
                         ? island.errorColor
-                        : island.secondaryColor
+                        : (island.batteryWarningActive ? island.accentColor : island.secondaryColor)
                     font.family: island.monoFont
                     font.pixelSize: 11
                     font.weight: Font.Medium
@@ -2454,9 +2485,9 @@ Rectangle {
 
                 Text {
                     text: island.stats ? island.stats.batteryText : "--"
-                    color: island.stats && island.stats.batteryPercent >= 0 && island.stats.batteryPercent <= 20
+                    color: island.batteryCriticalActive
                         ? island.errorColor
-                        : island.fgColor
+                        : (island.batteryWarningActive ? island.accentColor : island.fgColor)
                     font.family: island.monoFont
                     font.pixelSize: 10
                     font.weight: Font.Medium

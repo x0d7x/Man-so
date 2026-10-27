@@ -19,6 +19,10 @@ Scope {
     property bool showMedia: true
     property bool showVolume: true
     property bool showNotifications: true
+    property int cpuRefreshInterval: 300
+    property int batteryWarningThreshold: 20
+    property int batteryCriticalThreshold: 10
+    property bool batteryCriticalPreview: false
     property bool initialized: false
     property bool loading: false
     property string lastError: ""
@@ -36,7 +40,7 @@ Scope {
         const page = Number(value);
         if (!Number.isFinite(page))
             return 0;
-        return Math.max(0, Math.min(4, Math.round(page)));
+        return Math.max(0, Math.min(5, Math.round(page)));
     }
 
     function clampAnimationDuration(value) {
@@ -78,6 +82,33 @@ Scope {
             : "JetBrainsMono Nerd Font Mono";
     }
 
+    function clampCpuRefreshInterval(value) {
+        const interval = Number(value);
+        if (!Number.isFinite(interval))
+            return 300;
+        return Math.max(250, Math.min(2000, Math.round(interval / 50) * 50));
+    }
+
+    function clampBatteryWarning(value) {
+        const level = Number(value);
+        if (!Number.isFinite(level))
+            return 20;
+        return Math.max(5, Math.min(50, Math.round(level / 5) * 5));
+    }
+
+    function clampBatteryCritical(value) {
+        const level = Number(value);
+        if (!Number.isFinite(level))
+            return 10;
+        return Math.max(1, Math.min(20, Math.round(level)));
+    }
+
+    function resetPower() {
+        root.cpuRefreshInterval = 300;
+        root.batteryWarningThreshold = 20;
+        root.batteryCriticalThreshold = 10;
+    }
+
     function resetModules() {
         root.showWorkspaceTags = true;
         root.showWindowInfo = true;
@@ -111,6 +142,9 @@ Scope {
         root.showMedia = true;
         root.showVolume = true;
         root.showNotifications = true;
+        root.cpuRefreshInterval = 300;
+        root.batteryWarningThreshold = 20;
+        root.batteryCriticalThreshold = 10;
         root.loading = false;
         root.initialized = true;
     }
@@ -128,11 +162,13 @@ Scope {
                 const version = Number(parsed.version) || 1;
                 const rawPage = Number(parsed.settingsPage) || 0;
                 if (version < 2) {
-                    root.settingsPage = root.clampPage(rawPage + 3);
+                    root.settingsPage = root.clampPage(rawPage + 4);
                 } else if (version < 3) {
-                    root.settingsPage = root.clampPage(rawPage === 0 ? 0 : rawPage + 2);
+                    root.settingsPage = root.clampPage(rawPage === 0 ? 0 : rawPage + 3);
                 } else if (version < 5) {
-                    root.settingsPage = root.clampPage(rawPage <= 1 ? rawPage : rawPage + 1);
+                    root.settingsPage = root.clampPage(rawPage <= 1 ? rawPage : rawPage + 2);
+                } else if (version < 6) {
+                    root.settingsPage = root.clampPage(rawPage <= 2 ? rawPage : rawPage + 1);
                 } else {
                     root.settingsPage = root.clampPage(rawPage);
                 }
@@ -149,6 +185,11 @@ Scope {
                 root.showMedia = parsed.showMedia === undefined ? true : !!parsed.showMedia;
                 root.showVolume = parsed.showVolume === undefined ? true : !!parsed.showVolume;
                 root.showNotifications = parsed.showNotifications === undefined ? true : !!parsed.showNotifications;
+                root.cpuRefreshInterval = root.clampCpuRefreshInterval(parsed.cpuRefreshInterval);
+                root.batteryWarningThreshold = root.clampBatteryWarning(parsed.batteryWarningThreshold);
+                root.batteryCriticalThreshold = root.clampBatteryCritical(parsed.batteryCriticalThreshold);
+                if (root.batteryCriticalThreshold > root.batteryWarningThreshold)
+                    root.batteryCriticalThreshold = root.batteryWarningThreshold;
                 root.lastError = "";
             } catch (error) {
                 root.settingsPage = 0;
@@ -163,7 +204,7 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 5,
+            "version": 6,
             "settingsPage": root.settingsPage,
             "hoverExpansion": root.hoverExpansion,
             "animationDuration": root.animationDuration,
@@ -177,7 +218,10 @@ Scope {
             "showSystemStats": root.showSystemStats,
             "showMedia": root.showMedia,
             "showVolume": root.showVolume,
-            "showNotifications": root.showNotifications
+            "showNotifications": root.showNotifications,
+            "cpuRefreshInterval": root.cpuRefreshInterval,
+            "batteryWarningThreshold": root.batteryWarningThreshold,
+            "batteryCriticalThreshold": root.batteryCriticalThreshold
         };
     }
 
@@ -264,6 +308,29 @@ Scope {
     onShowNotificationsChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
+    }
+
+    onCpuRefreshIntervalChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onBatteryWarningThresholdChanged: {
+        if (root.initialized && !root.loading) {
+            if (root.batteryCriticalThreshold > root.batteryWarningThreshold)
+                root.batteryCriticalThreshold = root.batteryWarningThreshold;
+            if (!saveTimer.running)
+                saveTimer.restart();
+        }
+    }
+
+    onBatteryCriticalThresholdChanged: {
+        if (root.initialized && !root.loading) {
+            if (root.batteryCriticalThreshold > root.batteryWarningThreshold)
+                root.batteryWarningThreshold = root.batteryCriticalThreshold;
+            if (!saveTimer.running)
+                saveTimer.restart();
+        }
     }
 
     Component.onCompleted: root.refresh()

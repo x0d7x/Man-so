@@ -30,6 +30,7 @@ ShellRoot {
 
     SystemStats {
         id: stats
+        settings: settings
     }
 
     VolumeState {
@@ -177,6 +178,10 @@ ShellRoot {
         function toggleSettings(): void {
             island.toggleSettings();
         }
+
+
+
+
 
 
 

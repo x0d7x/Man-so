@@ -5,6 +5,8 @@ import QtQuick
 Scope {
     id: root
 
+    property var settings
+
     property real cpuRatio: -1
     property real memUsed: -1
     property real memTotal: -1
@@ -175,7 +177,6 @@ Scope {
         running: true
         repeat: true
         onTriggered: {
-            statFile.reload();
             memFile.reload();
             if (root.tempPath.length > 0)
                 tempFile.reload();
@@ -183,8 +184,10 @@ Scope {
     }
 
     Timer {
-        interval: 300
+        id: statTimer
+        interval: root.settings ? root.settings.cpuRefreshInterval : 300
         running: true
+        repeat: true
         onTriggered: statFile.reload()
     }
 
