@@ -13,9 +13,11 @@ FocusScope {
     property color mutedColor
     property color accentColor
     property color onAccentColor
+    property color errorColor
     property color borderMutedColor
     property var diagnostics
     property var settings
+    property var privacy
     property var keyboardLayout
     property bool fontSelectorOpen: false
 
@@ -27,6 +29,7 @@ FocusScope {
         { "label": "Power", "icon": "󰾅" },
         { "label": "MangoWM", "icon": "󰖯" },
         { "label": "Keyboard", "icon": "󰌌" },
+        { "label": "Privacy", "icon": "󰍬" },
         { "label": "About", "icon": "󰋼" },
         { "label": "Diagnostics", "icon": "󰓅" }
     ]
@@ -143,7 +146,7 @@ FocusScope {
                 Layout.preferredWidth: 112
                 Layout.maximumWidth: 112
                 Layout.fillHeight: true
-                spacing: 5
+                spacing: 4
 
                 Text {
                     text: "CATEGORIES"
@@ -166,7 +169,7 @@ FocusScope {
                         required property int index
 
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 32
+                        Layout.preferredHeight: 30
                         radius: 8
                         color: panel.currentPage === navItem.index
                             ? panel.accentColor
@@ -316,9 +319,23 @@ FocusScope {
                     surfaceHighColor: panel.surfaceHighColor
                 }
 
-                SettingsAboutPage {
+                SettingsPrivacyPage {
                     anchors.fill: parent
                     visible: panel.currentPage === 6
+                    settings: panel.settings
+                    privacy: panel.privacy
+                    monoFont: panel.monoFont
+                    fgColor: panel.fgColor
+                    mutedColor: panel.mutedColor
+                    accentColor: panel.accentColor
+                    onAccentColor: panel.onAccentColor
+                    surfaceHighColor: panel.surfaceHighColor
+                    errorColor: panel.errorColor
+                }
+
+                SettingsAboutPage {
+                    anchors.fill: parent
+                    visible: panel.currentPage === 7
                     diagnostics: panel.diagnostics
                     monoFont: panel.monoFont
                     fgColor: panel.fgColor
@@ -329,7 +346,7 @@ FocusScope {
 
                 SettingsDiagnosticsPage {
                     anchors.fill: parent
-                    visible: panel.currentPage === 7
+                    visible: panel.currentPage === 8
                     diagnostics: panel.diagnostics
                     settings: panel.settings
                     monoFont: panel.monoFont

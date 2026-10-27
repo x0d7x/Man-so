@@ -17,6 +17,7 @@ Rectangle {
     property var media
     property var diagnostics
     property var settings
+    property var privacy
     property var keyboardLayout
     property var bluetooth
     property var network
@@ -150,6 +151,7 @@ Rectangle {
     readonly property bool showMediaProgress: island.settings ? island.settings.showMediaProgress : true
     readonly property bool showNotificationImages: island.settings ? island.settings.showNotificationImages : true
     readonly property bool showBluetoothStatus: island.settings ? island.settings.showBluetoothStatus : true
+    readonly property bool privacyShowCollapsed: island.settings ? island.settings.privacyShowCollapsed : true
     readonly property string workspaceVisibility: island.settings ? island.settings.workspaceVisibility : "all"
     readonly property bool showOccupiedIndicator: island.settings ? island.settings.showOccupiedIndicator : true
     readonly property bool includeUrgentWorkspaces: island.settings ? island.settings.includeUrgentWorkspaces : true
@@ -1961,6 +1963,10 @@ Rectangle {
                 itemType: modelData
             }
         }
+
+        PrivacyIndicator {
+            host: island
+        }
     }
 
     RowLayout {
@@ -2609,6 +2615,112 @@ Rectangle {
             color: island.borderMutedColor
         }
 
+        Rectangle {
+            visible: island.privacy && island.privacy.microphoneActive
+            Layout.fillWidth: true
+            Layout.preferredHeight: 26
+            radius: 7
+            color: Qt.rgba(island.errorColor.r, island.errorColor.g, island.errorColor.b, 0.12)
+            border.width: 1
+            border.color: Qt.rgba(island.errorColor.r, island.errorColor.g, island.errorColor.b, 0.35)
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 8
+                anchors.rightMargin: 8
+                spacing: 6
+
+                Text {
+                    text: "󰍬"
+                    color: island.errorColor
+                    font.family: island.monoFont
+                    font.pixelSize: Math.round(12 * island.fontScale)
+                    font.weight: Font.Medium
+                }
+
+                Text {
+                    text: "MIC"
+                    color: island.errorColor
+                    font.family: island.monoFont
+                    font.pixelSize: Math.round(8 * island.fontScale)
+                    font.weight: Font.Bold
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    text: island.privacy && island.privacy.microphoneApps.length > 0
+                        ? island.privacy.microphoneApps.join(", ")
+                        : "Unknown application"
+                    color: island.fgColor
+                    font.family: island.monoFont
+                    font.pixelSize: Math.round(9 * island.fontScale)
+                    elide: Text.ElideRight
+                }
+
+                Text {
+                    visible: island.privacy && island.privacy.microphoneSessionCount > 1
+                    text: island.privacy ? "×" + island.privacy.microphoneSessionCount : ""
+                    color: island.mutedColor
+                    font.family: island.monoFont
+                    font.pixelSize: Math.round(8 * island.fontScale)
+                    font.weight: Font.DemiBold
+                }
+            }
+        }
+
+        Rectangle {
+            visible: island.privacy && island.privacy.screenActive
+            Layout.fillWidth: true
+            Layout.preferredHeight: 26
+            radius: 7
+            color: Qt.rgba(island.errorColor.r, island.errorColor.g, island.errorColor.b, 0.12)
+            border.width: 1
+            border.color: Qt.rgba(island.errorColor.r, island.errorColor.g, island.errorColor.b, 0.35)
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 8
+                anchors.rightMargin: 8
+                spacing: 6
+
+                Text {
+                    text: "󰍹"
+                    color: island.errorColor
+                    font.family: island.monoFont
+                    font.pixelSize: Math.round(12 * island.fontScale)
+                    font.weight: Font.Medium
+                }
+
+                Text {
+                    text: "SCREEN"
+                    color: island.errorColor
+                    font.family: island.monoFont
+                    font.pixelSize: Math.round(8 * island.fontScale)
+                    font.weight: Font.Bold
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    text: island.privacy && island.privacy.screenApps.length > 0
+                        ? island.privacy.screenApps.join(", ")
+                        : "Unknown application"
+                    color: island.fgColor
+                    font.family: island.monoFont
+                    font.pixelSize: Math.round(9 * island.fontScale)
+                    elide: Text.ElideRight
+                }
+
+                Text {
+                    visible: island.privacy && island.privacy.screenSessionCount > 1
+                    text: island.privacy ? "×" + island.privacy.screenSessionCount : ""
+                    color: island.mutedColor
+                    font.family: island.monoFont
+                    font.pixelSize: Math.round(8 * island.fontScale)
+                    font.weight: Font.DemiBold
+                }
+            }
+        }
+
         RowLayout {
             visible: island.showSystemStats && island.hasVisibleStats
             Layout.alignment: Qt.AlignHCenter
@@ -3206,10 +3318,12 @@ Rectangle {
         mutedColor: island.mutedColor
         accentColor: island.accentColor
         onAccentColor: island.onAccentColor
+        errorColor: island.errorColor
         borderMutedColor: island.borderMutedColor
         bgColor: island.bgColor
         diagnostics: island.diagnostics
         settings: island.settings
+        privacy: island.privacy
         keyboardLayout: island.keyboardLayout
         onCloseRequested: island.closeSettings()
     }

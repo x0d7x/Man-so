@@ -40,6 +40,10 @@ Scope {
     property int notificationHistoryLimit: 50
     property bool showNotificationImages: true
     property bool showBluetoothStatus: true
+    property bool privacyEnabled: true
+    property bool privacyMicrophoneEnabled: true
+    property bool privacyScreenEnabled: true
+    property bool privacyShowCollapsed: true
     property int cpuRefreshInterval: 300
     property int batteryWarningThreshold: 20
     property int batteryCriticalThreshold: 10
@@ -68,7 +72,7 @@ Scope {
         const page = Number(value);
         if (!Number.isFinite(page))
             return 0;
-        return Math.max(0, Math.min(7, Math.round(page)));
+        return Math.max(0, Math.min(8, Math.round(page)));
     }
 
     function clampAnimationDuration(value) {
@@ -292,6 +296,13 @@ Scope {
         root.keyboardOsdTimeout = 1500;
     }
 
+    function resetPrivacy() {
+        root.privacyEnabled = true;
+        root.privacyMicrophoneEnabled = true;
+        root.privacyScreenEnabled = true;
+        root.privacyShowCollapsed = true;
+    }
+
     function resetAppearance() {
         root.backgroundOpacity = 100;
         root.cornerRadius = 17;
@@ -326,6 +337,10 @@ Scope {
         root.notificationHistoryLimit = 50;
         root.showNotificationImages = true;
         root.showBluetoothStatus = true;
+        root.privacyEnabled = true;
+        root.privacyMicrophoneEnabled = true;
+        root.privacyScreenEnabled = true;
+        root.privacyShowCollapsed = true;
         root.backgroundOpacity = 100;
         root.cornerRadius = 17;
         root.borderVisible = true;
@@ -380,6 +395,8 @@ Scope {
                 }
                 if (version < 15 && migratedPage >= 5)
                     migratedPage += 1;
+                if (version < 19 && migratedPage >= 6)
+                    migratedPage += 1;
                 root.settingsPage = root.clampPage(migratedPage);
                 root.hoverExpansion = parsed.hoverExpansion === undefined ? true : !!parsed.hoverExpansion;
                 root.animationDuration = root.clampAnimationDuration(parsed.animationDuration);
@@ -432,6 +449,10 @@ Scope {
                 root.notificationHistoryLimit = root.clampNotificationHistoryLimit(parsed.notificationHistoryLimit);
                 root.showNotificationImages = parsed.showNotificationImages === undefined ? true : !!parsed.showNotificationImages;
                 root.showBluetoothStatus = parsed.showBluetoothStatus === undefined ? true : !!parsed.showBluetoothStatus;
+                root.privacyEnabled = parsed.privacyEnabled === undefined ? true : !!parsed.privacyEnabled;
+                root.privacyMicrophoneEnabled = parsed.privacyMicrophoneEnabled === undefined ? true : !!parsed.privacyMicrophoneEnabled;
+                root.privacyScreenEnabled = parsed.privacyScreenEnabled === undefined ? true : !!parsed.privacyScreenEnabled;
+                root.privacyShowCollapsed = parsed.privacyShowCollapsed === undefined ? true : !!parsed.privacyShowCollapsed;
                 if (root.batteryCriticalThreshold > root.batteryWarningThreshold)
                     root.batteryCriticalThreshold = root.batteryWarningThreshold;
                 root.lastError = "";
@@ -448,7 +469,7 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 18,
+            "version": 20,
             "settingsPage": root.settingsPage,
             "hoverExpansion": root.hoverExpansion,
             "animationDuration": root.animationDuration,
@@ -492,6 +513,10 @@ Scope {
             "notificationHistoryLimit": root.notificationHistoryLimit,
             "showNotificationImages": root.showNotificationImages,
             "showBluetoothStatus": root.showBluetoothStatus,
+            "privacyEnabled": root.privacyEnabled,
+            "privacyMicrophoneEnabled": root.privacyMicrophoneEnabled,
+            "privacyScreenEnabled": root.privacyScreenEnabled,
+            "privacyShowCollapsed": root.privacyShowCollapsed,
             "cpuRefreshInterval": root.cpuRefreshInterval,
             "batteryWarningThreshold": root.batteryWarningThreshold,
             "batteryCriticalThreshold": root.batteryCriticalThreshold
@@ -724,6 +749,26 @@ Scope {
     }
 
     onShowBluetoothStatusChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onPrivacyEnabledChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onPrivacyMicrophoneEnabledChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onPrivacyScreenEnabledChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onPrivacyShowCollapsedChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }

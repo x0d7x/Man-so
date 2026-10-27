@@ -61,9 +61,18 @@ ShellRoot {
         maxHistory: settings.notificationHistoryLimit
     }
 
+    PipewireEvents {
+        id: pipewireEvents
+        enabled: settings.privacyEnabled && settings.privacyScreenEnabled
+    }
+
     PrivacyState {
         id: privacy
         pulseEvents: pulseEvents
+        pipewireEvents: pipewireEvents
+        enabled: settings.privacyEnabled
+        microphoneEnabled: settings.privacyMicrophoneEnabled
+        screenEnabled: settings.privacyScreenEnabled
     }
 
     MediaState {
@@ -144,6 +153,7 @@ ShellRoot {
             media: media
             diagnostics: diagnostics
             settings: settings
+            privacy: privacy
             keyboardLayout: keyboardLayout
             bluetooth: bluetooth
             network: network
@@ -219,7 +229,12 @@ ShellRoot {
                 + " microphoneActive=" + privacy.microphoneActive
                 + " sessions=" + privacy.microphoneSessionCount
                 + " apps=" + privacy.microphoneApps.join(",")
-                + " error=" + privacy.lastError;
+                + " screenKnown=" + privacy.screenKnown
+                + " screenActive=" + privacy.screenActive
+                + " screenSessions=" + privacy.screenSessionCount
+                + " screenApps=" + privacy.screenApps.join(",")
+                + " micError=" + privacy.lastError
+                + " screenError=" + privacy.screenError;
         }
 
     }

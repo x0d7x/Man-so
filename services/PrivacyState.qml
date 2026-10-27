@@ -6,33 +6,55 @@ Scope {
     id: root
 
     property var pulseEvents: null
+    property var pipewireEvents: null
     property bool enabled: true
+    property bool microphoneEnabled: true
+    property bool screenEnabled: true
     property bool microphoneKnown: false
     property bool microphoneActive: false
     property int microphoneSessionCount: 0
     property var microphoneApps: []
     property string lastError: ""
     property bool pendingQuery: false
+    property bool screenKnown: false
+    property bool screenActive: false
+    property int screenSessionCount: 0
+    property var screenApps: []
+    property string screenError: ""
+    property bool pendingScreenQuery: false
 
     readonly property string summary: {
         if (!root.enabled)
             return "Monitoring disabled";
-        if (!root.microphoneKnown)
-            return "Microphone state unknown";
-        if (!root.microphoneActive)
-            return "No microphone capture";
-        return root.microphoneApps.join(", ");
+        const parts = [];
+        if (root.microphoneEnabled)
+            parts.push(root.microphoneActive ? "Microphone: " + root.microphoneApps.join(", ") : "Microphone: inactive");
+        if (root.screenEnabled)
+            parts.push(root.screenActive ? "Screen: " + root.screenApps.join(", ") : "Screen: inactive");
+        return parts.join(" · ") || "No privacy monitoring";
     }
 
-    function clearState() {
+    function clearMicrophoneState() {
         root.microphoneActive = false;
         root.microphoneSessionCount = 0;
         root.microphoneApps = [];
         root.microphoneKnown = false;
     }
 
+    function clearScreenState() {
+        root.screenActive = false;
+        root.screenSessionCount = 0;
+        root.screenApps = [];
+        root.screenKnown = false;
+    }
+
+    function clearState() {
+        root.clearMicrophoneState();
+        root.clearScreenState();
+    }
+
     function refresh() {
-        if (!root.enabled)
+        if (!root.enabled || !root.microphoneEnabled)
             return;
         if (queryProcess.running) {
             root.pendingQuery = true;
@@ -42,7 +64,20 @@ Scope {
         queryProcess.running = true;
     }
 
+    function refreshScreen() {
+        if (!root.enabled || !root.screenEnabled)
+            return;
+        if (screenProcess.running) {
+            root.pendingScreenQuery = true;
+            return;
+        }
+        root.pendingScreenQuery = false;
+        screenProcess.running = true;
+    }
+
     function evaluate(text) {
+        if (!root.enabled || !root.microphoneEnabled)
+            return;
         const marker = "__OUTPUTS__";
         const index = text.indexOf(marker);
         if (index < 0) {
@@ -117,8 +152,69 @@ Scope {
         root.lastError = "";
     }
 
+    function evaluateScreen(text) {
+        if (!root.enabled || !root.screenEnabled)
+            return;
+
+        let nodes = null;
+        try {
+            nodes = JSON.parse(text);
+        } catch (error) {
+            root.screenKnown = false;
+            root.screenError = "Cannot parse PipeWire data";
+            return;
+        }
+        if (!Array.isArray(nodes)) {
+            root.screenKnown = false;
+            root.screenError = "Cannot parse PipeWire data";
+            return;
+        }
+
+        const applications = [];
+        const seen = {};
+        let sessions = 0;
+
+        for (let i = 0; i < nodes.length; ++i) {
+            const item = nodes[i];
+            if (!item || item.type !== "PipeWire:Interface:Node")
+                continue;
+            const info = item.info || {};
+            const properties = info.props || {};
+            if (properties["media.class"] !== "Stream/Input/Video")
+                continue;
+            if (info.state !== "running")
+                continue;
+            if (String(properties["media.role"] || "").toLowerCase() !== "screen")
+                continue;
+
+            const appName = properties["application.name"]
+                || properties["application.process.binary"]
+                || properties["node.name"]
+                || "Unknown application";
+            const key = String(appName).toLowerCase();
+            ++sessions;
+            if (!seen[key]) {
+                seen[key] = true;
+                applications.push(String(appName));
+            }
+        }
+
+        root.screenKnown = true;
+        root.screenActive = sessions > 0;
+        root.screenSessionCount = sessions;
+        root.screenApps = applications;
+        root.screenError = "";
+    }
+
+    function handlePipewireActivity() {
+        if (!root.enabled || !root.screenEnabled)
+            return;
+        if (!screenRefreshTimer.running)
+            screenRefreshTimer.restart();
+    }
+
     function handlePulseEvent(line) {
-        if (!root.enabled)
+        if (!root.enabled || !root.microphoneEnabled)
             return;
         if (line.indexOf("source-output") !== -1
             || line.indexOf("on source #") !== -1
@@ -130,14 +226,42 @@ Scope {
     onEnabledChanged: {
         if (!root.enabled) {
             refreshTimer.stop();
+            screenRefreshTimer.stop();
             root.clearState();
+            root.lastError = "";
+            root.screenError = "";
+            return;
+        }
+        if (root.microphoneEnabled)
+            root.refresh();
+        if (root.screenEnabled)
+            root.refreshScreen();
+    }
+
+    onMicrophoneEnabledChanged: {
+        if (!root.microphoneEnabled) {
+            refreshTimer.stop();
+            root.clearMicrophoneState();
             root.lastError = "";
             return;
         }
         root.refresh();
     }
 
-    Component.onCompleted: root.refresh()
+    onScreenEnabledChanged: {
+        if (!root.screenEnabled) {
+            screenRefreshTimer.stop();
+            root.clearScreenState();
+            root.screenError = "";
+            return;
+        }
+        root.refreshScreen();
+    }
+
+    Component.onCompleted: {
+        root.refresh();
+        root.refreshScreen();
+    }
 
     Connections {
         target: root.pulseEvents ? root.pulseEvents : null
@@ -147,8 +271,17 @@ Scope {
         }
 
         function onConnectedChanged() {
-            if (root.enabled && root.pulseEvents && root.pulseEvents.connected)
+            if (root.enabled && root.microphoneEnabled
+                && root.pulseEvents && root.pulseEvents.connected)
                 root.refresh();
+        }
+    }
+
+    Connections {
+        target: root.pipewireEvents ? root.pipewireEvents : null
+
+        function onActivityChanged() {
+            root.handlePipewireActivity();
         }
     }
 
@@ -171,9 +304,31 @@ Scope {
         }
     }
 
+    Process {
+        id: screenProcess
+        command: ["pw-dump"]
+
+        stdout: StdioCollector {
+            onStreamFinished: root.evaluateScreen(this.text)
+        }
+
+        onExited: {
+            if (root.pendingScreenQuery) {
+                root.pendingScreenQuery = false;
+                screenRefreshTimer.restart();
+            }
+        }
+    }
+
     Timer {
         id: refreshTimer
         interval: 120
         onTriggered: root.refresh()
+    }
+
+    Timer {
+        id: screenRefreshTimer
+        interval: 250
+        onTriggered: root.refreshScreen()
     }
 }
