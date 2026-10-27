@@ -8,6 +8,10 @@ Scope {
     property int settingsPage: 0
     property bool hoverExpansion: true
     property int animationDuration: 220
+    property int backgroundOpacity: 100
+    property int cornerRadius: 17
+    property bool borderVisible: true
+    property int borderWidth: 1
     property bool initialized: false
     property bool loading: false
     property string lastError: ""
@@ -25,7 +29,7 @@ Scope {
         const page = Number(value);
         if (!Number.isFinite(page))
             return 0;
-        return Math.max(0, Math.min(2, Math.round(page)));
+        return Math.max(0, Math.min(3, Math.round(page)));
     }
 
     function clampAnimationDuration(value) {
@@ -40,11 +44,43 @@ Scope {
         root.animationDuration = 220;
     }
 
+    function clampBackgroundOpacity(value) {
+        const opacity = Number(value);
+        if (!Number.isFinite(opacity))
+            return 100;
+        return Math.max(40, Math.min(100, Math.round(opacity)));
+    }
+
+    function clampCornerRadius(value) {
+        const radius = Number(value);
+        if (!Number.isFinite(radius))
+            return 17;
+        return Math.max(8, Math.min(32, Math.round(radius)));
+    }
+
+    function clampBorderWidth(value) {
+        const width = Number(value);
+        if (!Number.isFinite(width))
+            return 1;
+        return Math.max(1, Math.min(4, Math.round(width)));
+    }
+
+    function resetAppearance() {
+        root.backgroundOpacity = 100;
+        root.cornerRadius = 17;
+        root.borderVisible = true;
+        root.borderWidth = 1;
+    }
+
     function applyDefaults() {
         root.loading = true;
         root.settingsPage = 0;
         root.hoverExpansion = true;
         root.animationDuration = 220;
+        root.backgroundOpacity = 100;
+        root.cornerRadius = 17;
+        root.borderVisible = true;
+        root.borderWidth = 1;
         root.loading = false;
         root.initialized = true;
     }
@@ -61,9 +97,19 @@ Scope {
                 const parsed = JSON.parse(text);
                 const version = Number(parsed.version) || 1;
                 const rawPage = Number(parsed.settingsPage) || 0;
-                root.settingsPage = version < 2 ? root.clampPage(rawPage + 1) : root.clampPage(rawPage);
+                if (version < 2) {
+                    root.settingsPage = root.clampPage(rawPage + 2);
+                } else if (version < 3) {
+                    root.settingsPage = root.clampPage(rawPage === 0 ? 0 : rawPage + 1);
+                } else {
+                    root.settingsPage = root.clampPage(rawPage);
+                }
                 root.hoverExpansion = parsed.hoverExpansion === undefined ? true : !!parsed.hoverExpansion;
                 root.animationDuration = root.clampAnimationDuration(parsed.animationDuration);
+                root.backgroundOpacity = root.clampBackgroundOpacity(parsed.backgroundOpacity);
+                root.cornerRadius = root.clampCornerRadius(parsed.cornerRadius);
+                root.borderVisible = parsed.borderVisible === undefined ? true : !!parsed.borderVisible;
+                root.borderWidth = root.clampBorderWidth(parsed.borderWidth);
                 root.lastError = "";
             } catch (error) {
                 root.settingsPage = 0;
@@ -78,10 +124,14 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 2,
+            "version": 3,
             "settingsPage": root.settingsPage,
             "hoverExpansion": root.hoverExpansion,
-            "animationDuration": root.animationDuration
+            "animationDuration": root.animationDuration,
+            "backgroundOpacity": root.backgroundOpacity,
+            "cornerRadius": root.cornerRadius,
+            "borderVisible": root.borderVisible,
+            "borderWidth": root.borderWidth
         };
     }
 
@@ -111,6 +161,26 @@ Scope {
     }
 
     onAnimationDurationChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onBackgroundOpacityChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onCornerRadiusChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onBorderVisibleChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onBorderWidthChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }

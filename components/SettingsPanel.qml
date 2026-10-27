@@ -19,6 +19,7 @@ FocusScope {
     property int currentPage: 0
     readonly property var navItems: [
         { "label": "General", "icon": "󰒓" },
+        { "label": "Appearance", "icon": "󰏘" },
         { "label": "About", "icon": "󰋼" },
         { "label": "Diagnostics", "icon": "󰓅" }
     ]
@@ -246,9 +247,21 @@ FocusScope {
                     surfaceHighColor: panel.surfaceHighColor
                 }
 
-                SettingsAboutPage {
+                SettingsAppearancePage {
                     anchors.fill: parent
                     visible: panel.currentPage === 1
+                    settings: panel.settings
+                    monoFont: panel.monoFont
+                    fgColor: panel.fgColor
+                    mutedColor: panel.mutedColor
+                    accentColor: panel.accentColor
+                    onAccentColor: panel.onAccentColor
+                    surfaceHighColor: panel.surfaceHighColor
+                }
+
+                SettingsAboutPage {
+                    anchors.fill: parent
+                    visible: panel.currentPage === 2
                     diagnostics: panel.diagnostics
                     monoFont: panel.monoFont
                     fgColor: panel.fgColor
@@ -259,7 +272,7 @@ FocusScope {
 
                 SettingsDiagnosticsPage {
                     anchors.fill: parent
-                    visible: panel.currentPage === 2
+                    visible: panel.currentPage === 3
                     diagnostics: panel.diagnostics
                     settings: panel.settings
                     monoFont: panel.monoFont

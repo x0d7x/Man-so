@@ -122,6 +122,10 @@ Rectangle {
 
     readonly property bool hoverExpansionEnabled: island.settings ? island.settings.hoverExpansion : true
     readonly property int animationDuration: island.settings ? island.settings.animationDuration : 220
+    readonly property int backgroundOpacity: island.settings ? island.settings.backgroundOpacity : 100
+    readonly property int cornerRadius: island.settings ? island.settings.cornerRadius : 17
+    readonly property bool borderVisible: island.settings ? island.settings.borderVisible : true
+    readonly property int borderThickness: island.settings ? island.settings.borderWidth : 1
 
     readonly property bool needsKeyboard: island.settingsOpen
         || island.wifiMenuOpen || island.bluetoothMenuOpen
@@ -487,9 +491,11 @@ Rectangle {
 
     width: island.targetWidth
     height: island.targetHeight
-    radius: 17
-    color: Qt.rgba(island.bgColor.r, island.bgColor.g, island.bgColor.b)
-    border.width: island.mode === "notification" || island.mode === "media" ? 0 : 1
+    radius: island.cornerRadius
+    color: Qt.rgba(island.bgColor.r, island.bgColor.g, island.bgColor.b, island.backgroundOpacity / 100)
+    border.width: island.mode === "notification" || island.mode === "media"
+        ? 0
+        : (island.borderVisible ? island.borderThickness : 0)
     border.color: island.pinned ? island.accentColor : island.borderMutedColor
     clip: true
 

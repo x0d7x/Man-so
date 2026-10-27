@@ -95,7 +95,7 @@ ShellRoot {
             y: Math.round(island.y)
             width: Math.round(island.width)
             height: Math.round(island.height)
-            radius: 17
+            radius: island.cornerRadius
         }
 
         Island {
