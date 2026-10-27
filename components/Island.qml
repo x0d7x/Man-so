@@ -128,6 +128,7 @@ Rectangle {
     readonly property int cornerRadius: island.settings ? island.settings.cornerRadius : 17
     readonly property bool borderVisible: island.settings ? island.settings.borderVisible : true
     readonly property int borderThickness: island.settings ? island.settings.borderWidth : 1
+    readonly property real fontScale: island.settings ? island.settings.fontSize / 11 : 1
     readonly property bool showWorkspaceTags: island.settings ? island.settings.showWorkspaceTags : true
     readonly property bool showWindowInfo: island.settings ? island.settings.showWindowInfo : true
     readonly property bool showSystemStats: island.settings ? island.settings.showSystemStats : true
@@ -138,11 +139,10 @@ Rectangle {
     readonly property int batteryCriticalThreshold: island.settings ? island.settings.batteryCriticalThreshold : 10
     readonly property bool batteryCharging: island.stats
         && (island.stats.batteryStatus === "Charging" || island.stats.batteryStatus === "Full")
-    readonly property bool batteryCriticalActive: (island.settings && island.settings.batteryCriticalPreview)
-        || (island.stats
-            && island.stats.batteryPercent >= 0
-            && island.stats.batteryPercent <= island.batteryCriticalThreshold
-            && !island.batteryCharging)
+    readonly property bool batteryCriticalActive: island.stats
+        && island.stats.batteryPercent >= 0
+        && island.stats.batteryPercent <= island.batteryCriticalThreshold
+        && !island.batteryCharging
     readonly property bool batteryWarningActive: island.stats
         && island.stats.batteryPercent >= 0
         && island.stats.batteryPercent <= island.batteryWarningThreshold
@@ -639,7 +639,7 @@ Rectangle {
                         text: "WI-FI"
                         color: island.mutedColor
                         font.family: island.monoFont
-                        font.pixelSize: 10
+                        font.pixelSize: Math.round(10 * island.fontScale)
                         font.weight: Font.DemiBold
                     }
 
@@ -650,7 +650,7 @@ Rectangle {
                             : "N/A"
                         color: island.network && island.network.connected ? island.secondaryColor : island.fgColor
                         font.family: island.monoFont
-                        font.pixelSize: 11
+                        font.pixelSize: Math.round(11 * island.fontScale)
                         font.weight: Font.Medium
                         elide: Text.ElideRight
                     }
@@ -666,7 +666,7 @@ Rectangle {
                             text: island.network && island.network.enabled ? "ON" : "OFF"
                             color: island.network && island.network.enabled ? island.onAccentColor : island.mutedColor
                             font.family: island.monoFont
-                            font.pixelSize: 9
+                            font.pixelSize: Math.round(9 * island.fontScale)
                             font.weight: Font.Bold
                         }
 
@@ -689,7 +689,7 @@ Rectangle {
                             text: "󰑐"
                             color: island.network && island.network.scanning ? island.accentColor : island.mutedColor
                             font.family: island.monoFont
-                            font.pixelSize: 13
+                            font.pixelSize: Math.round(13 * island.fontScale)
                         }
 
                         MouseArea {
@@ -717,7 +717,7 @@ Rectangle {
                         text: "NETWORKS"
                         color: island.mutedColor
                         font.family: island.monoFont
-                        font.pixelSize: 9
+                        font.pixelSize: Math.round(9 * island.fontScale)
                         font.weight: Font.DemiBold
                     }
 
@@ -731,7 +731,7 @@ Rectangle {
                             : "0 FOUND"
                         color: island.borderColor
                         font.family: island.monoFont
-                        font.pixelSize: 9
+                        font.pixelSize: Math.round(9 * island.fontScale)
                     }
                 }
 
@@ -776,7 +776,7 @@ Rectangle {
                                         : (island.network && !island.network.isOpen(wifiRow.modelData) ? "󰌾" : "󰤯")
                                     color: wifiRow.modelData.connected ? island.accentColor : island.mutedColor
                                     font.family: island.monoFont
-                                    font.pixelSize: 12
+                                    font.pixelSize: Math.round(12 * island.fontScale)
                                 }
 
                                 Text {
@@ -784,7 +784,7 @@ Rectangle {
                                     text: wifiRow.modelData.name
                                     color: wifiRow.modelData.connected ? island.accentColor : island.fgColor
                                     font.family: island.monoFont
-                                    font.pixelSize: 11
+                                    font.pixelSize: Math.round(11 * island.fontScale)
                                     font.weight: wifiRow.modelData.connected ? Font.DemiBold : Font.Normal
                                     elide: Text.ElideRight
                                 }
@@ -793,7 +793,7 @@ Rectangle {
                                     text: Math.round(wifiRow.modelData.signalStrength * 100) + "%"
                                     color: island.mutedColor
                                     font.family: island.monoFont
-                                    font.pixelSize: 9
+                                    font.pixelSize: Math.round(9 * island.fontScale)
                                 }
                             }
 
@@ -817,7 +817,7 @@ Rectangle {
                         }
                         color: island.mutedColor
                         font.family: island.monoFont
-                        font.pixelSize: 10
+                        font.pixelSize: Math.round(10 * island.fontScale)
                     }
                 }
 
@@ -827,7 +827,7 @@ Rectangle {
                     text: island.network ? island.network.lastError : ""
                     color: island.errorColor
                     font.family: island.monoFont
-                    font.pixelSize: 9
+                    font.pixelSize: Math.round(9 * island.fontScale)
                     wrapMode: Text.WordWrap
                 }
 
@@ -849,14 +849,14 @@ Rectangle {
                             text: "󰒓"
                             color: island.mutedColor
                             font.family: island.monoFont
-                            font.pixelSize: 12
+                            font.pixelSize: Math.round(12 * island.fontScale)
                         }
 
                         Text {
                             text: "Edit connections"
                             color: island.fgColor
                             font.family: island.monoFont
-                            font.pixelSize: 10
+                            font.pixelSize: Math.round(10 * island.fontScale)
                         }
                     }
 
@@ -902,7 +902,7 @@ Rectangle {
                         text: "JOIN NETWORK"
                         color: island.accentColor
                         font.family: island.monoFont
-                        font.pixelSize: 10
+                        font.pixelSize: Math.round(10 * island.fontScale)
                         font.weight: Font.Bold
                     }
 
@@ -911,7 +911,7 @@ Rectangle {
                         text: island.wifiSelectedNetwork ? island.wifiSelectedNetwork.name : ""
                         color: island.fgColor
                         font.family: island.monoFont
-                        font.pixelSize: 14
+                        font.pixelSize: Math.round(14 * island.fontScale)
                         font.weight: Font.DemiBold
                         elide: Text.ElideRight
                     }
@@ -920,7 +920,7 @@ Rectangle {
                         text: "Wi-Fi password"
                         color: island.mutedColor
                         font.family: island.monoFont
-                        font.pixelSize: 10
+                        font.pixelSize: Math.round(10 * island.fontScale)
                     }
 
                     Rectangle {
@@ -943,7 +943,7 @@ Rectangle {
                             selectionColor: island.accentColor
                             selectedTextColor: island.onAccentColor
                             font.family: island.monoFont
-                            font.pixelSize: 12
+                            font.pixelSize: Math.round(12 * island.fontScale)
                             echoMode: TextInput.Password
                             passwordCharacter: "●"
                             focus: island.wifiPasswordOpen
@@ -966,7 +966,7 @@ Rectangle {
                             : (island.network ? island.network.lastError : "")
                         color: island.errorColor
                         font.family: island.monoFont
-                        font.pixelSize: 9
+                        font.pixelSize: Math.round(9 * island.fontScale)
                         wrapMode: Text.WordWrap
                     }
 
@@ -993,7 +993,7 @@ Rectangle {
                                 text: "CANCEL"
                                 color: island.fgColor
                                 font.family: island.monoFont
-                                font.pixelSize: 9
+                                font.pixelSize: Math.round(9 * island.fontScale)
                                 font.weight: Font.DemiBold
                             }
 
@@ -1015,7 +1015,7 @@ Rectangle {
                                 text: "CONNECT"
                                 color: island.wifiPasswordText.length > 0 ? island.onAccentColor : island.mutedColor
                                 font.family: island.monoFont
-                                font.pixelSize: 9
+                                font.pixelSize: Math.round(9 * island.fontScale)
                                 font.weight: Font.Bold
                             }
 
@@ -1076,7 +1076,7 @@ Rectangle {
                         text: "BLUETOOTH"
                         color: island.mutedColor
                         font.family: island.monoFont
-                        font.pixelSize: 10
+                        font.pixelSize: Math.round(10 * island.fontScale)
                         font.weight: Font.DemiBold
                     }
 
@@ -1087,7 +1087,7 @@ Rectangle {
                             ? (island.bluetooth.connectedCount > 0 ? island.secondaryColor : island.accentColor)
                             : island.mutedColor
                         font.family: island.monoFont
-                        font.pixelSize: 11
+                        font.pixelSize: Math.round(11 * island.fontScale)
                         font.weight: Font.Medium
                         elide: Text.ElideRight
                     }
@@ -1104,7 +1104,7 @@ Rectangle {
                             text: island.bluetooth && island.bluetooth.enabled ? "ON" : "OFF"
                             color: island.bluetooth && island.bluetooth.enabled ? island.onAccentColor : island.mutedColor
                             font.family: island.monoFont
-                            font.pixelSize: 9
+                            font.pixelSize: Math.round(9 * island.fontScale)
                             font.weight: Font.Bold
                         }
 
@@ -1127,7 +1127,7 @@ Rectangle {
                             text: "󰑐"
                             color: island.bluetooth && island.bluetooth.discovering ? island.accentColor : island.mutedColor
                             font.family: island.monoFont
-                            font.pixelSize: 13
+                            font.pixelSize: Math.round(13 * island.fontScale)
                         }
 
                         MouseArea {
@@ -1156,7 +1156,7 @@ Rectangle {
                         text: "DEVICES"
                         color: island.mutedColor
                         font.family: island.monoFont
-                        font.pixelSize: 9
+                        font.pixelSize: Math.round(9 * island.fontScale)
                         font.weight: Font.DemiBold
                     }
 
@@ -1168,7 +1168,7 @@ Rectangle {
                         text: island.bluetooth ? island.bluetooth.devices.length + " FOUND" : "0 FOUND"
                         color: island.borderColor
                         font.family: island.monoFont
-                        font.pixelSize: 9
+                        font.pixelSize: Math.round(9 * island.fontScale)
                     }
                 }
 
@@ -1215,7 +1215,7 @@ Rectangle {
                                         ? island.secondaryColor
                                         : (bluetoothRow.modelData.paired ? island.accentColor : island.mutedColor)
                                     font.family: island.monoFont
-                                    font.pixelSize: 14
+                                    font.pixelSize: Math.round(14 * island.fontScale)
                                 }
 
                                 ColumnLayout {
@@ -1229,7 +1229,7 @@ Rectangle {
                                             : bluetoothRow.modelData.address
                                         color: bluetoothRow.modelData.connected ? island.accentColor : island.fgColor
                                         font.family: island.monoFont
-                                        font.pixelSize: 11
+                                        font.pixelSize: Math.round(11 * island.fontScale)
                                         font.weight: bluetoothRow.modelData.connected ? Font.DemiBold : Font.Medium
                                         elide: Text.ElideRight
                                     }
@@ -1243,7 +1243,7 @@ Rectangle {
                                                 : (bluetoothRow.modelData.paired ? "PAIRED" : "AVAILABLE"))
                                         color: bluetoothRow.modelData.pairing ? island.accentColor : island.mutedColor
                                         font.family: island.monoFont
-                                        font.pixelSize: 8
+                                        font.pixelSize: Math.round(8 * island.fontScale)
                                         font.weight: Font.DemiBold
                                         elide: Text.ElideRight
                                     }
@@ -1256,7 +1256,7 @@ Rectangle {
                                         : ""
                                     color: island.mutedColor
                                     font.family: island.monoFont
-                                    font.pixelSize: 9
+                                    font.pixelSize: Math.round(9 * island.fontScale)
                                 }
                             }
 
@@ -1274,7 +1274,7 @@ Rectangle {
                         text: island.bluetooth && island.bluetooth.discovering ? "Scanning…" : "No devices found"
                         color: island.mutedColor
                         font.family: island.monoFont
-                        font.pixelSize: 10
+                        font.pixelSize: Math.round(10 * island.fontScale)
                     }
                 }
 
@@ -1293,7 +1293,7 @@ Rectangle {
                         text: "Bluetooth is off"
                         color: island.mutedColor
                         font.family: island.monoFont
-                        font.pixelSize: 11
+                        font.pixelSize: Math.round(11 * island.fontScale)
                         horizontalAlignment: Text.AlignHCenter
                     }
 
@@ -1309,7 +1309,7 @@ Rectangle {
                             text: "TURN ON"
                             color: island.onAccentColor
                             font.family: island.monoFont
-                            font.pixelSize: 9
+                            font.pixelSize: Math.round(9 * island.fontScale)
                             font.weight: Font.Bold
                         }
 
@@ -1334,7 +1334,7 @@ Rectangle {
                     text: island.bluetooth ? island.bluetooth.lastError : ""
                     color: island.errorColor
                     font.family: island.monoFont
-                    font.pixelSize: 9
+                    font.pixelSize: Math.round(9 * island.fontScale)
                     wrapMode: Text.WordWrap
                 }
 
@@ -1356,14 +1356,14 @@ Rectangle {
                             text: "󰒓"
                             color: island.mutedColor
                             font.family: island.monoFont
-                            font.pixelSize: 12
+                            font.pixelSize: Math.round(12 * island.fontScale)
                         }
 
                         Text {
                             text: "Open Bluetooth manager"
                             color: island.fgColor
                             font.family: island.monoFont
-                            font.pixelSize: 10
+                            font.pixelSize: Math.round(10 * island.fontScale)
                         }
                     }
 
@@ -1409,7 +1409,7 @@ Rectangle {
                         text: "BLUETOOTH PAIRING"
                         color: island.accentColor
                         font.family: island.monoFont
-                        font.pixelSize: 10
+                        font.pixelSize: Math.round(10 * island.fontScale)
                         font.weight: Font.Bold
                     }
 
@@ -1418,7 +1418,7 @@ Rectangle {
                         text: island.bluetooth ? island.bluetooth.promptDeviceName : ""
                         color: island.fgColor
                         font.family: island.monoFont
-                        font.pixelSize: 14
+                        font.pixelSize: Math.round(14 * island.fontScale)
                         font.weight: Font.DemiBold
                         elide: Text.ElideRight
                     }
@@ -1428,7 +1428,7 @@ Rectangle {
                         text: island.bluetooth ? island.bluetooth.promptMessage : ""
                         color: island.mutedColor
                         font.family: island.monoFont
-                        font.pixelSize: 10
+                        font.pixelSize: Math.round(10 * island.fontScale)
                         wrapMode: Text.WordWrap
                     }
 
@@ -1438,7 +1438,7 @@ Rectangle {
                         text: island.bluetooth ? island.bluetooth.promptPasskey : ""
                         color: island.accentColor
                         font.family: island.monoFont
-                        font.pixelSize: 26
+                        font.pixelSize: Math.round(26 * island.fontScale)
                         font.weight: Font.Bold
                         font.letterSpacing: 3
                         horizontalAlignment: Text.AlignHCenter
@@ -1465,7 +1465,7 @@ Rectangle {
                             selectionColor: island.accentColor
                             selectedTextColor: island.onAccentColor
                             font.family: island.monoFont
-                            font.pixelSize: 12
+                            font.pixelSize: Math.round(12 * island.fontScale)
                             inputMethodHints: Qt.ImhDigitsOnly
                             focus: island.bluetooth && island.bluetooth.promptNeedsInput
                             onAccepted: island.submitBluetoothPasskey()
@@ -1483,7 +1483,7 @@ Rectangle {
                         text: island.bluetooth ? island.bluetooth.lastError : ""
                         color: island.errorColor
                         font.family: island.monoFont
-                        font.pixelSize: 9
+                        font.pixelSize: Math.round(9 * island.fontScale)
                         wrapMode: Text.WordWrap
                     }
 
@@ -1511,7 +1511,7 @@ Rectangle {
                                 text: "CANCEL"
                                 color: island.fgColor
                                 font.family: island.monoFont
-                                font.pixelSize: 9
+                                font.pixelSize: Math.round(9 * island.fontScale)
                                 font.weight: Font.DemiBold
                             }
 
@@ -1534,7 +1534,7 @@ Rectangle {
                                 text: island.bluetooth && island.bluetooth.promptNeedsInput ? "PAIR" : "CONFIRM"
                                 color: island.onAccentColor
                                 font.family: island.monoFont
-                                font.pixelSize: 9
+                                font.pixelSize: Math.round(9 * island.fontScale)
                                 font.weight: Font.Bold
                             }
 
@@ -1564,7 +1564,7 @@ Rectangle {
                                 text: "DONE"
                                 color: island.onAccentColor
                                 font.family: island.monoFont
-                                font.pixelSize: 9
+                                font.pixelSize: Math.round(9 * island.fontScale)
                                 font.weight: Font.Bold
                             }
 
@@ -1649,7 +1649,7 @@ Rectangle {
                         text: "NOTIFICATIONS"
                         color: island.mutedColor
                         font.family: island.monoFont
-                        font.pixelSize: 10
+                        font.pixelSize: Math.round(10 * island.fontScale)
                         font.weight: Font.DemiBold
                     }
 
@@ -1657,7 +1657,7 @@ Rectangle {
                         text: island.notifications ? island.notifications.history.length : "0"
                         color: island.borderColor
                         font.family: island.monoFont
-                        font.pixelSize: 9
+                        font.pixelSize: Math.round(9 * island.fontScale)
                     }
 
                     Item {
@@ -1668,7 +1668,7 @@ Rectangle {
                         text: "CLEAR"
                         color: island.mutedColor
                         font.family: island.monoFont
-                        font.pixelSize: 8
+                        font.pixelSize: Math.round(8 * island.fontScale)
                         font.weight: Font.DemiBold
 
                         MouseArea {
@@ -1691,7 +1691,7 @@ Rectangle {
                             text: "󰅖"
                             color: island.mutedColor
                             font.family: island.monoFont
-                            font.pixelSize: 12
+                            font.pixelSize: Math.round(12 * island.fontScale)
                         }
 
                         MouseArea {
@@ -1775,7 +1775,7 @@ Rectangle {
                                         text: "󰂚"
                                         color: island.mutedColor
                                         font.family: island.monoFont
-                                        font.pixelSize: 17
+                                        font.pixelSize: Math.round(17 * island.fontScale)
                                     }
                                 }
 
@@ -1794,7 +1794,7 @@ Rectangle {
                                                 : historyRow.modelData.appName
                                             color: island.fgColor
                                             font.family: island.monoFont
-                                            font.pixelSize: 10
+                                            font.pixelSize: Math.round(10 * island.fontScale)
                                             font.weight: Font.DemiBold
                                             elide: Text.ElideRight
                                             maximumLineCount: 1
@@ -1813,7 +1813,7 @@ Rectangle {
                                             text: Qt.formatTime(new Date(historyRow.modelData.timestamp), "hh:mm")
                                             color: island.borderColor
                                             font.family: island.monoFont
-                                            font.pixelSize: 8
+                                            font.pixelSize: Math.round(8 * island.fontScale)
                                         }
                                     }
 
@@ -1822,7 +1822,7 @@ Rectangle {
                                         text: historyRow.modelData.body
                                         color: island.mutedColor
                                         font.family: island.monoFont
-                                        font.pixelSize: 8
+                                        font.pixelSize: Math.round(8 * island.fontScale)
                                         elide: Text.ElideRight
                                         maximumLineCount: 1
                                         textFormat: Text.PlainText
@@ -1838,7 +1838,7 @@ Rectangle {
                         text: "No notifications"
                         color: island.mutedColor
                         font.family: island.monoFont
-                        font.pixelSize: 10
+                        font.pixelSize: Math.round(10 * island.fontScale)
                     }
                 }
             }
@@ -1849,6 +1849,7 @@ Rectangle {
         anchors.fill: parent
         visible: island.mode === "media"
         media: island.media
+        fontScale: island.fontScale
         monoFont: island.monoFont
         bgColor: island.bgColor
         surfaceHighColor: island.surfaceHighColor
@@ -1865,6 +1866,7 @@ Rectangle {
         anchors.fill: parent
         visible: island.mode === "notification"
         notifications: island.notifications
+        fontScale: island.fontScale
         monoFont: island.monoFont
         bgColor: island.bgColor
         surfaceHighColor: island.surfaceHighColor
@@ -1886,7 +1888,7 @@ Rectangle {
             text: island.timeText
             color: island.accentColor
             font.family: island.monoFont
-            font.pixelSize: 13
+            font.pixelSize: Math.round(13 * island.fontScale)
             font.weight: Font.DemiBold
             font.letterSpacing: 0.4
         }
@@ -1896,7 +1898,7 @@ Rectangle {
             text: island.stats ? island.stats.batteryIcon : "󰂎"
             color: island.errorColor
             font.family: island.monoFont
-            font.pixelSize: 11
+            font.pixelSize: Math.round(11 * island.fontScale)
             font.weight: Font.Medium
         }
     }
@@ -1913,7 +1915,7 @@ Rectangle {
             text: island.volume ? island.volume.icon : "󰖁"
             color: island.volume && island.volume.muted ? island.mutedColor : island.accentColor
             font.family: island.monoFont
-            font.pixelSize: 16
+            font.pixelSize: Math.round(16 * island.fontScale)
             font.weight: Font.Medium
         }
 
@@ -1921,7 +1923,7 @@ Rectangle {
             text: island.volume && island.volume.muted ? "MUTE" : "VOL"
             color: island.mutedColor
             font.family: island.monoFont
-            font.pixelSize: 9
+            font.pixelSize: Math.round(9 * island.fontScale)
             font.weight: Font.DemiBold
         }
 
@@ -1930,7 +1932,7 @@ Rectangle {
             text: island.volume ? island.volume.levelText : "--"
             color: island.volume && island.volume.muted ? island.mutedColor : island.accentColor
             font.family: island.monoFont
-            font.pixelSize: 12
+            font.pixelSize: Math.round(12 * island.fontScale)
             font.weight: Font.DemiBold
             horizontalAlignment: Text.AlignRight
         }
@@ -1975,7 +1977,7 @@ Rectangle {
             text: "WS"
             color: island.mutedColor
             font.family: island.monoFont
-            font.pixelSize: 10
+            font.pixelSize: Math.round(10 * island.fontScale)
             font.weight: Font.DemiBold
         }
 
@@ -1990,7 +1992,7 @@ Rectangle {
                 text: island.workspaceText
                 color: island.onAccentColor
                 font.family: island.monoFont
-                font.pixelSize: 12
+                font.pixelSize: Math.round(12 * island.fontScale)
                 font.weight: Font.Bold
             }
         }
@@ -2010,7 +2012,7 @@ Rectangle {
             text: island.windowTitle
             color: island.fgColor
             font.family: island.monoFont
-            font.pixelSize: 12
+            font.pixelSize: Math.round(12 * island.fontScale)
             font.weight: Font.Medium
             elide: Text.ElideRight
             maximumLineCount: 1
@@ -2033,7 +2035,7 @@ Rectangle {
                 text: island.timeText
                 color: island.accentColor
                 font.family: island.monoFont
-                font.pixelSize: 12
+                font.pixelSize: Math.round(12 * island.fontScale)
                 font.weight: Font.DemiBold
                 font.letterSpacing: 0.3
             }
@@ -2043,7 +2045,7 @@ Rectangle {
                 text: island.stats ? island.stats.batteryIcon : "󰂎"
                 color: island.errorColor
                 font.family: island.monoFont
-                font.pixelSize: 11
+                font.pixelSize: Math.round(11 * island.fontScale)
                 font.weight: Font.Medium
             }
 
@@ -2076,7 +2078,7 @@ Rectangle {
                             text: dashboardTag.index + 1
                             color: dashboardTag.active ? island.onAccentColor : (dashboardTag.occupied ? island.fgColor : island.mutedColor)
                             font.family: island.monoFont
-                            font.pixelSize: 10
+                            font.pixelSize: Math.round(10 * island.fontScale)
                             font.weight: dashboardTag.active ? Font.Bold : Font.Medium
                         }
 
@@ -2125,7 +2127,7 @@ Rectangle {
                     text: island.windowTitle
                     color: island.fgColor
                     font.family: island.monoFont
-                    font.pixelSize: 11
+                    font.pixelSize: Math.round(11 * island.fontScale)
                     font.weight: Font.Medium
                     elide: Text.ElideRight
                     maximumLineCount: 1
@@ -2135,7 +2137,7 @@ Rectangle {
                     text: "LAYOUT"
                     color: island.mutedColor
                     font.family: island.monoFont
-                    font.pixelSize: 8
+                    font.pixelSize: Math.round(8 * island.fontScale)
                     font.weight: Font.DemiBold
                 }
 
@@ -2143,7 +2145,7 @@ Rectangle {
                     text: island.layoutSymbol
                     color: island.tertiaryColor
                     font.family: island.monoFont
-                    font.pixelSize: 10
+                    font.pixelSize: Math.round(10 * island.fontScale)
                     font.weight: Font.Bold
                 }
 
@@ -2227,7 +2229,7 @@ Rectangle {
                             return island.accentColor;
                         }
                         font.family: island.monoFont
-                        font.pixelSize: 12
+                        font.pixelSize: Math.round(12 * island.fontScale)
                         font.weight: Font.Medium
                     }
 
@@ -2236,7 +2238,7 @@ Rectangle {
                         width: Math.min(implicitWidth, 72)
                         color: island.network && island.network.connected ? island.fgColor : island.mutedColor
                         font.family: island.monoFont
-                        font.pixelSize: 8
+                        font.pixelSize: Math.round(8 * island.fontScale)
                         font.weight: Font.DemiBold
                         elide: Text.ElideRight
                     }
@@ -2286,7 +2288,7 @@ Rectangle {
                             ? (island.bluetooth.connectedCount > 0 ? island.secondaryColor : island.accentColor)
                             : island.mutedColor
                         font.family: island.monoFont
-                        font.pixelSize: 12
+                        font.pixelSize: Math.round(12 * island.fontScale)
                         font.weight: Font.Medium
                     }
 
@@ -2294,7 +2296,7 @@ Rectangle {
                         text: island.bluetooth ? island.bluetooth.label : "--"
                         color: island.bluetooth && island.bluetooth.enabled ? island.fgColor : island.mutedColor
                         font.family: island.monoFont
-                        font.pixelSize: 8
+                        font.pixelSize: Math.round(8 * island.fontScale)
                         font.weight: Font.DemiBold
                     }
                 }
@@ -2341,7 +2343,7 @@ Rectangle {
                         text: island.power ? island.power.icon : "󰾅"
                         color: island.powerColor()
                         font.family: island.monoFont
-                        font.pixelSize: 12
+                        font.pixelSize: Math.round(12 * island.fontScale)
                         font.weight: Font.Medium
                     }
 
@@ -2349,7 +2351,7 @@ Rectangle {
                         text: island.power ? island.power.label : "--"
                         color: island.fgColor
                         font.family: island.monoFont
-                        font.pixelSize: 8
+                        font.pixelSize: Math.round(8 * island.fontScale)
                         font.weight: Font.DemiBold
                     }
                 }
@@ -2383,7 +2385,7 @@ Rectangle {
                     text: "󰒓"
                     color: settingsMouse.containsMouse ? island.accentColor : island.fgColor
                     font.family: island.monoFont
-                    font.pixelSize: 14
+                    font.pixelSize: Math.round(14 * island.fontScale)
                 }
 
                 MouseArea {
@@ -2417,7 +2419,7 @@ Rectangle {
                     text: "󰻠"
                     color: island.mutedColor
                     font.family: island.monoFont
-                    font.pixelSize: 12
+                    font.pixelSize: Math.round(12 * island.fontScale)
                     font.weight: Font.Medium
                 }
 
@@ -2425,7 +2427,7 @@ Rectangle {
                     text: island.stats ? island.stats.cpuText : "--"
                     color: island.fgColor
                     font.family: island.monoFont
-                    font.pixelSize: 10
+                    font.pixelSize: Math.round(10 * island.fontScale)
                     font.weight: Font.Medium
                 }
             }
@@ -2437,7 +2439,7 @@ Rectangle {
                     text: "󰍛"
                     color: island.mutedColor
                     font.family: island.monoFont
-                    font.pixelSize: 12
+                    font.pixelSize: Math.round(12 * island.fontScale)
                     font.weight: Font.Medium
                 }
 
@@ -2445,7 +2447,7 @@ Rectangle {
                     text: island.stats ? island.stats.memText : "--"
                     color: island.fgColor
                     font.family: island.monoFont
-                    font.pixelSize: 10
+                    font.pixelSize: Math.round(10 * island.fontScale)
                     font.weight: Font.Medium
                 }
             }
@@ -2457,7 +2459,7 @@ Rectangle {
                     text: "󰔏"
                     color: island.mutedColor
                     font.family: island.monoFont
-                    font.pixelSize: 12
+                    font.pixelSize: Math.round(12 * island.fontScale)
                     font.weight: Font.Medium
                 }
 
@@ -2465,7 +2467,7 @@ Rectangle {
                     text: island.stats ? island.stats.tempText : "--"
                     color: island.fgColor
                     font.family: island.monoFont
-                    font.pixelSize: 10
+                    font.pixelSize: Math.round(10 * island.fontScale)
                     font.weight: Font.Medium
                 }
             }
@@ -2479,7 +2481,7 @@ Rectangle {
                         ? island.errorColor
                         : (island.batteryWarningActive ? island.accentColor : island.secondaryColor)
                     font.family: island.monoFont
-                    font.pixelSize: 11
+                    font.pixelSize: Math.round(11 * island.fontScale)
                     font.weight: Font.Medium
                 }
 
@@ -2489,7 +2491,7 @@ Rectangle {
                         ? island.errorColor
                         : (island.batteryWarningActive ? island.accentColor : island.fgColor)
                     font.family: island.monoFont
-                    font.pixelSize: 10
+                    font.pixelSize: Math.round(10 * island.fontScale)
                     font.weight: Font.Medium
                 }
             }
@@ -2507,6 +2509,7 @@ Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 104
             media: island.media
+            fontScale: island.fontScale
             monoFont: island.monoFont
             bgColor: island.bgColor
             surfaceHighColor: island.surfaceHighColor
@@ -2541,7 +2544,7 @@ Rectangle {
                     text: island.volume ? island.volume.icon : "󰖁"
                     color: island.volume && island.volume.muted ? island.mutedColor : island.accentColor
                     font.family: island.monoFont
-                    font.pixelSize: 16
+                    font.pixelSize: Math.round(16 * island.fontScale)
                 }
 
                 MouseArea {
@@ -2558,7 +2561,7 @@ Rectangle {
                 text: island.volume && island.volume.muted ? "MUTE" : "VOL"
                 color: island.mutedColor
                 font.family: island.monoFont
-                font.pixelSize: 9
+                font.pixelSize: Math.round(9 * island.fontScale)
                 font.weight: Font.DemiBold
             }
 
@@ -2567,7 +2570,7 @@ Rectangle {
                 text: island.volume ? island.volume.levelText : "--"
                 color: island.volume && island.volume.muted ? island.mutedColor : island.accentColor
                 font.family: island.monoFont
-                font.pixelSize: 11
+                font.pixelSize: Math.round(11 * island.fontScale)
                 font.weight: Font.DemiBold
                 horizontalAlignment: Text.AlignRight
             }
@@ -2625,7 +2628,7 @@ Rectangle {
                     text: "NOTIFICATIONS"
                     color: island.mutedColor
                     font.family: island.monoFont
-                    font.pixelSize: 9
+                    font.pixelSize: Math.round(9 * island.fontScale)
                     font.weight: Font.DemiBold
                 }
 
@@ -2633,7 +2636,7 @@ Rectangle {
                     text: island.notifications ? island.notifications.history.length : "0"
                     color: island.borderColor
                     font.family: island.monoFont
-                    font.pixelSize: 8
+                    font.pixelSize: Math.round(8 * island.fontScale)
                 }
 
                 Item {
@@ -2655,7 +2658,7 @@ Rectangle {
                         text: "󰂚"
                         color: bellHover.hovered ? island.accentColor : island.fgColor
                         font.family: island.monoFont
-                        font.pixelSize: 14
+                        font.pixelSize: Math.round(14 * island.fontScale)
                         font.weight: Font.Medium
                     }
 
@@ -2677,7 +2680,7 @@ Rectangle {
                                 : (island.notifications ? island.notifications.unreadCount : "")
                             color: island.onAccentColor
                             font.family: island.monoFont
-                            font.pixelSize: 7
+                            font.pixelSize: Math.round(7 * island.fontScale)
                             font.weight: Font.Bold
                         }
                     }
@@ -2737,7 +2740,7 @@ Rectangle {
                             text: "󰂚"
                             color: island.mutedColor
                             font.family: island.monoFont
-                            font.pixelSize: 9
+                            font.pixelSize: Math.round(9 * island.fontScale)
                         }
                     }
 
@@ -2748,7 +2751,7 @@ Rectangle {
                             : dashboardNotification.modelData.appName
                         color: island.fgColor
                         font.family: island.monoFont
-                        font.pixelSize: 9
+                        font.pixelSize: Math.round(9 * island.fontScale)
                         elide: Text.ElideRight
                         maximumLineCount: 1
                         textFormat: Text.PlainText
@@ -2766,7 +2769,7 @@ Rectangle {
                         text: Qt.formatTime(new Date(dashboardNotification.modelData.timestamp), "hh:mm")
                         color: island.borderColor
                         font.family: island.monoFont
-                        font.pixelSize: 8
+                        font.pixelSize: Math.round(8 * island.fontScale)
                     }
 
                     MouseArea {
@@ -2791,7 +2794,7 @@ Rectangle {
                         text: "󰂚"
                         color: island.borderColor
                         font.family: island.monoFont
-                        font.pixelSize: 20
+                        font.pixelSize: Math.round(20 * island.fontScale)
                     }
 
                     Text {
@@ -2799,7 +2802,7 @@ Rectangle {
                         text: "No notifications"
                         color: island.borderColor
                         font.family: island.monoFont
-                        font.pixelSize: 8
+                        font.pixelSize: Math.round(8 * island.fontScale)
                     }
                 }
             }

@@ -115,23 +115,6 @@ Item {
                 }
             }
 
-            SettingsToggleRow {
-                Layout.fillWidth: true
-                label: "Preview critical indicator"
-                description: "Show the red clock icon even when the battery is not low."
-                checked: page.settings ? page.settings.batteryCriticalPreview : false
-                monoFont: page.monoFont
-                fgColor: page.fgColor
-                mutedColor: page.mutedColor
-                accentColor: page.accentColor
-                onAccentColor: page.onAccentColor
-                surfaceHighColor: page.surfaceHighColor
-                onToggled: {
-                    if (page.settings)
-                        page.settings.batteryCriticalPreview = !page.settings.batteryCriticalPreview;
-                }
-            }
-
             Text {
                 Layout.fillWidth: true
                 text: "The red icon appears next to the clock while the battery is at or below the critical threshold, until charging begins."

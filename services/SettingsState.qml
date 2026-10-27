@@ -22,7 +22,7 @@ Scope {
     property int cpuRefreshInterval: 300
     property int batteryWarningThreshold: 20
     property int batteryCriticalThreshold: 10
-    property bool batteryCriticalPreview: false
+    property int fontSize: 11
     property bool initialized: false
     property bool loading: false
     property string lastError: ""
@@ -124,6 +124,7 @@ Scope {
         root.borderVisible = true;
         root.borderWidth = 1;
         root.fontFamily = "JetBrainsMono Nerd Font Mono";
+        root.fontSize = 11;
     }
 
     function applyDefaults() {
@@ -136,6 +137,7 @@ Scope {
         root.borderVisible = true;
         root.borderWidth = 1;
         root.fontFamily = "JetBrainsMono Nerd Font Mono";
+        root.fontSize = 11;
         root.showWorkspaceTags = true;
         root.showWindowInfo = true;
         root.showSystemStats = true;
@@ -179,6 +181,11 @@ Scope {
                 root.borderVisible = parsed.borderVisible === undefined ? true : !!parsed.borderVisible;
                 root.borderWidth = root.clampBorderWidth(parsed.borderWidth);
                 root.fontFamily = root.clampFontFamily(parsed.fontFamily);
+                root.fontSize = parsed.fontSize !== undefined
+                    ? Math.max(9, Math.min(13, Math.round(Number(parsed.fontSize))))
+                    : (parsed.fontScale !== undefined
+                        ? Math.max(9, Math.min(13, Math.round(Number(parsed.fontScale) * 11 / 100)))
+                        : 11);
                 root.showWorkspaceTags = parsed.showWorkspaceTags === undefined ? true : !!parsed.showWorkspaceTags;
                 root.showWindowInfo = parsed.showWindowInfo === undefined ? true : !!parsed.showWindowInfo;
                 root.showSystemStats = parsed.showSystemStats === undefined ? true : !!parsed.showSystemStats;
@@ -204,7 +211,7 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 6,
+            "version": 8,
             "settingsPage": root.settingsPage,
             "hoverExpansion": root.hoverExpansion,
             "animationDuration": root.animationDuration,
@@ -213,6 +220,7 @@ Scope {
             "borderVisible": root.borderVisible,
             "borderWidth": root.borderWidth,
             "fontFamily": root.fontFamily,
+            "fontSize": root.fontSize,
             "showWorkspaceTags": root.showWorkspaceTags,
             "showWindowInfo": root.showWindowInfo,
             "showSystemStats": root.showSystemStats,
@@ -276,6 +284,11 @@ Scope {
     }
 
     onFontFamilyChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onFontSizeChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }

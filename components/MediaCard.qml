@@ -7,6 +7,7 @@ Rectangle {
 
     property var media
     property string monoFont
+    property real fontScale: 1
     property color bgColor
     property color surfaceHighColor
     property color fgColor
@@ -54,7 +55,7 @@ Rectangle {
                 text: "󰎆"
                 color: card.mutedColor
                 font.family: card.monoFont
-                font.pixelSize: 30
+                font.pixelSize: Math.round(30 * card.fontScale)
             }
         }
 
@@ -72,7 +73,7 @@ Rectangle {
                     text: card.media ? card.media.title : ""
                     color: card.fgColor
                     font.family: card.monoFont
-                    font.pixelSize: 12
+                    font.pixelSize: Math.round(12 * card.fontScale)
                     font.weight: Font.DemiBold
                     elide: Text.ElideRight
                     maximumLineCount: 1
@@ -82,7 +83,7 @@ Rectangle {
                     text: card.media && card.media.isPlaying ? "PLAYING" : "PAUSED"
                     color: card.media && card.media.isPlaying ? card.secondaryColor : card.mutedColor
                     font.family: card.monoFont
-                    font.pixelSize: 8
+                    font.pixelSize: Math.round(8 * card.fontScale)
                     font.weight: Font.DemiBold
                 }
             }
@@ -98,7 +99,7 @@ Rectangle {
                 }
                 color: card.mutedColor
                 font.family: card.monoFont
-                font.pixelSize: 9
+                font.pixelSize: Math.round(9 * card.fontScale)
                 elide: Text.ElideRight
                 maximumLineCount: 1
             }
@@ -112,7 +113,7 @@ Rectangle {
                     text: card.media ? card.media.positionText : "0:00"
                     color: card.borderMutedColor
                     font.family: card.monoFont
-                    font.pixelSize: 8
+                    font.pixelSize: Math.round(8 * card.fontScale)
                 }
 
                 Rectangle {
@@ -151,7 +152,7 @@ Rectangle {
                     text: card.media ? card.media.lengthText : "0:00"
                     color: card.borderMutedColor
                     font.family: card.monoFont
-                    font.pixelSize: 8
+                    font.pixelSize: Math.round(8 * card.fontScale)
                 }
             }
 
@@ -173,7 +174,7 @@ Rectangle {
                         text: "󰒮"
                         color: card.fgColor
                         font.family: card.monoFont
-                        font.pixelSize: 15
+                        font.pixelSize: Math.round(15 * card.fontScale)
                     }
 
                     MouseArea {
@@ -197,7 +198,7 @@ Rectangle {
                         text: card.media && card.media.isPlaying ? "󰏤" : "󰐊"
                         color: card.onAccentColor
                         font.family: card.monoFont
-                        font.pixelSize: 15
+                        font.pixelSize: Math.round(15 * card.fontScale)
                     }
 
                     MouseArea {
@@ -220,7 +221,7 @@ Rectangle {
                         text: "󰒭"
                         color: card.fgColor
                         font.family: card.monoFont
-                        font.pixelSize: 15
+                        font.pixelSize: Math.round(15 * card.fontScale)
                     }
 
                     MouseArea {

@@ -118,6 +118,25 @@ Item {
 
             SettingsSlider {
                 Layout.fillWidth: true
+                label: "Font size"
+                value: page.settings ? page.settings.fontSize : 11
+                from: 9
+                to: 13
+                step: 1
+                suffix: " px"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                surfaceHighColor: page.surfaceHighColor
+                onMoved: value => {
+                    if (page.settings)
+                        page.settings.fontSize = value;
+                }
+            }
+
+            SettingsSlider {
+                Layout.fillWidth: true
                 label: "Background opacity"
                 value: page.settings ? page.settings.backgroundOpacity : 100
                 from: 40

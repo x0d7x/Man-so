@@ -7,6 +7,7 @@ Rectangle {
 
     property var notifications
     property string monoFont
+    property real fontScale: 1
     property color bgColor
     property color surfaceHighColor
     property color fgColor
@@ -77,7 +78,7 @@ Rectangle {
                 text: "󰂚"
                 color: card.mutedColor
                 font.family: card.monoFont
-                font.pixelSize: 28
+                font.pixelSize: Math.round(28 * card.fontScale)
             }
         }
 
@@ -95,7 +96,7 @@ Rectangle {
                     text: card.note ? card.note.appName : ""
                     color: card.mutedColor
                     font.family: card.monoFont
-                    font.pixelSize: 9
+                    font.pixelSize: Math.round(9 * card.fontScale)
                     font.weight: Font.DemiBold
                     elide: Text.ElideRight
                 }
@@ -117,7 +118,7 @@ Rectangle {
                         text: "󰅖"
                         color: card.mutedColor
                         font.family: card.monoFont
-                        font.pixelSize: 13
+                        font.pixelSize: Math.round(13 * card.fontScale)
                     }
 
                     MouseArea {
@@ -136,7 +137,7 @@ Rectangle {
                 text: card.note ? card.note.summary : ""
                 color: card.fgColor
                 font.family: card.monoFont
-                font.pixelSize: 12
+                font.pixelSize: Math.round(12 * card.fontScale)
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
                 maximumLineCount: 1
@@ -149,7 +150,7 @@ Rectangle {
                 text: card.note ? card.note.body : ""
                 color: card.note && card.note.body.length > 0 ? card.mutedColor : "transparent"
                 font.family: card.monoFont
-                font.pixelSize: 9
+                font.pixelSize: Math.round(9 * card.fontScale)
                 wrapMode: Text.Wrap
                 elide: Text.ElideRight
                 maximumLineCount: 2
@@ -184,7 +185,7 @@ Rectangle {
                                 ? card.onAccentColor
                                 : card.fgColor
                             font.family: card.monoFont
-                            font.pixelSize: 9
+                            font.pixelSize: Math.round(9 * card.fontScale)
                             font.weight: Font.DemiBold
                         }
 
