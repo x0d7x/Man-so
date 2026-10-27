@@ -8,6 +8,8 @@ Scope {
     property bool available: false
     property bool initialized: false
     property bool querying: false
+    property bool syncEnabled: true
+    property int syncInterval: 5000
     property int rawCurrent: -1
     property int maximum: -1
     property int percent: -1
@@ -54,7 +56,7 @@ Scope {
     }
 
     function query() {
-        if (getProcess.running)
+        if (getProcess.running || writeProcess.running || writeTimer.running || root.pendingPercent >= 0)
             return;
         root.querying = true;
         getProcess.running = true;
@@ -115,5 +117,13 @@ Scope {
         id: writeTimer
         interval: 180
         onTriggered: root.flushWrite()
+    }
+
+    Timer {
+        id: syncTimer
+        interval: root.syncInterval
+        running: root.syncEnabled
+        repeat: true
+        onTriggered: root.query()
     }
 }

@@ -46,6 +46,8 @@ ShellRoot {
 
     DdcBrightnessState {
         id: ddcBrightness
+        syncEnabled: settings.ddcSyncEnabled
+        syncInterval: settings.ddcSyncInterval
     }
 
     NotificationState {

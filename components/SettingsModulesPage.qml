@@ -519,6 +519,39 @@ Item {
                 }
             }
 
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Sync monitor buttons"
+                description: "Poll the external monitor for changes made with its physical controls."
+                checked: page.settings ? page.settings.ddcSyncEnabled : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: if (page.settings) page.settings.ddcSyncEnabled = !page.settings.ddcSyncEnabled
+            }
+
+            SettingsSlider {
+                Layout.fillWidth: true
+                label: "DDC sync interval"
+                value: page.settings ? page.settings.ddcSyncInterval : 5000
+                from: 2000
+                to: 15000
+                step: 1000
+                suffix: " ms"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                surfaceHighColor: page.surfaceHighColor
+                onMoved: value => {
+                    if (page.settings)
+                        page.settings.ddcSyncInterval = value;
+                }
+            }
+
             Item { implicitHeight: 2 }
 
             Rectangle {

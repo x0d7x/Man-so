@@ -13,6 +13,8 @@ Scope {
     property int volumeStep: 2
     property int volumeOsdTimeout: 1500
     property int brightnessOsdTimeout: 1500
+    property bool ddcSyncEnabled: true
+    property int ddcSyncInterval: 5000
     property bool showNetworkName: true
     property int backgroundOpacity: 100
     property int cornerRadius: 17
@@ -136,6 +138,13 @@ Scope {
         return Math.max(1, Math.min(10, Math.round(step)));
     }
 
+    function clampDdcSyncInterval(value) {
+        const interval = Number(value);
+        if (!Number.isFinite(interval))
+            return 5000;
+        return Math.max(2000, Math.min(15000, Math.round(interval / 1000) * 1000));
+    }
+
     function clampWorkspaceVisibility(value) {
         return value === "occupied" || value === "active" ? value : "all";
     }
@@ -230,6 +239,8 @@ Scope {
         root.volumeStep = 2;
         root.volumeOsdTimeout = 1500;
         root.brightnessOsdTimeout = 1500;
+        root.ddcSyncEnabled = true;
+        root.ddcSyncInterval = 5000;
         root.showNetworkName = true;
     }
 
@@ -258,6 +269,8 @@ Scope {
         root.volumeStep = 2;
         root.volumeOsdTimeout = 1500;
         root.brightnessOsdTimeout = 1500;
+        root.ddcSyncEnabled = true;
+        root.ddcSyncInterval = 5000;
         root.showNetworkName = true;
         root.backgroundOpacity = 100;
         root.cornerRadius = 17;
@@ -351,6 +364,8 @@ Scope {
                 root.volumeStep = root.clampVolumeStep(parsed.volumeStep);
                 root.volumeOsdTimeout = root.clampOsdTimeout(parsed.volumeOsdTimeout);
                 root.brightnessOsdTimeout = root.clampOsdTimeout(parsed.brightnessOsdTimeout);
+                root.ddcSyncEnabled = parsed.ddcSyncEnabled === undefined ? true : !!parsed.ddcSyncEnabled;
+                root.ddcSyncInterval = root.clampDdcSyncInterval(parsed.ddcSyncInterval);
                 root.showNetworkName = parsed.showNetworkName === undefined ? true : !!parsed.showNetworkName;
                 if (root.batteryCriticalThreshold > root.batteryWarningThreshold)
                     root.batteryCriticalThreshold = root.batteryWarningThreshold;
@@ -368,7 +383,7 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 16,
+            "version": 17,
             "settingsPage": root.settingsPage,
             "hoverExpansion": root.hoverExpansion,
             "animationDuration": root.animationDuration,
@@ -377,6 +392,8 @@ Scope {
             "volumeStep": root.volumeStep,
             "volumeOsdTimeout": root.volumeOsdTimeout,
             "brightnessOsdTimeout": root.brightnessOsdTimeout,
+            "ddcSyncEnabled": root.ddcSyncEnabled,
+            "ddcSyncInterval": root.ddcSyncInterval,
             "showNetworkName": root.showNetworkName,
             "backgroundOpacity": root.backgroundOpacity,
             "cornerRadius": root.cornerRadius,
@@ -561,6 +578,16 @@ Scope {
     }
 
     onBrightnessOsdTimeoutChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onDdcSyncEnabledChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onDdcSyncIntervalChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }
