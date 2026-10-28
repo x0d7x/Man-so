@@ -225,7 +225,7 @@ FocusScope {
 
                 Text {
                     Layout.leftMargin: 8
-                    text: "man-qs"
+                    text: "manēso"
                     color: panel.borderMutedColor
                     font.family: panel.monoFont
                     font.pixelSize: 8

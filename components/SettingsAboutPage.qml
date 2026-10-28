@@ -35,14 +35,14 @@ Item {
                 Column {
                     spacing: 1
                     Text {
-                        text: "man-qs"
+                        text: "manēso"
                         color: page.fgColor
                         font.family: page.monoFont
                         font.pixelSize: 16
                         font.weight: Font.DemiBold
                     }
                     Text {
-                        text: "Dynamic Island for MangoWM"
+                        text: "Your desktop, in motion."
                         color: page.mutedColor
                         font.family: page.monoFont
                         font.pixelSize: 9

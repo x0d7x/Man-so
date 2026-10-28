@@ -59,14 +59,16 @@ Scope {
     property bool loading: false
     property string lastError: ""
 
-    readonly property string configDir: {
+    readonly property string configBaseDir: {
         const xdg = Quickshell.env("XDG_CONFIG_HOME");
-        const base = xdg && xdg.length > 0
+        return xdg && xdg.length > 0
             ? xdg
             : Quickshell.env("HOME") + "/.config";
-        return base + "/man-qs";
     }
+    readonly property string configDir: root.configBaseDir + "/maneso"
     readonly property string configPath: root.configDir + "/settings.json"
+    readonly property string legacyConfigDir: root.configBaseDir + "/man-qs"
+    readonly property string legacyConfigPath: root.legacyConfigDir + "/settings.json"
 
     function clampPage(value) {
         const page = Number(value);
@@ -803,6 +805,18 @@ Scope {
     Process {
         id: mkdirProcess
         command: ["mkdir", "-p", root.configDir]
+
+        onExited: migrateProcess.running = true
+    }
+
+    // Copy legacy settings into the new location without removing the original.
+    Process {
+        id: migrateProcess
+        command: [
+            "sh", "-c",
+            "if [ -f \"$1\" ] && [ ! -e \"$2\" ]; then cp -- \"$1\" \"$2\"; fi",
+            "maneso-migrate", root.legacyConfigPath, root.configPath
+        ]
 
         onExited: settingsFile.reload()
     }
