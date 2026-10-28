@@ -76,7 +76,10 @@ ShellRoot {
         color: "transparent"
         exclusiveZone: 34
         aboveWindows: true
-        focusable: island.needsKeyboard
+        WlrLayershell.namespace: "maneso"
+         WlrLayershell.keyboardFocus: island.settingsOpen
+             ? WlrKeyboardFocus.Exclusive
+             : (island.needsKeyboard ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None)
 
         mask: Region {
             x: Math.round(island.x)

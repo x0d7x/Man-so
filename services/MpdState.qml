@@ -169,7 +169,7 @@ Scope {
         artProcess.command = [
             "ffmpeg", "-v", "error", "-y", "-i", path,
             "-map", "0:v:0", "-frames:v", "1",
-            "/tmp/man-qs-mpd-cover-" + id + ".png"
+            "/tmp/maneso-mpd-cover-" + id + ".png"
         ];
         artProcess.running = true;
     }
@@ -224,7 +224,7 @@ Scope {
 
         onExited: exitCode => {
             if (exitCode === 0)
-                root.trackArtUrl = "file:///tmp/man-qs-mpd-cover-" + root.artworkId + ".png";
+                root.trackArtUrl = "file:///tmp/maneso-mpd-cover-" + root.artworkId + ".png";
             else
                 root.trackArtUrl = "";
 
