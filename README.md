@@ -1,5 +1,9 @@
 # manēso
 
+<p align="center">
+  <img src="logo.png" alt="manēso logo" width="480">
+</p>
+
 **manēso — A Dynamic Island for MangoWM**
 
 **Your desktop, in motion.**
@@ -188,15 +192,17 @@ The island keeps its existing `island` IPC target so that current scripts and
 keybindings continue to work:
 
 ```sh
-qs ipc call island toggle
-qs ipc call island status
-qs ipc call island toggleNotifications
-qs ipc call island toggleSettings
+qs -c maneso ipc call island toggle
+qs -c maneso ipc call island status
+qs -c maneso ipc call island toggleNotifications
+qs -c maneso ipc call island toggleSettings
 ```
+
+If you launch the configuration with `qs -p`, pass the same path to the IPC
+command instead, for example
+`qs -p /path/to/maneso ipc call island toggle`.
 
 ## Naming
 
 - User-facing name: **manēso**
 - ASCII identifier: **maneso**
-
-> > > > > > > conflict 1 of 1 ends
