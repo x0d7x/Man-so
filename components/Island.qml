@@ -34,6 +34,7 @@ Rectangle {
     property bool wifiMenuOpen: false
     property bool wifiPasswordOpen: false
     property bool bluetoothMenuOpen: false
+    property bool powerMenuOpen: false
     property bool settingsOpen: false
     property string bluetoothInput: ""
     property var wifiSelectedNetwork: null
@@ -191,7 +192,7 @@ Rectangle {
         && !island.batteryCharging
 
     readonly property bool needsKeyboard: island.settingsOpen
-        || island.wifiMenuOpen || island.bluetoothMenuOpen
+        || island.wifiMenuOpen || island.bluetoothMenuOpen || island.powerMenuOpen
         || (island.notifications && island.notifications.centerOpen)
         || (island.pointerHovered && island.hoverExpansionEnabled && !island.suppressHoverKeyboard)
 
@@ -202,6 +203,8 @@ Rectangle {
             return "wifi";
         if (island.bluetoothMenuOpen)
             return "bluetooth";
+        if (island.powerMenuOpen)
+            return "power";
         if (island.notificationInhibitOsdActive)
             return "notificationsOff";
         if (island.notifications && island.notifications.visible && island.notifications.active)
@@ -232,6 +235,8 @@ Rectangle {
         if (island.mode === "wifi")
             return 380;
         if (island.mode === "bluetooth")
+            return 380;
+        if (island.mode === "power")
             return 380;
         if (island.mode === "notification")
             return 460;
@@ -342,6 +347,8 @@ Rectangle {
             return 420;
         if (island.mode === "bluetooth")
             return 420;
+        if (island.mode === "power")
+            return 260;
         if (island.mode === "notification")
             return 104;
         if (island.mode === "media")
@@ -405,6 +412,8 @@ Rectangle {
             island.closeWifiMenu();
         if (island.bluetoothMenuOpen)
             island.closeBluetoothMenu();
+        if (island.powerMenuOpen)
+            island.closePowerMenu();
         if (island.notifications && island.notifications.centerOpen)
             island.closeNotificationCenter();
         island.settingsOpen = true;
@@ -448,6 +457,8 @@ Rectangle {
             island.closeWifiMenu();
         if (island.bluetoothMenuOpen)
             island.closeBluetoothMenu();
+        if (island.powerMenuOpen)
+            island.closePowerMenu();
 
         island.notifications.openCenter();
         notificationCenterDelay.restart();
@@ -485,6 +496,8 @@ Rectangle {
 
         if (island.bluetoothMenuOpen)
             island.closeBluetoothMenu();
+        if (island.powerMenuOpen)
+            island.closePowerMenu();
 
         island.wifiMenuOpen = true;
         island.network.clearError();
@@ -553,6 +566,8 @@ Rectangle {
 
         if (island.wifiMenuOpen)
             island.closeWifiMenu();
+        if (island.powerMenuOpen)
+            island.closePowerMenu();
 
         island.bluetoothMenuOpen = true;
         island.bluetooth.clearPrompt();
@@ -567,6 +582,32 @@ Rectangle {
             island.bluetooth.stopDiscovery();
         }
         island.releaseHoverKeyboard();
+    }
+
+    function closePowerMenu() {
+        if (!island.powerMenuOpen)
+            return;
+        island.powerMenuOpen = false;
+        island.releaseHoverKeyboard();
+    }
+
+    function togglePowerMenu() {
+        if (!island.power)
+            return;
+
+        if (island.powerMenuOpen) {
+            island.closePowerMenu();
+            return;
+        }
+
+        if (island.wifiMenuOpen)
+            island.closeWifiMenu();
+        if (island.bluetoothMenuOpen)
+            island.closeBluetoothMenu();
+        if (island.notifications && island.notifications.centerOpen)
+            island.closeNotificationCenter();
+
+        island.powerMenuOpen = true;
     }
 
     function submitBluetoothPasskey() {
@@ -601,11 +642,14 @@ Rectangle {
     }
 
     onModeChanged: {
-        if (island.mode !== "expanded" && island.mode !== "wifi" && island.mode !== "bluetooth") {
+        if (island.mode !== "expanded" && island.mode !== "wifi" && island.mode !== "bluetooth"
+            && island.mode !== "power") {
             if (island.wifiMenuOpen)
                 island.closeWifiMenu();
             if (island.bluetoothMenuOpen)
                 island.closeBluetoothMenu();
+            if (island.powerMenuOpen)
+                island.closePowerMenu();
             if (island.notifications && island.notifications.centerOpen)
                 island.closeNotificationCenter();
         }
@@ -767,6 +811,37 @@ Rectangle {
             island.volume.adjust(event.angleDelta.y > 0 ? 1 : -1);
             event.accepted = true;
         }
+    }
+
+    // Window-level Esc handling: the panel surface only receives keyboard input
+    // while a menu is open (see WlrLayershell.keyboardFocus in shell.qml), so
+    // these shortcuts do not need an active focus item to fire.
+    Shortcut {
+        sequence: "Esc"
+        enabled: island.wifiMenuOpen
+        onActivated: {
+            if (island.wifiPasswordOpen)
+                island.cancelWifiPassword();
+            else
+                island.closeWifiMenu();
+        }
+    }
+
+    Shortcut {
+        sequence: "Esc"
+        enabled: island.bluetoothMenuOpen
+        onActivated: {
+            if (island.bluetooth && island.bluetooth.promptActive)
+                island.cancelBluetoothPrompt();
+            else
+                island.closeBluetoothMenu();
+        }
+    }
+
+    Shortcut {
+        sequence: "Esc"
+        enabled: island.powerMenuOpen
+        onActivated: island.closePowerMenu()
     }
 
     FocusScope {
@@ -1792,6 +1867,230 @@ Rectangle {
         }
     }
 
+    FocusScope {
+        id: powerPanel
+
+        anchors.fill: parent
+        visible: island.mode === "power"
+        focus: visible
+
+        onVisibleChanged: {
+            if (visible)
+                Qt.callLater(() => powerEscapeFocus.forceActiveFocus());
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.LeftButton
+            onClicked: {}
+        }
+
+        Rectangle {
+            id: powerCard
+
+            anchors.fill: parent
+            radius: 0
+            color: "transparent"
+            border.width: 0
+            clip: true
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 10
+                spacing: 8
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 7
+
+                    Text {
+                        text: "POWER PROFILE"
+                        color: island.mutedColor
+                        font.family: island.monoFont
+                        font.pixelSize: Math.round(10 * island.fontScale)
+                        font.weight: Font.DemiBold
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: {
+                            if (!island.power)
+                                return "N/A";
+                            const entry = island.power.profileEntry(island.power.profile);
+                            return entry ? entry.label : island.power.label;
+                        }
+                        color: island.powerColor()
+                        font.family: island.monoFont
+                        font.pixelSize: Math.round(11 * island.fontScale)
+                        font.weight: Font.Medium
+                        elide: Text.ElideRight
+                    }
+
+                    Item {
+                        Layout.preferredWidth: 20
+                        Layout.preferredHeight: 20
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰅖"
+                            color: island.mutedColor
+                            font.family: island.monoFont
+                            font.pixelSize: Math.round(12 * island.fontScale)
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: island.closePowerMenu()
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 1
+                    color: island.borderMutedColor
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 6
+
+                    Repeater {
+                        model: island.power ? island.power.profiles : []
+
+                        delegate: Rectangle {
+                            id: powerRow
+
+                            required property var modelData
+
+                            readonly property bool active: island.power
+                                && island.power.profile === powerRow.modelData.id
+                            readonly property bool rowAvailable: powerRow.modelData.available !== false
+
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 52
+                            radius: 8
+                            color: powerRow.active
+                                ? Qt.rgba(island.accentColor.r, island.accentColor.g, island.accentColor.b, 0.16)
+                                : (powerRowHover.hovered && powerRow.rowAvailable
+                                    ? island.surfaceHighColor
+                                    : "transparent")
+                            border.width: 1
+                            border.color: powerRow.active
+                                ? island.accentColor
+                                : (powerRowHover.hovered && powerRow.rowAvailable
+                                    ? island.borderMutedColor
+                                    : "transparent")
+                            opacity: powerRow.rowAvailable ? 1 : 0.45
+
+                            HoverHandler {
+                                id: powerRowHover
+                            }
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 10
+                                spacing: 10
+
+                                Text {
+                                    text: powerRow.modelData.icon
+                                    color: powerRow.active ? island.accentColor : island.mutedColor
+                                    font.family: island.monoFont
+                                    font.pixelSize: Math.round(16 * island.fontScale)
+                                    font.weight: Font.Medium
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 1
+
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: powerRow.modelData.label
+                                        color: powerRow.active ? island.accentColor : island.fgColor
+                                        font.family: island.monoFont
+                                        font.pixelSize: Math.round(11 * island.fontScale)
+                                        font.weight: powerRow.active ? Font.DemiBold : Font.Medium
+                                        elide: Text.ElideRight
+                                        maximumLineCount: 1
+                                    }
+
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: powerRow.rowAvailable
+                                            ? powerRow.modelData.description
+                                            : "Not supported by this system"
+                                        color: island.mutedColor
+                                        font.family: island.monoFont
+                                        font.pixelSize: Math.round(8 * island.fontScale)
+                                        elide: Text.ElideRight
+                                        maximumLineCount: 1
+                                    }
+                                }
+
+                                Text {
+                                    visible: powerRow.active
+                                    text: "󰄬"
+                                    color: island.accentColor
+                                    font.family: island.monoFont
+                                    font.pixelSize: Math.round(13 * island.fontScale)
+                                    font.weight: Font.Bold
+                                }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                enabled: powerRow.rowAvailable
+                                cursorShape: powerRow.rowAvailable
+                                    ? Qt.PointingHandCursor
+                                    : Qt.ArrowCursor
+                                onClicked: {
+                                    if (island.power)
+                                        island.power.setProfile(powerRow.modelData.id);
+                                    island.closePowerMenu();
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    visible: island.power && island.power.degradationText.length > 0
+                    text: island.power ? island.power.degradationText : ""
+                    color: island.accentColor
+                    font.family: island.monoFont
+                    font.pixelSize: Math.round(8 * island.fontScale)
+                    wrapMode: Text.WordWrap
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    visible: !island.power || !island.power.available
+                    text: "Power profiles are unavailable on this system"
+                    color: island.mutedColor
+                    font.family: island.monoFont
+                    font.pixelSize: Math.round(9 * island.fontScale)
+                    wrapMode: Text.WordWrap
+                }
+
+                Item {
+                    Layout.fillHeight: true
+                }
+            }
+        }
+
+        FocusScope {
+            id: powerEscapeFocus
+
+            anchors.fill: parent
+            focus: island.powerMenuOpen
+            Keys.onEscapePressed: island.closePowerMenu()
+        }
+    }
+
     PopupWindow {
         id: notificationCenterPopup
 
@@ -2640,7 +2939,7 @@ Rectangle {
                 Rectangle {
                     anchors.fill: parent
                     radius: 8
-                    color: Qt.rgba(island.surfaceHighColor.r, island.surfaceHighColor.g, island.surfaceHighColor.b, powerMouse.containsMouse ? 0.8 : 0.5)
+                    color: Qt.rgba(island.surfaceHighColor.r, island.surfaceHighColor.g, island.surfaceHighColor.b, (powerMouse.containsMouse || island.powerMenuOpen) ? 0.8 : 0.5)
                 }
 
                 Row {
@@ -2660,7 +2959,7 @@ Rectangle {
 
                     Text {
                         text: island.power ? island.power.label : "--"
-                        color: island.fgColor
+                        color: island.powerMenuOpen ? island.accentColor : island.fgColor
                         font.family: island.monoFont
                         font.pixelSize: Math.round(8 * island.fontScale)
                         font.weight: Font.DemiBold
@@ -2676,7 +2975,7 @@ Rectangle {
                     cursorShape: Qt.PointingHandCursor
                     onClicked: {
                         if (island.power)
-                            island.power.cycle();
+                            island.togglePowerMenu();
                     }
                 }
             }

@@ -130,7 +130,8 @@ ShellRoot {
         exclusiveZone: 34
         aboveWindows: true
         WlrLayershell.namespace: "maneso"
-        WlrLayershell.keyboardFocus: island.settingsOpen
+        WlrLayershell.keyboardFocus: (island.settingsOpen || island.wifiMenuOpen
+            || island.bluetoothMenuOpen || island.powerMenuOpen)
             ? WlrKeyboardFocus.Exclusive
             : (island.needsKeyboard ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None)
 

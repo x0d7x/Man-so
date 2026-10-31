@@ -20,6 +20,47 @@ Scope {
     readonly property string pendingProfile: ""
     readonly property string lastError: ""
 
+    readonly property bool available: root.profile !== "unknown"
+    readonly property bool hasPerformance: PowerProfiles.hasPerformanceProfile
+    readonly property string degradationText: {
+        if (PowerProfiles.degradationReason === PerformanceDegradationReason.LapDetected)
+            return "Performance is limited: lap detected";
+        if (PowerProfiles.degradationReason === PerformanceDegradationReason.HighTemperature)
+            return "Performance is limited: high temperature";
+        return "";
+    }
+    readonly property var profiles: [
+        {
+            "id": "performance",
+            "label": "Performance",
+            "icon": "",
+            "description": "Maximum clocks and responsiveness",
+            "available": root.available && root.hasPerformance
+        },
+        {
+            "id": "balanced",
+            "label": "Balanced",
+            "icon": "",
+            "description": "Adapts clocks to the current workload",
+            "available": root.available
+        },
+        {
+            "id": "power-saver",
+            "label": "Power Saver",
+            "icon": "",
+            "description": "Lower clocks for longer battery life",
+            "available": root.available
+        }
+    ]
+
+    function profileEntry(name) {
+        for (let i = 0; i < root.profiles.length; ++i) {
+            if (root.profiles[i].id === name)
+                return root.profiles[i];
+        }
+        return null;
+    }
+
     readonly property string label: {
         if (root.profile === "performance")
             return "PERF";
