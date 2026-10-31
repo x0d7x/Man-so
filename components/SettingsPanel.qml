@@ -25,6 +25,7 @@ FocusScope {
     readonly property var navItems: [
         { "label": "General", "icon": "󰒓" },
         { "label": "Appearance", "icon": "󰏘" },
+        { "label": "Dashboard", "icon": "󰕮" },
         { "label": "Modules", "icon": "󰍜" },
         { "label": "Power", "icon": "󰾅" },
         { "label": "MangoWM", "icon": "󰖯" },
@@ -284,7 +285,7 @@ FocusScope {
                     anchors.fill: parent
                     active: panel.visible && panel.currentPage === 2
                     sourceComponent: Component {
-                        SettingsModulesPage {
+                        SettingsDashboardPage {
                             anchors.fill: parent
                             settings: panel.settings
                             monoFont: panel.monoFont
@@ -301,7 +302,7 @@ FocusScope {
                     anchors.fill: parent
                     active: panel.visible && panel.currentPage === 3
                     sourceComponent: Component {
-                        SettingsPowerPage {
+                        SettingsModulesPage {
                             anchors.fill: parent
                             settings: panel.settings
                             monoFont: panel.monoFont
@@ -318,7 +319,7 @@ FocusScope {
                     anchors.fill: parent
                     active: panel.visible && panel.currentPage === 4
                     sourceComponent: Component {
-                        SettingsMangoPage {
+                        SettingsPowerPage {
                             anchors.fill: parent
                             settings: panel.settings
                             monoFont: panel.monoFont
@@ -334,6 +335,23 @@ FocusScope {
                 Loader {
                     anchors.fill: parent
                     active: panel.visible && panel.currentPage === 5
+                    sourceComponent: Component {
+                        SettingsMangoPage {
+                            anchors.fill: parent
+                            settings: panel.settings
+                            monoFont: panel.monoFont
+                            fgColor: panel.fgColor
+                            mutedColor: panel.mutedColor
+                            accentColor: panel.accentColor
+                            onAccentColor: panel.onAccentColor
+                            surfaceHighColor: panel.surfaceHighColor
+                        }
+                    }
+                }
+
+                Loader {
+                    anchors.fill: parent
+                    active: panel.visible && panel.currentPage === 6
                     sourceComponent: Component {
                         SettingsKeyboardPage {
                             anchors.fill: parent
@@ -351,7 +369,7 @@ FocusScope {
 
                 Loader {
                     anchors.fill: parent
-                    active: panel.visible && panel.currentPage === 6
+                    active: panel.visible && panel.currentPage === 7
                     sourceComponent: Component {
                         SettingsPrivacyPage {
                             anchors.fill: parent
@@ -370,7 +388,7 @@ FocusScope {
 
                 Loader {
                     anchors.fill: parent
-                    active: panel.visible && panel.currentPage === 7
+                    active: panel.visible && panel.currentPage === 8
                     sourceComponent: Component {
                         SettingsAboutPage {
                             anchors.fill: parent
@@ -386,7 +404,7 @@ FocusScope {
 
                 Loader {
                     anchors.fill: parent
-                    active: panel.visible && panel.currentPage === 8
+                    active: panel.visible && panel.currentPage === 9
                     sourceComponent: Component {
                         SettingsDiagnosticsPage {
                             anchors.fill: parent

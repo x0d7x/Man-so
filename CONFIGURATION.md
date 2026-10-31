@@ -26,6 +26,19 @@ new location. The original file is left untouched.
 | `borderVisible`     | Show the island outline        | `true`                           | `true`, `false`           |
 | `borderWidth`       | Outline thickness              | `1`                              | 1–4 px                    |
 
+### Dashboard
+
+| Key                         | Description                                         | Default | Range / values      |
+| --------------------------- | --------------------------------------------------- | ------- | ------------------- |
+| `dashboardWidth`            | Width of the expanded dashboard                     | `420`   | 340–600 px, step 10 |
+| `dashboardMaxHeight`        | Max dashboard height as a percentage of the screen  | `100`   | 40–100%, step 5     |
+| `dashboardPadding`          | Inner padding of the dashboard                      | `14`    | 8–24 px             |
+| `dashboardSpacing`          | Spacing between dashboard sections                  | `10`    | 4–18 px             |
+| `dashboardNotificationRows` | Notification rows kept visible before scrolling     | `4`     | 1–8 rows            |
+| `dashboardSeparators`       | Draw divider lines between dashboard sections       | `true`  | `true`, `false`     |
+| `dashboardShowTray`         | Show system tray icons in the dashboard header      | `true`  | `true`, `false`     |
+| `dashboardTrayLimit`        | Maximum number of tray icons shown                  | `3`     | 1–6                 |
+
 ### Module visibility
 
 | Key                      | Description                                                 | Default |

@@ -55,6 +55,14 @@ Scope {
     property var collapsedItems: ["time"]
     property int collapsedItemSpacing: 4
     property int collapsedPadding: 14
+    property int dashboardWidth: 420
+    property int dashboardPadding: 14
+    property int dashboardSpacing: 10
+    property int dashboardMaxHeight: 100
+    property int dashboardNotificationRows: 4
+    property bool dashboardSeparators: true
+    property bool dashboardShowTray: true
+    property int dashboardTrayLimit: 3
     property bool initialized: false
     property bool loading: false
     property string lastError: ""
@@ -74,7 +82,7 @@ Scope {
         const page = Number(value);
         if (!Number.isFinite(page))
             return 0;
-        return Math.max(0, Math.min(8, Math.round(page)));
+        return Math.max(0, Math.min(9, Math.round(page)));
     }
 
     function clampAnimationDuration(value) {
@@ -201,6 +209,48 @@ Scope {
         return Math.max(8, Math.min(24, Math.round(padding)));
     }
 
+    function clampDashboardWidth(value) {
+        const width = Number(value);
+        if (!Number.isFinite(width))
+            return 420;
+        return Math.max(340, Math.min(600, Math.round(width / 10) * 10));
+    }
+
+    function clampDashboardPadding(value) {
+        const padding = Number(value);
+        if (!Number.isFinite(padding))
+            return 14;
+        return Math.max(8, Math.min(24, Math.round(padding)));
+    }
+
+    function clampDashboardSpacing(value) {
+        const spacing = Number(value);
+        if (!Number.isFinite(spacing))
+            return 10;
+        return Math.max(4, Math.min(18, Math.round(spacing)));
+    }
+
+    function clampDashboardMaxHeight(value) {
+        const percent = Number(value);
+        if (!Number.isFinite(percent))
+            return 100;
+        return Math.max(40, Math.min(100, Math.round(percent / 5) * 5));
+    }
+
+    function clampDashboardNotificationRows(value) {
+        const rows = Number(value);
+        if (!Number.isFinite(rows))
+            return 4;
+        return Math.max(1, Math.min(8, Math.round(rows)));
+    }
+
+    function clampDashboardTrayLimit(value) {
+        const limit = Number(value);
+        if (!Number.isFinite(limit))
+            return 3;
+        return Math.max(1, Math.min(6, Math.round(limit)));
+    }
+
     readonly property var collapsedItemKeys: [
         "time", "workspace", "window", "layout", "cpu", "ram", "temp", "battery",
         "wifi", "bluetooth", "power", "volume", "brightness", "externalBrightness", "media", "notifications", "tray"
@@ -315,6 +365,17 @@ Scope {
         root.uiScale = 100;
     }
 
+    function resetDashboard() {
+        root.dashboardWidth = 420;
+        root.dashboardPadding = 14;
+        root.dashboardSpacing = 10;
+        root.dashboardMaxHeight = 100;
+        root.dashboardNotificationRows = 4;
+        root.dashboardSeparators = true;
+        root.dashboardShowTray = true;
+        root.dashboardTrayLimit = 3;
+    }
+
     function applyDefaults() {
         root.loading = true;
         root.settingsPage = 0;
@@ -356,6 +417,14 @@ Scope {
         root.collapsedItems = ["time"];
         root.collapsedItemSpacing = 4;
         root.collapsedPadding = 14;
+        root.dashboardWidth = 420;
+        root.dashboardPadding = 14;
+        root.dashboardSpacing = 10;
+        root.dashboardMaxHeight = 100;
+        root.dashboardNotificationRows = 4;
+        root.dashboardSeparators = true;
+        root.dashboardShowTray = true;
+        root.dashboardTrayLimit = 3;
         root.showWorkspaceTags = true;
         root.showWindowInfo = true;
         root.showSystemStats = true;
@@ -399,6 +468,8 @@ Scope {
                     migratedPage += 1;
                 if (version < 19 && migratedPage >= 6)
                     migratedPage += 1;
+                if (version < 22 && migratedPage >= 2)
+                    migratedPage += 1;
                 root.settingsPage = root.clampPage(migratedPage);
                 root.expansionMode = parsed.expansionMode === "click" || parsed.expansionMode === "hover"
                     ? parsed.expansionMode
@@ -423,6 +494,14 @@ Scope {
                 root.collapsedItems = root.sanitizeCollapsedItems(parsed.collapsedItems);
                 root.collapsedItemSpacing = root.clampCollapsedItemSpacing(parsed.collapsedItemSpacing);
                 root.collapsedPadding = root.clampCollapsedPadding(parsed.collapsedPadding);
+                root.dashboardWidth = root.clampDashboardWidth(parsed.dashboardWidth);
+                root.dashboardPadding = root.clampDashboardPadding(parsed.dashboardPadding);
+                root.dashboardSpacing = root.clampDashboardSpacing(parsed.dashboardSpacing);
+                root.dashboardMaxHeight = root.clampDashboardMaxHeight(parsed.dashboardMaxHeight);
+                root.dashboardNotificationRows = root.clampDashboardNotificationRows(parsed.dashboardNotificationRows);
+                root.dashboardSeparators = parsed.dashboardSeparators === undefined ? true : !!parsed.dashboardSeparators;
+                root.dashboardShowTray = parsed.dashboardShowTray === undefined ? true : !!parsed.dashboardShowTray;
+                root.dashboardTrayLimit = root.clampDashboardTrayLimit(parsed.dashboardTrayLimit);
                 root.showWorkspaceTags = parsed.showWorkspaceTags === undefined ? true : !!parsed.showWorkspaceTags;
                 root.showWindowInfo = parsed.showWindowInfo === undefined ? true : !!parsed.showWindowInfo;
                 root.showSystemStats = parsed.showSystemStats === undefined ? true : !!parsed.showSystemStats;
@@ -473,7 +552,7 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 21,
+            "version": 22,
             "settingsPage": root.settingsPage,
             "expansionMode": root.expansionMode,
             "animationDuration": root.animationDuration,
@@ -498,6 +577,14 @@ Scope {
             "collapsedItems": root.collapsedItems,
             "collapsedItemSpacing": root.collapsedItemSpacing,
             "collapsedPadding": root.collapsedPadding,
+            "dashboardWidth": root.dashboardWidth,
+            "dashboardPadding": root.dashboardPadding,
+            "dashboardSpacing": root.dashboardSpacing,
+            "dashboardMaxHeight": root.dashboardMaxHeight,
+            "dashboardNotificationRows": root.dashboardNotificationRows,
+            "dashboardSeparators": root.dashboardSeparators,
+            "dashboardShowTray": root.dashboardShowTray,
+            "dashboardTrayLimit": root.dashboardTrayLimit,
             "showWorkspaceTags": root.showWorkspaceTags,
             "showWindowInfo": root.showWindowInfo,
             "showSystemStats": root.showSystemStats,
@@ -618,6 +705,46 @@ Scope {
     }
 
     onCollapsedPaddingChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onDashboardWidthChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onDashboardPaddingChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onDashboardSpacingChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onDashboardMaxHeightChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onDashboardNotificationRowsChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onDashboardSeparatorsChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onDashboardShowTrayChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onDashboardTrayLimitChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }

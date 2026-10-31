@@ -243,7 +243,7 @@ Rectangle {
         if (island.mode === "media")
             return 460;
         if (island.mode === "expanded")
-            return 420;
+            return island.dashboardWidth;
         if (island.mode === "layout")
             return 260;
         if (island.mode === "notificationsOff")
@@ -261,14 +261,21 @@ Rectangle {
         return 84;
     }
 
-    readonly property real dashboardSpacing: 10
-    readonly property real dashboardMargins: 28
+    readonly property int dashboardWidth: island.settings ? island.settings.dashboardWidth : 420
+    readonly property int dashboardPadding: island.settings ? island.settings.dashboardPadding : 14
+    readonly property int dashboardSpacing: island.settings ? island.settings.dashboardSpacing : 10
+    readonly property int dashboardMaxHeightPercent: island.settings ? island.settings.dashboardMaxHeight : 100
+    readonly property int dashboardNotificationRows: island.settings ? island.settings.dashboardNotificationRows : 4
+    readonly property bool dashboardSeparatorsVisible: island.settings ? island.settings.dashboardSeparators : true
+    readonly property bool dashboardTrayVisible: island.settings ? island.settings.dashboardShowTray : true
+    readonly property int dashboardTrayLimit: island.settings ? island.settings.dashboardTrayLimit : 3
 
     // Height of everything in the expanded dashboard except the notification list.
     readonly property real dashboardChromeHeight: {
+        const separator = island.dashboardSeparatorsVisible ? 1 : 0;
         // Top row, separator, navigation row, separator.
-        let height = 50 + 1 + 30 + 1;
-        let count = 4;
+        let height = 50 + separator + 30 + separator;
+        let count = separator > 0 ? 4 : 2;
         if (island.privacy && island.privacy.microphoneActive) {
             height += 26;
             count += 1;
@@ -278,12 +285,20 @@ Rectangle {
             count += 1;
         }
         if (island.showSystemStats && island.hasVisibleStats) {
-            height += 24 + 1;
-            count += 2;
+            height += 24;
+            count += 1;
+            if (separator > 0) {
+                height += separator;
+                count += 1;
+            }
         }
         if (island.showMedia && island.media && island.media.hasPlayer) {
-            height += 104 + 1;
-            count += 2;
+            height += 104;
+            count += 1;
+            if (separator > 0) {
+                height += separator;
+                count += 1;
+            }
         }
         if (island.showVolume) {
             height += 24;
@@ -297,20 +312,21 @@ Rectangle {
             height += 24;
             count += 1;
         }
-        if (island.showVolume) {
-            height += 1;
+        if (island.showVolume && separator > 0) {
+            height += separator;
             count += 1;
         }
         if (island.showNotifications) {
             height += 20;
             count += 1;
         }
-        return island.dashboardMargins + height
+        return island.dashboardPadding * 2 + height
             + Math.max(0, count - 1) * island.dashboardSpacing;
     }
 
     // Space the inline notification center needs: one row per group, plus the
-    // items of expanded groups. Capped so the list scrolls instead of growing forever.
+    // items of expanded groups. Capped by the configured row count so the list
+    // scrolls instead of growing forever.
     readonly property real dashboardNotificationsHeight: {
         if (!island.showNotifications)
             return 0;
@@ -329,7 +345,8 @@ Rectangle {
         content += Math.max(0, populatedGroups - 1) * 4;
         content += expandedItems * 3;
         content += 4;
-        return Math.max(66, Math.min(380, content));
+        const cap = Math.max(70, Math.min(560, island.dashboardNotificationRows * 70));
+        return Math.max(66, Math.min(cap, content));
     }
 
     readonly property real maxDashboardHeight: {
@@ -337,7 +354,8 @@ Rectangle {
         if (!screen || !screen.height)
             return 720;
         const scale = island.uiScale > 0 ? island.uiScale : 1;
-        return Math.max(320, Math.floor((screen.height - 24) / scale));
+        const percent = Math.max(40, Math.min(100, island.dashboardMaxHeightPercent));
+        return Math.max(320, Math.floor((screen.height * percent / 100 - 24) / scale));
     }
 
     readonly property int targetHeight: {
@@ -2628,8 +2646,8 @@ Rectangle {
     ColumnLayout {
         id: dashboard
         anchors.fill: parent
-        anchors.margins: 14
-        spacing: 10
+        anchors.margins: island.dashboardPadding
+        spacing: island.dashboardSpacing
         visible: island.mode === "expanded"
 
         RowLayout {
@@ -2786,9 +2804,10 @@ Rectangle {
                             required property var modelData
                             required property int index
 
-                            width: index < 3 ? 18 : 0
+                            width: index < island.dashboardTrayLimit ? 18 : 0
                             height: 18
-                            visible: index < 3
+                            visible: island.dashboardTrayVisible
+                                && index < island.dashboardTrayLimit
                             trayItem: modelData
                             host: island
                         }
@@ -2800,6 +2819,7 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 1
+            visible: island.dashboardSeparatorsVisible
             color: island.borderMutedColor
         }
 
@@ -3013,6 +3033,7 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 1
+            visible: island.dashboardSeparatorsVisible
             color: island.borderMutedColor
         }
 
@@ -3219,6 +3240,7 @@ Rectangle {
 
         Rectangle {
             visible: island.showSystemStats && island.hasVisibleStats
+                && island.dashboardSeparatorsVisible
             Layout.fillWidth: true
             Layout.preferredHeight: 1
             color: island.borderMutedColor
@@ -3246,6 +3268,7 @@ Rectangle {
 
         Rectangle {
             visible: island.showMedia && island.media && island.media.hasPlayer
+                && island.dashboardSeparatorsVisible
             Layout.fillWidth: true
             Layout.preferredHeight: 1
             color: island.borderMutedColor
@@ -3498,9 +3521,10 @@ Rectangle {
         }
 
         Rectangle {
-            visible: island.showVolume
+            visible: (island.showVolume
                 || (island.showBrightness && island.brightness && island.brightness.available)
-                || (island.showExternalBrightness && island.ddcBrightness && island.ddcBrightness.available)
+                || (island.showExternalBrightness && island.ddcBrightness && island.ddcBrightness.available))
+                && island.dashboardSeparatorsVisible
             Layout.fillWidth: true
             Layout.preferredHeight: 1
             color: island.borderMutedColor
