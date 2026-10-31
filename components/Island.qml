@@ -256,6 +256,85 @@ Rectangle {
         return 84;
     }
 
+    readonly property real dashboardSpacing: 10
+    readonly property real dashboardMargins: 28
+
+    // Height of everything in the expanded dashboard except the notification list.
+    readonly property real dashboardChromeHeight: {
+        // Top row, separator, navigation row, separator.
+        let height = 50 + 1 + 30 + 1;
+        let count = 4;
+        if (island.privacy && island.privacy.microphoneActive) {
+            height += 26;
+            count += 1;
+        }
+        if (island.privacy && island.privacy.screenActive) {
+            height += 26;
+            count += 1;
+        }
+        if (island.showSystemStats && island.hasVisibleStats) {
+            height += 24 + 1;
+            count += 2;
+        }
+        if (island.showMedia && island.media && island.media.hasPlayer) {
+            height += 104 + 1;
+            count += 2;
+        }
+        if (island.showVolume) {
+            height += 24;
+            count += 1;
+        }
+        if (island.showBrightness && island.brightness && island.brightness.available) {
+            height += 24;
+            count += 1;
+        }
+        if (island.showExternalBrightness && island.ddcBrightness && island.ddcBrightness.available) {
+            height += 24;
+            count += 1;
+        }
+        if (island.showVolume) {
+            height += 1;
+            count += 1;
+        }
+        if (island.showNotifications) {
+            height += 20;
+            count += 1;
+        }
+        return island.dashboardMargins + height
+            + Math.max(0, count - 1) * island.dashboardSpacing;
+    }
+
+    // Space the inline notification center needs: one row per group, plus the
+    // items of expanded groups. Capped so the list scrolls instead of growing forever.
+    readonly property real dashboardNotificationsHeight: {
+        if (!island.showNotifications)
+            return 0;
+        const groups = island.notifications ? island.notifications.groups : [];
+        let populatedGroups = 0;
+        let expandedItems = 0;
+        for (let i = 0; i < groups.length; ++i) {
+            const group = groups[i];
+            if (!group || !group.items || group.items.length === 0)
+                continue;
+            populatedGroups += 1;
+            if (group.expanded)
+                expandedItems += group.items.length;
+        }
+        let content = populatedGroups * 66 + expandedItems * 62;
+        content += Math.max(0, populatedGroups - 1) * 4;
+        content += expandedItems * 3;
+        content += 4;
+        return Math.max(66, Math.min(380, content));
+    }
+
+    readonly property real maxDashboardHeight: {
+        const screen = island.panelWindow ? island.panelWindow.screen : null;
+        if (!screen || !screen.height)
+            return 720;
+        const scale = island.uiScale > 0 ? island.uiScale : 1;
+        return Math.max(320, Math.floor((screen.height - 24) / scale));
+    }
+
     readonly property int targetHeight: {
         if (island.mode === "settings")
             return 420;
@@ -268,12 +347,8 @@ Rectangle {
         if (island.mode === "media")
             return 104;
         if (island.mode === "expanded") {
-            const noteCount = island.showNotifications && island.notifications
-                ? island.notifications.history.length
-                : 0;
-            if (noteCount <= 1)
-                return 420;
-            return Math.min(620, 420 + (noteCount - 1) * 54);
+            const desired = island.dashboardChromeHeight + island.dashboardNotificationsHeight;
+            return Math.round(Math.max(240, Math.min(island.maxDashboardHeight, desired)));
         }
         if (island.mode === "transient")
             return 36;
@@ -1728,7 +1803,13 @@ Rectangle {
             const desired = Math.round(visualLeft + island.width * island.uiScale / 2 - implicitWidth / 2);
             return Math.max(16, Math.min(desired, island.panelWindow.width - implicitWidth - 16));
         }
-        anchor.rect.y: Math.round(island.y + island.height * island.uiScale + 8)
+        anchor.rect.y: {
+            const below = Math.round(island.y + island.height * island.uiScale + 8);
+            const screen = island.panelWindow ? island.panelWindow.screen : null;
+            if (!screen || !screen.height)
+                return below;
+            return Math.max(8, Math.min(below, screen.height - implicitHeight - 16));
+        }
         visible: false
         grabFocus: true
         implicitWidth: 360
