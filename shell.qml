@@ -131,7 +131,7 @@ ShellRoot {
         aboveWindows: true
         WlrLayershell.namespace: "maneso"
         WlrLayershell.keyboardFocus: (island.settingsOpen || island.wifiMenuOpen
-            || island.bluetoothMenuOpen || island.powerMenuOpen)
+            || island.bluetoothMenuOpen || island.powerMenuOpen || island.pinned)
             ? WlrKeyboardFocus.Exclusive
             : (island.needsKeyboard ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None)
 
@@ -173,18 +173,22 @@ ShellRoot {
 
         function toggle(): void {
             root.pinned = !root.pinned;
+            island.hoverDismissed = !root.pinned;
         }
 
         function expand(): void {
             root.pinned = true;
+            island.hoverDismissed = false;
         }
 
         function collapse(): void {
             root.pinned = false;
+            island.hoverDismissed = true;
         }
 
         function setPinned(value: bool): void {
             root.pinned = value;
+            island.hoverDismissed = !root.pinned;
         }
 
         function isPinned(): bool {

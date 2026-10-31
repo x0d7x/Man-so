@@ -24,6 +24,7 @@ Rectangle {
     property var colors
     property var panelWindow
     property bool pinned: false
+    property bool hoverDismissed: false
     property bool pointerHovered: false
     property bool transientActive: false
     property bool layoutOsdActive: false
@@ -221,7 +222,7 @@ Rectangle {
             return "keyboardLayout";
         if (island.media && island.media.visible)
             return "media";
-        if ((island.pointerHovered && island.hoverExpansionEnabled) || island.wifiMenuOpen
+        if ((island.pointerHovered && island.hoverExpansionEnabled && !island.hoverDismissed) || island.wifiMenuOpen
             || island.bluetoothMenuOpen || (island.notifications && island.notifications.centerOpen))
             return "expanded";
         if (island.transientActive)
@@ -614,6 +615,39 @@ Rectangle {
         island.releaseHoverKeyboard();
     }
 
+    function closeDashboard() {
+        if (island.settingsOpen) {
+            island.closeSettings();
+            return true;
+        }
+        if (island.wifiMenuOpen) {
+            island.closeWifiMenu();
+            return true;
+        }
+        if (island.bluetoothMenuOpen) {
+            island.closeBluetoothMenu();
+            return true;
+        }
+        if (island.powerMenuOpen) {
+            island.closePowerMenu();
+            return true;
+        }
+        if (island.notifications && island.notifications.centerOpen) {
+            island.closeNotificationCenter();
+            return true;
+        }
+        if (island.pinned) {
+            island.pinRequested();
+            island.hoverDismissed = true;
+            return true;
+        }
+        if (island.pointerHovered && island.hoverExpansionEnabled) {
+            island.hoverDismissed = true;
+            return true;
+        }
+        return false;
+    }
+
     function togglePowerMenu() {
         if (!island.power)
             return;
@@ -660,8 +694,14 @@ Rectangle {
     }
 
     onPointerHoveredChanged: {
+        island.hoverDismissed = false;
         if (island.pointerHovered && island.mode === "media" && island.media)
             island.media.show();
+    }
+
+    onPinnedChanged: {
+        if (island.pinned)
+            island.hoverDismissed = false;
     }
 
     onModeChanged: {
@@ -865,6 +905,12 @@ Rectangle {
         sequence: "Esc"
         enabled: island.powerMenuOpen
         onActivated: island.closePowerMenu()
+    }
+
+    Shortcut {
+        sequence: "Esc"
+        enabled: island.mode === "expanded"
+        onActivated: island.closeDashboard()
     }
 
     FocusScope {
