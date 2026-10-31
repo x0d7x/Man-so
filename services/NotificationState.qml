@@ -17,6 +17,7 @@ Scope {
     property int maxHistory: 50
     property var expandedGroups: ({})
     property bool inhibited: false
+    property int activeTimeout: 0
 
     readonly property bool hasActive: root.active !== null
     readonly property bool activeCritical: root.active
@@ -173,15 +174,36 @@ Scope {
 
     function startDisplayTimer() {
         displayTimer.stop();
-        if (!root.active || root.isPersistent(root.active))
+        if (!root.active || root.isPersistent(root.active)) {
+            root.activeTimeout = 0;
             return;
+        }
 
         let timeout = root.active.expireTimeout > 0
             ? root.active.expireTimeout
             : root.defaultTimeout;
         timeout = Math.max(root.minTimeout, Math.min(root.maxTimeout, timeout));
+        root.activeTimeout = timeout;
         displayTimer.interval = timeout;
         displayTimer.restart();
+    }
+
+    function relativeTime(timestamp, now) {
+        const value = Number(timestamp);
+        if (!Number.isFinite(value) || value <= 0)
+            return "";
+        const current = now && now > 0 ? now : Date.now();
+        const diff = Math.max(0, current - value);
+        const minute = 60000;
+        if (diff < minute)
+            return "now";
+        if (diff < 60 * minute)
+            return Math.floor(diff / minute) + "m";
+        if (diff < 24 * 60 * minute)
+            return Math.floor(diff / (60 * minute)) + "h";
+        if (diff < 7 * 24 * 60 * minute)
+            return Math.floor(diff / (24 * 60 * minute)) + "d";
+        return Qt.formatDate(new Date(value), "dd MMM");
     }
 
     function advance() {

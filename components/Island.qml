@@ -270,6 +270,9 @@ Rectangle {
     readonly property bool dashboardTrayVisible: island.settings ? island.settings.dashboardShowTray : true
     readonly property int dashboardTrayLimit: island.settings ? island.settings.dashboardTrayLimit : 3
 
+    readonly property bool dashboardNotificationsVisible: island.showNotifications
+        && !(island.notifications && island.notifications.centerOpen)
+
     // Height of everything in the expanded dashboard except the notification list.
     readonly property real dashboardChromeHeight: {
         const separator = island.dashboardSeparatorsVisible ? 1 : 0;
@@ -316,8 +319,8 @@ Rectangle {
             height += separator;
             count += 1;
         }
-        if (island.showNotifications) {
-            height += 20;
+        if (island.dashboardNotificationsVisible) {
+            height += 22;
             count += 1;
         }
         return island.dashboardPadding * 2 + height
@@ -328,7 +331,7 @@ Rectangle {
     // items of expanded groups. Capped by the configured row count so the list
     // scrolls instead of growing forever.
     readonly property real dashboardNotificationsHeight: {
-        if (!island.showNotifications)
+        if (!island.dashboardNotificationsVisible)
             return 0;
         const groups = island.notifications ? island.notifications.groups : [];
         let populatedGroups = 0;
@@ -341,12 +344,12 @@ Rectangle {
             if (group.expanded)
                 expandedItems += group.items.length;
         }
-        let content = populatedGroups * 66 + expandedItems * 62;
-        content += Math.max(0, populatedGroups - 1) * 4;
-        content += expandedItems * 3;
+        let content = populatedGroups * 86 + expandedItems * 64;
+        content += Math.max(0, populatedGroups - 1) * 8;
+        content += expandedItems * 5;
         content += 4;
-        const cap = Math.max(70, Math.min(560, island.dashboardNotificationRows * 70));
-        return Math.max(66, Math.min(cap, content));
+        const cap = Math.max(96, Math.min(768, island.dashboardNotificationRows * 96));
+        return Math.max(86, Math.min(cap, content));
     }
 
     readonly property real maxDashboardHeight: {
@@ -367,8 +370,10 @@ Rectangle {
             return 420;
         if (island.mode === "power")
             return 260;
-        if (island.mode === "notification")
-            return 104;
+        if (island.mode === "notification") {
+            const actionCount = island.notifications ? island.notifications.activeActions.length : 0;
+            return actionCount > 0 ? 124 : 106;
+        }
         if (island.mode === "media")
             return 104;
         if (island.mode === "expanded") {
@@ -2129,8 +2134,8 @@ Rectangle {
         }
         visible: false
         grabFocus: true
-        implicitWidth: 360
-        implicitHeight: 420
+        implicitWidth: 400
+        implicitHeight: 480
         color: "transparent"
 
         onVisibleChanged: {
@@ -2145,11 +2150,23 @@ Rectangle {
 
         Rectangle {
             anchors.fill: parent
-            radius: 14
+            radius: 18
             color: Qt.rgba(island.bgColor.r, island.bgColor.g, island.bgColor.b, 0.98)
             border.width: 1
-            border.color: island.borderMutedColor
+            border.color: Qt.rgba(island.borderMutedColor.r, island.borderMutedColor.g, island.borderMutedColor.b, 0.8)
             clip: true
+
+            Rectangle {
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.topMargin: 1
+                anchors.leftMargin: 18
+                anchors.rightMargin: 18
+                height: 1
+                radius: 1
+                color: Qt.rgba(1, 1, 1, 0.06)
+            }
 
             FocusScope {
                 id: notificationCenterEscapeFocus
@@ -2167,38 +2184,86 @@ Rectangle {
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 10
-                spacing: 8
+                anchors.margins: 14
+                spacing: 12
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 6
+                    spacing: 10
 
-                    Text {
-                        text: "NOTIFICATION CENTER"
-                        color: island.mutedColor
-                        font.family: island.monoFont
-                        font.pixelSize: Math.round(10 * island.fontScale)
-                        font.weight: Font.DemiBold
+                    Rectangle {
+                        Layout.preferredWidth: 34
+                        Layout.preferredHeight: 34
+                        radius: 10
+                        color: Qt.rgba(island.accentColor.r, island.accentColor.g, island.accentColor.b, 0.14)
+                        border.width: 1
+                        border.color: Qt.rgba(island.accentColor.r, island.accentColor.g, island.accentColor.b, 0.32)
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰂚"
+                            color: island.accentColor
+                            font.family: island.monoFont
+                            font.pixelSize: Math.round(16 * island.fontScale)
+                        }
                     }
 
-                    Text {
-                        text: island.notifications ? island.notifications.history.length : "0"
-                        color: island.borderColor
-                        font.family: island.monoFont
-                        font.pixelSize: Math.round(9 * island.fontScale)
+                    ColumnLayout {
+                        spacing: 1
+
+                        Text {
+                            text: "Notifications"
+                            color: island.fgColor
+                            font.family: island.monoFont
+                            font.pixelSize: Math.round(12 * island.fontScale)
+                            font.weight: Font.Bold
+                            font.letterSpacing: 0.2
+                        }
+
+                        Text {
+                            text: {
+                                if (!island.notifications)
+                                    return "0 total";
+                                const total = island.notifications.history.length;
+                                const apps = island.notifications.groups.length;
+                                return total + (total === 1 ? " notification" : " notifications")
+                                    + (apps > 1 ? " · " + apps + " apps" : "");
+                            }
+                            color: island.mutedColor
+                            font.family: island.monoFont
+                            font.pixelSize: Math.round(8 * island.fontScale)
+                        }
                     }
 
                     Item {
                         Layout.fillWidth: true
                     }
 
-                    Text {
-                        text: "CLEAR"
-                        color: island.mutedColor
-                        font.family: island.monoFont
-                        font.pixelSize: Math.round(8 * island.fontScale)
-                        font.weight: Font.DemiBold
+                    Rectangle {
+                        visible: island.notifications && island.notifications.history.length > 0
+                        Layout.preferredWidth: popupClearLabel.implicitWidth + 20
+                        Layout.preferredHeight: 26
+                        radius: 8
+                        color: popupClearHover.hovered
+                            ? Qt.rgba(island.accentColor.r, island.accentColor.g, island.accentColor.b, 0.2)
+                            : Qt.rgba(island.surfaceHighColor.r, island.surfaceHighColor.g, island.surfaceHighColor.b, 0.5)
+                        border.width: 1
+                        border.color: Qt.rgba(island.borderMutedColor.r, island.borderMutedColor.g, island.borderMutedColor.b, 0.5)
+
+                        Text {
+                            id: popupClearLabel
+                            anchors.centerIn: parent
+                            text: "CLEAR ALL"
+                            color: popupClearHover.hovered ? island.accentColor : island.mutedColor
+                            font.family: island.monoFont
+                            font.pixelSize: Math.round(7 * island.fontScale)
+                            font.weight: Font.Bold
+                            font.letterSpacing: 0.5
+                        }
+
+                        HoverHandler {
+                            id: popupClearHover
+                        }
 
                         MouseArea {
                             anchors.fill: parent
@@ -2212,15 +2277,27 @@ Rectangle {
                     }
 
                     Item {
-                        Layout.preferredWidth: 20
-                        Layout.preferredHeight: 20
+                        Layout.preferredWidth: 26
+                        Layout.preferredHeight: 26
 
-                        Text {
-                            anchors.centerIn: parent
-                            text: "󰅖"
-                            color: island.mutedColor
-                            font.family: island.monoFont
-                            font.pixelSize: Math.round(12 * island.fontScale)
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: 8
+                            color: popupCloseHover.hovered
+                                ? Qt.rgba(island.surfaceHighColor.r, island.surfaceHighColor.g, island.surfaceHighColor.b, 0.8)
+                                : Qt.rgba(island.surfaceHighColor.r, island.surfaceHighColor.g, island.surfaceHighColor.b, 0.4)
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "󰅖"
+                                color: island.mutedColor
+                                font.family: island.monoFont
+                                font.pixelSize: Math.round(12 * island.fontScale)
+                            }
+                        }
+
+                        HoverHandler {
+                            id: popupCloseHover
                         }
 
                         MouseArea {
@@ -2234,7 +2311,7 @@ Rectangle {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 1
-                    color: island.borderMutedColor
+                    color: Qt.rgba(island.borderMutedColor.r, island.borderMutedColor.g, island.borderMutedColor.b, 0.6)
                 }
 
                 NotificationList {
@@ -2244,6 +2321,7 @@ Rectangle {
                     monoFont: island.monoFont
                     fontScale: island.fontScale
                     showImages: island.showNotificationImages
+                    accentColor: island.accentColor
                     surfaceHighColor: island.surfaceHighColor
                     fgColor: island.fgColor
                     mutedColor: island.mutedColor
@@ -2276,6 +2354,7 @@ Rectangle {
         anchors.fill: parent
         visible: island.mode === "notification"
         notifications: island.notifications
+        showImages: island.showNotificationImages
         fontScale: island.fontScale
         monoFont: island.monoFont
         bgColor: island.bgColor
@@ -3531,41 +3610,80 @@ Rectangle {
         }
 
         ColumnLayout {
-            visible: island.showNotifications
+            visible: island.dashboardNotificationsVisible
             Layout.fillWidth: true
             Layout.fillHeight: true
             spacing: 3
 
             RowLayout {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 20
+                Layout.preferredHeight: 22
                 spacing: 6
 
+                Rectangle {
+                    Layout.preferredWidth: 20
+                    Layout.preferredHeight: 20
+                    radius: 6
+                    color: Qt.rgba(island.accentColor.r, island.accentColor.g, island.accentColor.b, 0.14)
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "󰂚"
+                        color: island.accentColor
+                        font.family: island.monoFont
+                        font.pixelSize: Math.round(10 * island.fontScale)
+                    }
+                }
+
                 Text {
-                    text: "NOTIFICATION CENTER"
-                    color: island.mutedColor
+                    text: "Notifications"
+                    color: island.fgColor
                     font.family: island.monoFont
                     font.pixelSize: Math.round(9 * island.fontScale)
                     font.weight: Font.DemiBold
                 }
 
-                Text {
-                    text: island.notifications ? island.notifications.history.length : "0"
-                    color: island.borderColor
-                    font.family: island.monoFont
-                    font.pixelSize: Math.round(8 * island.fontScale)
+                Rectangle {
+                    visible: island.notifications && island.notifications.history.length > 0
+                    Layout.preferredWidth: dashCountLabel.implicitWidth + 10
+                    Layout.preferredHeight: 15
+                    radius: 7.5
+                    color: Qt.rgba(island.surfaceHighColor.r, island.surfaceHighColor.g, island.surfaceHighColor.b, 0.7)
+
+                    Text {
+                        id: dashCountLabel
+                        anchors.centerIn: parent
+                        text: island.notifications ? island.notifications.history.length : "0"
+                        color: island.mutedColor
+                        font.family: island.monoFont
+                        font.pixelSize: Math.round(7 * island.fontScale)
+                        font.weight: Font.Bold
+                    }
                 }
 
                 Item {
                     Layout.fillWidth: true
                 }
 
-                Text {
-                    text: "CLEAR"
-                    color: clearHover.hovered ? island.accentColor : island.mutedColor
-                    font.family: island.monoFont
-                    font.pixelSize: Math.round(8 * island.fontScale)
-                    font.weight: Font.DemiBold
+                Rectangle {
+                    visible: island.notifications && island.notifications.history.length > 0
+                    Layout.preferredWidth: dashClearLabel.implicitWidth + 14
+                    Layout.preferredHeight: 18
+                    radius: 6
+                    color: clearHover.hovered
+                        ? Qt.rgba(island.accentColor.r, island.accentColor.g, island.accentColor.b, 0.2)
+                        : Qt.rgba(island.surfaceHighColor.r, island.surfaceHighColor.g, island.surfaceHighColor.b, 0.5)
+
+                    Text {
+                        id: dashClearLabel
+                        anchors.centerIn: parent
+                        text: "CLEAR"
+                        color: clearHover.hovered ? island.accentColor : island.mutedColor
+                        font.family: island.monoFont
+                        font.pixelSize: Math.round(7 * island.fontScale)
+                        font.weight: Font.Bold
+                        font.letterSpacing: 0.4
+                    }
 
                     HoverHandler {
                         id: clearHover
@@ -3589,6 +3707,7 @@ Rectangle {
                 monoFont: island.monoFont
                 fontScale: island.fontScale
                 showImages: island.showNotificationImages
+                accentColor: island.accentColor
                 surfaceHighColor: island.surfaceHighColor
                 fgColor: island.fgColor
                 mutedColor: island.mutedColor
@@ -3599,7 +3718,7 @@ Rectangle {
         }
 
         Item {
-            visible: !island.showNotifications
+            visible: !island.dashboardNotificationsVisible
             Layout.fillWidth: true
             Layout.fillHeight: true
         }
