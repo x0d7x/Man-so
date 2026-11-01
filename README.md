@@ -85,6 +85,8 @@ The island keeps its existing `island` IPC target so that current scripts and
 keybindings continue to work:
 
 ```sh
+qs -c maneso ipc show                    # list registered functions
+qs -c maneso ipc call island help        # human-readable command list
 qs -c maneso ipc call island toggle
 qs -c maneso ipc call island status
 qs -c maneso ipc call island toggleNotifications

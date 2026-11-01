@@ -172,6 +172,41 @@ ShellRoot {
     IpcHandler {
         target: "island"
 
+        function help(): string {
+            return [
+                "manēso island IPC",
+                "",
+                "Usage: qs -c maneso ipc call island <command> [args]",
+                "List the registered functions with: qs -c maneso ipc show",
+                "",
+                "ISLAND",
+                "  toggle                  Toggle pinned/expanded state",
+                "  expand                  Pin the island open",
+                "  collapse                Unpin the island",
+                "  setPinned <bool>        Set pinned state (true/false)",
+                "  isPinned                Print pinned state",
+                "  status                  Print \"pinned\" or \"collapsed\"",
+                "  mode                    Print the current island mode",
+                "  hovered                 Print pointer hover state",
+                "  geometry                Print island and panel geometry",
+                "  reloadTheme             Reload Matugen colors",
+                "",
+                "NOTIFICATIONS",
+                "  toggleNotifications     Toggle the notification-center popup",
+                "  clearNotifications      Clear notification history",
+                "  inhibitNotifications    Mute notification popups",
+                "  uninhibitNotifications  Unmute notification popups",
+                "  notificationsInhibited  Print inhibit state",
+                "",
+                "SETTINGS & PRIVACY",
+                "  toggleSettings          Toggle the settings panel",
+                "  privacyStatus           Print privacy session diagnostics",
+                "",
+                "HELP",
+                "  help                    Show this help"
+            ].join("\n");
+        }
+
         function toggle(): void {
             root.pinned = !root.pinned;
             island.hoverDismissed = !root.pinned;
