@@ -12,6 +12,8 @@
   </tr>
 </table>
 
+![Demo](docs/demo.gif)
+
 ## Features
 
 - Animated island with hover or click expansion
