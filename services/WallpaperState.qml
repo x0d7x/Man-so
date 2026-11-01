@@ -12,7 +12,7 @@ Scope {
     property var mango
 
     readonly property var imageExtensions: ["jpg", "jpeg", "png", "webp", "gif"]
-    readonly property int maxRotationAttempts: 5
+    readonly property int maxSkipAttempts: 10
     readonly property string homeDir: Quickshell.env("HOME") || ""
     readonly property string stateDir: (Quickshell.env("XDG_STATE_HOME") || (root.homeDir + "/.local/state")) + "/maneso"
     readonly property string statePath: root.stateDir + "/wallpaper.json"
@@ -31,7 +31,10 @@ Scope {
     property string pendingPath: ""
     property string pendingOrigin: "manual"
     property string lastFailedPath: ""
-    property int rotationAttempts: 0
+    property int skipAttempts: 0
+    property var knownOutputs: null
+    property var newOutputs: []
+    property int restoreAttempts: 0
     property var hookQueue: []
 
     // Veila reads its lock background from this file; keep it in sync.
@@ -97,10 +100,27 @@ Scope {
             root.lastError = "not a supported image: " + target;
             return false;
         }
+        root.skipAttempts = 0;
         return root.apply(target, "manual");
     }
 
+    // Public entry points start a fresh skip chain. Retries call pickRandom/step directly.
     function randomWallpaper() {
+        root.skipAttempts = 0;
+        return root.pickRandom("random");
+    }
+
+    function nextWallpaper() {
+        root.skipAttempts = 0;
+        return root.step(1, "", "next");
+    }
+
+    function previousWallpaper() {
+        root.skipAttempts = 0;
+        return root.step(-1, "", "previous");
+    }
+
+    function pickRandom(origin) {
         const list = root.files;
         if (list.length === 0) {
             root.lastError = "no images in " + root.directory;
@@ -109,30 +129,25 @@ Scope {
         }
         const pool = list.filter(p => p !== root.currentPath && p !== root.lastFailedPath);
         const choices = pool.length > 0 ? pool : list;
-        return root.apply(choices[Math.floor(Math.random() * choices.length)], "manual");
+        return root.apply(choices[Math.floor(Math.random() * choices.length)], origin);
     }
 
-    function stepWallpaper(delta) {
+    // Steps from `from` (the current image when empty). Retries pass the failed file
+    // as `from`, so a broken image is skipped instead of being picked again.
+    function step(delta, from, origin) {
         const list = root.files;
         if (list.length === 0) {
             root.lastError = "no images in " + root.directory;
             root.refresh();
             return false;
         }
-        let index = list.indexOf(root.currentPath);
+        const base = from.length > 0 ? from : root.currentPath;
+        let index = list.indexOf(base);
         if (index < 0)
             index = delta > 0 ? 0 : list.length - 1;
         else
             index = (index + delta + list.length) % list.length;
-        return root.apply(list[index], "manual");
-    }
-
-    function nextWallpaper() {
-        return root.stepWallpaper(1);
-    }
-
-    function previousWallpaper() {
-        return root.stepWallpaper(-1);
+        return root.apply(list[index], origin);
     }
 
     function apply(path, origin) {
@@ -191,7 +206,7 @@ Scope {
         if (exitCode === 0) {
             root.currentPath = path;
             root.lastError = "";
-            root.rotationAttempts = 0;
+            root.skipAttempts = 0;
             root.lastFailedPath = "";
             root.saveState();
             root.queueHooks(path);
@@ -205,11 +220,28 @@ Scope {
             const next = root.pendingPath;
             const nextOrigin = root.pendingOrigin;
             root.pendingPath = "";
+            root.skipAttempts = 0;
             root.apply(next, nextOrigin);
-        } else if (exitCode !== 0 && origin === "rotation" && root.rotationAttempts < root.maxRotationAttempts) {
-            root.rotationAttempts += 1;
-            root.randomWallpaper();
+        } else if (exitCode !== 0 && origin !== "manual") {
+            root.retryAfterFailure(origin, path);
         }
+    }
+
+    // An automatic or stepping request hit an unreadable file: try the next candidate,
+    // up to maxSkipAttempts times, then stop with the last error.
+    function retryAfterFailure(origin, failedPath) {
+        if (root.skipAttempts >= root.maxSkipAttempts) {
+            root.lastError = "stopped after " + root.skipAttempts + " unreadable images; " + root.lastError;
+            root.skipAttempts = 0;
+            return;
+        }
+        root.skipAttempts += 1;
+        if (origin === "next")
+            root.step(1, failedPath, "next");
+        else if (origin === "previous")
+            root.step(-1, failedPath, "previous");
+        else
+            root.pickRandom(origin);
     }
 
     function queueHooks(path) {
@@ -270,7 +302,10 @@ Scope {
     onDirectoryChanged: root.refresh()
     onReadyChanged: root.refresh()
 
-    Component.onCompleted: mkdirProcess.running = true
+    Component.onCompleted: {
+        mkdirProcess.running = true;
+        root.knownOutputs = root.screenNames();
+    }
 
     Process {
         id: mkdirProcess
@@ -328,12 +363,102 @@ Scope {
         }
     }
 
+    // Hotplug: restore the current image on outputs that appear later. Only the awww
+    // backend needs this; the quickshell layer follows Quickshell.screens by itself.
+    function screenNames() {
+        const names = [];
+        const screens = Quickshell.screens;
+        for (let i = 0; i < screens.length; ++i) {
+            if (screens[i] && screens[i].name)
+                names.push(screens[i].name);
+        }
+        return names;
+    }
+
+    function handleScreensChanged() {
+        const names = root.screenNames();
+        const known = root.knownOutputs;
+        root.knownOutputs = names;
+        if (known === null)
+            return;
+        for (let i = 0; i < names.length; ++i) {
+            if (known.indexOf(names[i]) < 0 && root.newOutputs.indexOf(names[i]) < 0)
+                root.newOutputs = root.newOutputs.concat([names[i]]);
+        }
+        if (root.newOutputs.length > 0)
+            restoreTimer.restart();
+    }
+
+    function restoreNewOutputs() {
+        if (restoreProcess.running) {
+            restoreTimer.restart();
+            return;
+        }
+        const outputs = root.newOutputs;
+        if (outputs.length === 0)
+            return;
+        if (!root.settings || root.settings.wallpaperBackend !== "awww" || root.currentPath.length === 0) {
+            root.newOutputs = [];
+            return;
+        }
+        restoreProcess.command = [
+            "awww", "img",
+            "--resize", root.awwwResize(root.settings.wallpaperFit),
+            "--transition-type", "none",
+            "--transition-duration", "0",
+            "--transition-fps", "60",
+            "--outputs", outputs.join(","),
+            root.currentPath
+        ];
+        restoreProcess.running = true;
+    }
+
+    Connections {
+        target: Quickshell
+
+        function onScreensChanged() {
+            root.handleScreensChanged();
+        }
+    }
+
+    Timer {
+        id: restoreTimer
+        // Give the compositor a moment to finish creating the new output.
+        interval: 500
+        onTriggered: root.restoreNewOutputs()
+    }
+
+    Process {
+        id: restoreProcess
+        stderr: StdioCollector {
+            id: restoreError
+        }
+
+        onExited: exitCode => {
+            if (exitCode === 0) {
+                root.newOutputs = [];
+                root.restoreAttempts = 0;
+            } else if (root.restoreAttempts < 4) {
+                // The output may not be ready yet; retry the same outputs shortly.
+                root.restoreAttempts += 1;
+                restoreTimer.restart();
+            } else {
+                root.newOutputs = [];
+                root.restoreAttempts = 0;
+                root.lastError = "restore to new output failed: " + restoreError.text.trim();
+            }
+        }
+    }
+
     Timer {
         id: rotateTimer
         interval: Math.max(1, root.rotateMinutes) * 60000
         repeat: true
         running: root.ready && root.rotateMinutes > 0
-        onTriggered: root.randomWallpaper()
+        onTriggered: {
+            root.skipAttempts = 0;
+            root.pickRandom("rotation");
+        }
     }
 
     FileView {
