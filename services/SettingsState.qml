@@ -87,7 +87,7 @@ Scope {
         const page = Number(value);
         if (!Number.isFinite(page))
             return 0;
-        return Math.max(0, Math.min(9, Math.round(page)));
+        return Math.max(0, Math.min(11, Math.round(page)));
     }
 
     function clampAnimationDuration(value) {
@@ -333,6 +333,19 @@ Scope {
         root.datePill = true;
     }
 
+    function resetIsland() {
+        root.resetCollapsedItems();
+        root.resetDate();
+    }
+
+    function resetNotifications() {
+        root.showNotifications = true;
+        root.showUnreadBell = true;
+        root.notificationOsdTimeout = 6000;
+        root.notificationHistoryLimit = 50;
+        root.showNotificationImages = true;
+    }
+
     function resetMango() {
         root.workspaceVisibility = "all";
         root.showOccupiedIndicator = true;
@@ -353,8 +366,6 @@ Scope {
         root.showVolume = true;
         root.showBrightness = true;
         root.showExternalBrightness = true;
-        root.showNotifications = true;
-        root.showUnreadBell = true;
         root.volumeStep = 2;
         root.volumeOsdTimeout = 1500;
         root.brightnessOsdTimeout = 1500;
@@ -368,9 +379,6 @@ Scope {
         root.showMediaArtwork = true;
         root.showMediaProgress = true;
         root.mediaOsdTimeout = 4000;
-        root.notificationOsdTimeout = 6000;
-        root.notificationHistoryLimit = 50;
-        root.showNotificationImages = true;
         root.showBluetoothStatus = true;
     }
 
@@ -427,9 +435,6 @@ Scope {
         root.showMediaArtwork = true;
         root.showMediaProgress = true;
         root.mediaOsdTimeout = 4000;
-        root.notificationOsdTimeout = 6000;
-        root.notificationHistoryLimit = 50;
-        root.showNotificationImages = true;
         root.showBluetoothStatus = true;
         root.privacyEnabled = true;
         root.privacyMicrophoneEnabled = true;
@@ -506,6 +511,12 @@ Scope {
                     migratedPage += 1;
                 if (version < 22 && migratedPage >= 2)
                     migratedPage += 1;
+                if (version < 25) {
+                    if (migratedPage >= 2)
+                        migratedPage += 1;
+                    if (migratedPage >= 4)
+                        migratedPage += 1;
+                }
                 root.settingsPage = root.clampPage(migratedPage);
                 root.expansionMode = parsed.expansionMode === "click" || parsed.expansionMode === "hover"
                     ? parsed.expansionMode
@@ -593,7 +604,7 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 24,
+            "version": 25,
             "settingsPage": root.settingsPage,
             "expansionMode": root.expansionMode,
             "animationDuration": root.animationDuration,

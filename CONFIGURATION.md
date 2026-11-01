@@ -98,7 +98,7 @@ Available `collapsedItems` keys are `time`, `date`, `workspace`, `window`,
 | `datePill`      | Give the date a subtle pill background   | `true`     | `true`, `false`                         |
 
 Add `date` to `collapsedItems` to show it; use the Date section in
-Settings → Modules to pick a format preset and style.
+Settings → Island to pick a format preset and style.
 
 ### Power
 

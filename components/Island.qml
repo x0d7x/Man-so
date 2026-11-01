@@ -235,7 +235,7 @@ Rectangle {
 
     readonly property int targetWidth: {
         if (island.mode === "settings")
-            return 560;
+            return 720;
         if (island.mode === "wifi")
             return 380;
         if (island.mode === "bluetooth")
@@ -367,7 +367,7 @@ Rectangle {
 
     readonly property int targetHeight: {
         if (island.mode === "settings")
-            return 420;
+            return 560;
         if (island.mode === "wifi")
             return 420;
         if (island.mode === "bluetooth")

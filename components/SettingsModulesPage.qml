@@ -12,41 +12,6 @@ Item {
     property color onAccentColor
     property color surfaceHighColor
 
-    readonly property var clockOption: { "key": "time", "label": "Clock", "icon": "󰥔" }
-    readonly property var collapsedOptions: [
-        { "key": "date", "label": "Date", "icon": "󰃭" },
-        { "key": "workspace", "label": "Workspace", "icon": "󰅬" },
-        { "key": "window", "label": "Window", "icon": "󰖲" },
-        { "key": "layout", "label": "Layout", "icon": "󰕴" },
-        { "key": "cpu", "label": "CPU", "icon": "󰻠" },
-        { "key": "ram", "label": "RAM", "icon": "󰍛" },
-        { "key": "temp", "label": "Temp", "icon": "󰔏" },
-        { "key": "battery", "label": "Battery", "icon": "󰁹" },
-        { "key": "wifi", "label": "Wi-Fi", "icon": "󰤨" },
-        { "key": "bluetooth", "label": "Bluetooth", "icon": "󰂯" },
-        { "key": "power", "label": "Power", "icon": "󰾅" },
-        { "key": "volume", "label": "Volume", "icon": "󰕾" },
-        { "key": "brightness", "label": "Brightness", "icon": "󰃠" },
-        { "key": "externalBrightness", "label": "Ext. brightness", "icon": "󰃠" },
-        { "key": "media", "label": "Media", "icon": "󰎆" },
-        { "key": "notifications", "label": "Notifications", "icon": "󰂚" },
-        { "key": "tray", "label": "Tray", "icon": "󰀻" }
-    ]
-
-    function optionInfo(key) {
-        if (key === "time")
-            return page.clockOption;
-        for (let i = 0; i < page.collapsedOptions.length; ++i) {
-            if (page.collapsedOptions[i].key === key)
-                return page.collapsedOptions[i];
-        }
-        return { "key": key, "label": key, "icon": "" };
-    }
-
-    function dateExample(pattern) {
-        return Qt.formatDate(new Date(), pattern);
-    }
-
     Flickable {
         anchors.fill: parent
         clip: true
@@ -59,7 +24,7 @@ Item {
             spacing: 6
 
             Text {
-                text: "Island Modules"
+                text: "Modules"
                 color: page.fgColor
                 font.family: page.monoFont
                 font.pixelSize: 14
@@ -68,7 +33,7 @@ Item {
 
             Text {
                 Layout.fillWidth: true
-                text: "Choose which modules appear in the expanded dashboard. Temporary OSDs are unchanged."
+                text: "Choose which modules appear in the dashboard, then fine-tune how they behave."
                 color: page.mutedColor
                 font.family: page.monoFont
                 font.pixelSize: 9
@@ -173,34 +138,6 @@ Item {
                 onToggled: if (page.settings) page.settings.showExternalBrightness = !page.settings.showExternalBrightness
             }
 
-            SettingsToggleRow {
-                Layout.fillWidth: true
-                label: "Notifications"
-                description: "Show recent notifications and the notification center entry."
-                checked: page.settings ? page.settings.showNotifications : true
-                monoFont: page.monoFont
-                fgColor: page.fgColor
-                mutedColor: page.mutedColor
-                accentColor: page.accentColor
-                onAccentColor: page.onAccentColor
-                surfaceHighColor: page.surfaceHighColor
-                onToggled: if (page.settings) page.settings.showNotifications = !page.settings.showNotifications
-            }
-
-            SettingsToggleRow {
-                Layout.fillWidth: true
-                label: "Unread bell"
-                description: "Show a bell in the collapsed Island when a new notification arrives."
-                checked: page.settings ? page.settings.showUnreadBell : true
-                monoFont: page.monoFont
-                fgColor: page.fgColor
-                mutedColor: page.mutedColor
-                accentColor: page.accentColor
-                onAccentColor: page.onAccentColor
-                surfaceHighColor: page.surfaceHighColor
-                onToggled: if (page.settings) page.settings.showUnreadBell = !page.settings.showUnreadBell
-            }
-
             Text {
                 text: "MODULE DETAILS"
                 color: page.mutedColor
@@ -212,7 +149,7 @@ Item {
 
             Text {
                 Layout.fillWidth: true
-                text: "Fine-tune audio, network, display, system, media, notifications, and Bluetooth behavior."
+                text: "Audio, network, display, system, media and Bluetooth behavior."
                 color: page.mutedColor
                 font.family: page.monoFont
                 font.pixelSize: 8
@@ -315,380 +252,6 @@ Item {
                     if (page.settings)
                         page.settings.brightnessOsdTimeout = value;
                 }
-            }
-
-            Text {
-                text: "CLOCK ITEMS"
-                color: page.mutedColor
-                font.family: page.monoFont
-                font.pixelSize: 7
-                font.weight: Font.DemiBold
-                font.letterSpacing: 0.5
-            }
-
-            Text {
-                Layout.fillWidth: true
-                text: "Selected items appear next to the clock in the collapsed Island. Selection order is preserved."
-                color: page.mutedColor
-                font.family: page.monoFont
-                font.pixelSize: 8
-                wrapMode: Text.Wrap
-            }
-
-            GridLayout {
-                Layout.fillWidth: true
-                columns: 2
-                columnSpacing: 6
-                rowSpacing: 6
-
-                Repeater {
-                    model: page.collapsedOptions
-
-                    delegate: Rectangle {
-                        id: collapsedChip
-
-                        required property var modelData
-
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 28
-                        radius: 7
-                        color: page.settings && page.settings.hasCollapsedItem(collapsedChip.modelData.key)
-                            ? page.accentColor
-                            : (collapsedHover.hovered
-                                ? Qt.rgba(page.surfaceHighColor.r, page.surfaceHighColor.g, page.surfaceHighColor.b, 0.8)
-                                : Qt.rgba(page.surfaceHighColor.r, page.surfaceHighColor.g, page.surfaceHighColor.b, 0.4))
-
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 8
-                            anchors.rightMargin: 8
-                            spacing: 6
-
-                            Text {
-                                text: collapsedChip.modelData.icon
-                                color: page.settings && page.settings.hasCollapsedItem(collapsedChip.modelData.key)
-                                    ? page.onAccentColor
-                                    : page.accentColor
-                                font.family: page.monoFont
-                                font.pixelSize: 12
-                            }
-
-                            Text {
-                                Layout.fillWidth: true
-                                text: collapsedChip.modelData.label
-                                color: page.settings && page.settings.hasCollapsedItem(collapsedChip.modelData.key)
-                                    ? page.onAccentColor
-                                    : page.fgColor
-                                font.family: page.monoFont
-                                font.pixelSize: 9
-                                font.weight: Font.DemiBold
-                                elide: Text.ElideRight
-                            }
-                        }
-
-                        HoverHandler {
-                            id: collapsedHover
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: if (page.settings) page.settings.toggleCollapsedItem(collapsedChip.modelData.key)
-                        }
-                    }
-                }
-            }
-
-            SettingsToggleRow {
-                Layout.fillWidth: true
-                label: "Privacy indicator"
-                description: "Show microphone and screen activity in the collapsed Island."
-                checked: page.settings ? page.settings.privacyShowCollapsed : true
-                monoFont: page.monoFont
-                fgColor: page.fgColor
-                mutedColor: page.mutedColor
-                accentColor: page.accentColor
-                onAccentColor: page.onAccentColor
-                surfaceHighColor: page.surfaceHighColor
-                onToggled: if (page.settings) page.settings.privacyShowCollapsed = !page.settings.privacyShowCollapsed
-            }
-
-            Text {
-                text: "ORDER"
-                color: page.mutedColor
-                font.family: page.monoFont
-                font.pixelSize: 7
-                font.weight: Font.DemiBold
-                font.letterSpacing: 0.5
-            }
-
-            Text {
-                Layout.fillWidth: true
-                text: "Move items, including the clock, left or right."
-                color: page.mutedColor
-                font.family: page.monoFont
-                font.pixelSize: 8
-            }
-
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 4
-
-                Repeater {
-                    model: page.settings ? page.settings.collapsedItems : ["time"]
-
-                    delegate: Rectangle {
-                        id: orderRow
-
-                        required property string modelData
-                        required property int index
-
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 27
-                        radius: 7
-                        color: Qt.rgba(page.surfaceHighColor.r, page.surfaceHighColor.g, page.surfaceHighColor.b, 0.35)
-
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 8
-                            anchors.rightMargin: 6
-                            spacing: 6
-
-                            Text {
-                                text: page.optionInfo(orderRow.modelData).icon
-                                color: page.accentColor
-                                font.family: page.monoFont
-                                font.pixelSize: 11
-                            }
-
-                            Text {
-                                Layout.fillWidth: true
-                                text: page.optionInfo(orderRow.modelData).label
-                                color: page.fgColor
-                                font.family: page.monoFont
-                                font.pixelSize: 9
-                                font.weight: Font.DemiBold
-                            }
-
-                            Item {
-                                Layout.preferredWidth: 20
-                                Layout.preferredHeight: 20
-                                opacity: orderRow.index > 0 ? 1 : 0.3
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "←"
-                                    color: page.mutedColor
-                                    font.family: page.monoFont
-                                    font.pixelSize: 11
-                                }
-
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: if (page.settings) page.settings.moveCollapsedItem(orderRow.modelData, -1)
-                                }
-                            }
-
-                            Item {
-                                Layout.preferredWidth: 20
-                                Layout.preferredHeight: 20
-                                opacity: page.settings && orderRow.index < page.settings.collapsedItems.length - 1 ? 1 : 0.3
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "→"
-                                    color: page.mutedColor
-                                    font.family: page.monoFont
-                                    font.pixelSize: 11
-                                }
-
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: if (page.settings) page.settings.moveCollapsedItem(orderRow.modelData, 1)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            SettingsSlider {
-                Layout.fillWidth: true
-                label: "Item spacing"
-                value: page.settings ? page.settings.collapsedItemSpacing : 4
-                from: 0
-                to: 12
-                step: 1
-                suffix: " px"
-                monoFont: page.monoFont
-                fgColor: page.fgColor
-                mutedColor: page.mutedColor
-                accentColor: page.accentColor
-                surfaceHighColor: page.surfaceHighColor
-                onMoved: value => {
-                    if (page.settings)
-                        page.settings.collapsedItemSpacing = value;
-                }
-            }
-
-            SettingsSlider {
-                Layout.fillWidth: true
-                label: "Pill padding"
-                value: page.settings ? page.settings.collapsedPadding : 14
-                from: 8
-                to: 24
-                step: 1
-                suffix: " px"
-                monoFont: page.monoFont
-                fgColor: page.fgColor
-                mutedColor: page.mutedColor
-                accentColor: page.accentColor
-                surfaceHighColor: page.surfaceHighColor
-                onMoved: value => {
-                    if (page.settings)
-                        page.settings.collapsedPadding = value;
-                }
-            }
-
-            Text {
-                text: "DATE"
-                color: page.mutedColor
-                font.family: page.monoFont
-                font.pixelSize: 7
-                font.weight: Font.DemiBold
-                font.letterSpacing: 0.5
-            }
-
-            Text {
-                Layout.fillWidth: true
-                text: "Add Date from Clock items above, then choose its format and style."
-                color: page.mutedColor
-                font.family: page.monoFont
-                font.pixelSize: 8
-                wrapMode: Text.Wrap
-            }
-
-            GridLayout {
-                Layout.fillWidth: true
-                columns: 2
-                columnSpacing: 6
-                rowSpacing: 6
-
-                Repeater {
-                    model: page.settings ? page.settings.dateFormatOptions : []
-
-                    delegate: Rectangle {
-                        id: dateChip
-
-                        required property var modelData
-
-                        readonly property bool active: page.settings
-                            && page.settings.dateFormat === dateChip.modelData.pattern
-
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 34
-                        radius: 7
-                        color: dateChip.active
-                            ? page.accentColor
-                            : (dateChipHover.hovered
-                                ? Qt.rgba(page.surfaceHighColor.r, page.surfaceHighColor.g, page.surfaceHighColor.b, 0.85)
-                                : Qt.rgba(page.surfaceHighColor.r, page.surfaceHighColor.g, page.surfaceHighColor.b, 0.4))
-
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 8
-                            anchors.rightMargin: 8
-                            spacing: 7
-
-                            Text {
-                                text: "󰃭"
-                                color: dateChip.active ? page.onAccentColor : page.accentColor
-                                font.family: page.monoFont
-                                font.pixelSize: 11
-                            }
-
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 0
-
-                                Text {
-                                    Layout.fillWidth: true
-                                    text: page.dateExample(dateChip.modelData.pattern)
-                                    color: dateChip.active ? page.onAccentColor : page.fgColor
-                                    font.family: page.monoFont
-                                    font.pixelSize: 9
-                                    font.weight: Font.DemiBold
-                                    elide: Text.ElideRight
-                                }
-
-                                Text {
-                                    Layout.fillWidth: true
-                                    text: dateChip.modelData.pattern
-                                    color: dateChip.active
-                                        ? Qt.rgba(page.onAccentColor.r, page.onAccentColor.g, page.onAccentColor.b, 0.65)
-                                        : page.mutedColor
-                                    font.family: page.monoFont
-                                    font.pixelSize: 7
-                                    elide: Text.ElideRight
-                                }
-                            }
-                        }
-
-                        HoverHandler {
-                            id: dateChipHover
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: if (page.settings) page.settings.dateFormat = dateChip.modelData.pattern
-                        }
-                    }
-                }
-            }
-
-            SettingsToggleRow {
-                Layout.fillWidth: true
-                label: "Uppercase"
-                description: "Render the date in capitals."
-                checked: page.settings ? page.settings.dateUppercase : false
-                monoFont: page.monoFont
-                fgColor: page.fgColor
-                mutedColor: page.mutedColor
-                accentColor: page.accentColor
-                onAccentColor: page.onAccentColor
-                surfaceHighColor: page.surfaceHighColor
-                onToggled: if (page.settings) page.settings.dateUppercase = !page.settings.dateUppercase
-            }
-
-            SettingsToggleRow {
-                Layout.fillWidth: true
-                label: "Accent color"
-                description: "Use the accent color instead of muted text."
-                checked: page.settings ? page.settings.dateAccent : false
-                monoFont: page.monoFont
-                fgColor: page.fgColor
-                mutedColor: page.mutedColor
-                accentColor: page.accentColor
-                onAccentColor: page.onAccentColor
-                surfaceHighColor: page.surfaceHighColor
-                onToggled: if (page.settings) page.settings.dateAccent = !page.settings.dateAccent
-            }
-
-            SettingsToggleRow {
-                Layout.fillWidth: true
-                label: "Pill background"
-                description: "Give the date its own subtle pill."
-                checked: page.settings ? page.settings.datePill : true
-                monoFont: page.monoFont
-                fgColor: page.fgColor
-                mutedColor: page.mutedColor
-                accentColor: page.accentColor
-                onAccentColor: page.onAccentColor
-                surfaceHighColor: page.surfaceHighColor
-                onToggled: if (page.settings) page.settings.datePill = !page.settings.datePill
             }
 
             SettingsToggleRow {
@@ -846,67 +409,6 @@ Item {
             }
 
             Text {
-                text: "NOTIFICATIONS"
-                color: page.mutedColor
-                font.family: page.monoFont
-                font.pixelSize: 7
-                font.weight: Font.DemiBold
-                font.letterSpacing: 0.5
-            }
-
-            SettingsToggleRow {
-                Layout.fillWidth: true
-                label: "Notification images"
-                description: "Show image attachments in notification cards."
-                checked: page.settings ? page.settings.showNotificationImages : true
-                monoFont: page.monoFont
-                fgColor: page.fgColor
-                mutedColor: page.mutedColor
-                accentColor: page.accentColor
-                onAccentColor: page.onAccentColor
-                surfaceHighColor: page.surfaceHighColor
-                onToggled: if (page.settings) page.settings.showNotificationImages = !page.settings.showNotificationImages
-            }
-
-            SettingsSlider {
-                Layout.fillWidth: true
-                label: "Notification OSD duration"
-                value: page.settings ? page.settings.notificationOsdTimeout : 6000
-                from: 2200
-                to: 12000
-                step: 100
-                suffix: " ms"
-                monoFont: page.monoFont
-                fgColor: page.fgColor
-                mutedColor: page.mutedColor
-                accentColor: page.accentColor
-                surfaceHighColor: page.surfaceHighColor
-                onMoved: value => {
-                    if (page.settings)
-                        page.settings.notificationOsdTimeout = value;
-                }
-            }
-
-            SettingsSlider {
-                Layout.fillWidth: true
-                label: "Notification history limit"
-                value: page.settings ? page.settings.notificationHistoryLimit : 50
-                from: 10
-                to: 100
-                step: 5
-                suffix: ""
-                monoFont: page.monoFont
-                fgColor: page.fgColor
-                mutedColor: page.mutedColor
-                accentColor: page.accentColor
-                surfaceHighColor: page.surfaceHighColor
-                onMoved: value => {
-                    if (page.settings)
-                        page.settings.notificationHistoryLimit = value;
-                }
-            }
-
-            Text {
                 text: "BLUETOOTH"
                 color: page.mutedColor
                 font.family: page.monoFont
@@ -958,8 +460,6 @@ Item {
                     onClicked: {
                         if (page.settings) {
                             page.settings.resetModules();
-                            page.settings.resetCollapsedItems();
-                            page.settings.resetDate();
                         }
                     }
                 }

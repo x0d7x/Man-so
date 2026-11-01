@@ -23,20 +23,30 @@ FocusScope {
 
     property int currentPage: 0
     readonly property var navItems: [
-        { "label": "General", "icon": "󰒓" },
-        { "label": "Appearance", "icon": "󰏘" },
-        { "label": "Dashboard", "icon": "󰕮" },
-        { "label": "Modules", "icon": "󰍜" },
-        { "label": "Power", "icon": "󰾅" },
-        { "label": "MangoWM", "icon": "󰖯" },
-        { "label": "Keyboard", "icon": "󰌌" },
-        { "label": "Privacy", "icon": "󰍬" },
-        { "label": "About", "icon": "󰋼" },
-        { "label": "Diagnostics", "icon": "󰓅" }
+        { "label": "General", "icon": "󰒓", "group": "CORE" },
+        { "label": "Appearance", "icon": "󰏘", "group": "CORE" },
+        { "label": "Island", "icon": "󰍹", "group": "CORE" },
+        { "label": "Dashboard", "icon": "󰕮", "group": "CORE" },
+        { "label": "Notifications", "icon": "󰂚", "group": "CORE" },
+        { "label": "Modules", "icon": "󰍜", "group": "SYSTEM" },
+        { "label": "Power", "icon": "󰾅", "group": "SYSTEM" },
+        { "label": "MangoWM", "icon": "󰖯", "group": "SYSTEM" },
+        { "label": "Keyboard", "icon": "󰌌", "group": "SYSTEM" },
+        { "label": "Privacy", "icon": "󰍬", "group": "INFO" },
+        { "label": "About", "icon": "󰋼", "group": "INFO" },
+        { "label": "Diagnostics", "icon": "󰓅", "group": "INFO" }
     ]
 
     anchors.fill: parent
     focus: visible
+
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: 1
+        radius: 14
+        color: Qt.rgba(panel.bgColor.r, panel.bgColor.g, panel.bgColor.b, 0.97)
+        z: -100
+    }
 
     MouseArea {
         anchors.fill: parent
@@ -143,11 +153,11 @@ FocusScope {
 
             ColumnLayout {
                 Layout.fillWidth: false
-                Layout.minimumWidth: 112
-                Layout.preferredWidth: 112
-                Layout.maximumWidth: 112
+                Layout.minimumWidth: 132
+                Layout.preferredWidth: 132
+                Layout.maximumWidth: 132
                 Layout.fillHeight: true
-                spacing: 4
+                spacing: 3
 
                 Text {
                     text: "CATEGORIES"
@@ -160,68 +170,77 @@ FocusScope {
                     Layout.bottomMargin: 2
                 }
 
-                Repeater {
+                ListView {
+                    id: navList
+
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+                    spacing: 2
+                    boundsBehavior: Flickable.StopAtBounds
                     model: panel.navItems
 
-                    delegate: Rectangle {
-                        id: navItem
+                    delegate: Item {
+                        id: navEntry
 
                         required property var modelData
                         required property int index
 
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 30
-                        radius: 8
-                        color: panel.currentPage === navItem.index
-                            ? panel.accentColor
-                            : (navHover.hovered
-                                ? Qt.rgba(panel.surfaceHighColor.r, panel.surfaceHighColor.g, panel.surfaceHighColor.b, 0.75)
-                                : "transparent")
+                        width: navList.width
+                        height: 24
 
-                        RowLayout {
+                        Rectangle {
+                            id: navItem
+
                             anchors.fill: parent
-                            anchors.leftMargin: 9
-                            anchors.rightMargin: 9
-                            spacing: 7
+                            radius: 7
+                            color: panel.currentPage === navEntry.index
+                                ? panel.accentColor
+                                : (navHover.hovered
+                                    ? Qt.rgba(panel.surfaceHighColor.r, panel.surfaceHighColor.g, panel.surfaceHighColor.b, 0.75)
+                                    : "transparent")
 
-                            Text {
-                                text: navItem.modelData.icon
-                                color: panel.currentPage === navItem.index
-                                    ? panel.onAccentColor
-                                    : panel.accentColor
-                                font.family: panel.monoFont
-                                font.pixelSize: 13
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 9
+                                anchors.rightMargin: 9
+                                spacing: 7
+
+                                Text {
+                                    text: navEntry.modelData.icon
+                                    color: panel.currentPage === navEntry.index
+                                        ? panel.onAccentColor
+                                        : panel.accentColor
+                                    font.family: panel.monoFont
+                                    font.pixelSize: 11
+                                }
+
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: navEntry.modelData.label
+                                    color: panel.currentPage === navEntry.index
+                                        ? panel.onAccentColor
+                                        : panel.fgColor
+                                    font.family: panel.monoFont
+                                    font.pixelSize: 9
+                                    font.weight: panel.currentPage === navEntry.index
+                                        ? Font.DemiBold
+                                        : Font.Normal
+                                    elide: Text.ElideRight
+                                }
                             }
 
-                            Text {
-                                Layout.fillWidth: true
-                                text: navItem.modelData.label
-                                color: panel.currentPage === navItem.index
-                                    ? panel.onAccentColor
-                                    : panel.fgColor
-                                font.family: panel.monoFont
-                                font.pixelSize: 10
-                                font.weight: panel.currentPage === navItem.index
-                                    ? Font.DemiBold
-                                    : Font.Normal
-                                elide: Text.ElideRight
+                            HoverHandler {
+                                id: navHover
                             }
-                        }
 
-                        HoverHandler {
-                            id: navHover
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: panel.currentPage = navItem.index
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: panel.currentPage = navEntry.index
+                            }
                         }
                     }
-                }
-
-                Item {
-                    Layout.fillHeight: true
                 }
 
                 Text {
@@ -285,7 +304,7 @@ FocusScope {
                     anchors.fill: parent
                     active: panel.visible && panel.currentPage === 2
                     sourceComponent: Component {
-                        SettingsDashboardPage {
+                        SettingsIslandPage {
                             anchors.fill: parent
                             settings: panel.settings
                             monoFont: panel.monoFont
@@ -302,7 +321,7 @@ FocusScope {
                     anchors.fill: parent
                     active: panel.visible && panel.currentPage === 3
                     sourceComponent: Component {
-                        SettingsModulesPage {
+                        SettingsDashboardPage {
                             anchors.fill: parent
                             settings: panel.settings
                             monoFont: panel.monoFont
@@ -319,7 +338,7 @@ FocusScope {
                     anchors.fill: parent
                     active: panel.visible && panel.currentPage === 4
                     sourceComponent: Component {
-                        SettingsPowerPage {
+                        SettingsNotificationsPage {
                             anchors.fill: parent
                             settings: panel.settings
                             monoFont: panel.monoFont
@@ -336,7 +355,7 @@ FocusScope {
                     anchors.fill: parent
                     active: panel.visible && panel.currentPage === 5
                     sourceComponent: Component {
-                        SettingsMangoPage {
+                        SettingsModulesPage {
                             anchors.fill: parent
                             settings: panel.settings
                             monoFont: panel.monoFont
@@ -352,6 +371,40 @@ FocusScope {
                 Loader {
                     anchors.fill: parent
                     active: panel.visible && panel.currentPage === 6
+                    sourceComponent: Component {
+                        SettingsPowerPage {
+                            anchors.fill: parent
+                            settings: panel.settings
+                            monoFont: panel.monoFont
+                            fgColor: panel.fgColor
+                            mutedColor: panel.mutedColor
+                            accentColor: panel.accentColor
+                            onAccentColor: panel.onAccentColor
+                            surfaceHighColor: panel.surfaceHighColor
+                        }
+                    }
+                }
+
+                Loader {
+                    anchors.fill: parent
+                    active: panel.visible && panel.currentPage === 7
+                    sourceComponent: Component {
+                        SettingsMangoPage {
+                            anchors.fill: parent
+                            settings: panel.settings
+                            monoFont: panel.monoFont
+                            fgColor: panel.fgColor
+                            mutedColor: panel.mutedColor
+                            accentColor: panel.accentColor
+                            onAccentColor: panel.onAccentColor
+                            surfaceHighColor: panel.surfaceHighColor
+                        }
+                    }
+                }
+
+                Loader {
+                    anchors.fill: parent
+                    active: panel.visible && panel.currentPage === 8
                     sourceComponent: Component {
                         SettingsKeyboardPage {
                             anchors.fill: parent
@@ -369,7 +422,7 @@ FocusScope {
 
                 Loader {
                     anchors.fill: parent
-                    active: panel.visible && panel.currentPage === 7
+                    active: panel.visible && panel.currentPage === 9
                     sourceComponent: Component {
                         SettingsPrivacyPage {
                             anchors.fill: parent
@@ -388,7 +441,7 @@ FocusScope {
 
                 Loader {
                     anchors.fill: parent
-                    active: panel.visible && panel.currentPage === 8
+                    active: panel.visible && panel.currentPage === 10
                     sourceComponent: Component {
                         SettingsAboutPage {
                             anchors.fill: parent
@@ -404,7 +457,7 @@ FocusScope {
 
                 Loader {
                     anchors.fill: parent
-                    active: panel.visible && panel.currentPage === 9
+                    active: panel.visible && panel.currentPage === 11
                     sourceComponent: Component {
                         SettingsDiagnosticsPage {
                             anchors.fill: parent
