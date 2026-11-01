@@ -104,6 +104,12 @@ ShellRoot {
         id: power
     }
 
+    WallpaperState {
+        id: wallpaper
+        settings: settings
+        mango: mango
+    }
+
     Colors {
         id: colors
     }
@@ -166,6 +172,51 @@ ShellRoot {
             pinned: root.pinned
             onPinRequested: root.pinned = !root.pinned
             onExpandRequested: root.pinned = true
+        }
+    }
+
+    IpcHandler {
+        target: "wallpaper"
+
+        function help(): string {
+            return [
+                "manēso wallpaper IPC",
+                "",
+                "Usage: qs -c maneso ipc call wallpaper <command> [args]",
+                "",
+                "  set <absolute-path>     Apply an image (queued; check status)",
+                "  random                  Apply a random image from the directory",
+                "  next                    Apply the next image in sorted order",
+                "  previous                Apply the previous image in sorted order",
+                "  reload                  Rescan the wallpaper directory",
+                "  status                  Print backend, directory, current image and errors",
+                "  help                    Show this help"
+            ].join("\n");
+        }
+
+        function set(path: string): string {
+            return wallpaper.setPath(path) ? "queued" : "rejected: " + wallpaper.lastError;
+        }
+
+        function random(): string {
+            return wallpaper.randomWallpaper() ? "queued" : "rejected: " + wallpaper.lastError;
+        }
+
+        function next(): string {
+            return wallpaper.nextWallpaper() ? "queued" : "rejected: " + wallpaper.lastError;
+        }
+
+        function previous(): string {
+            return wallpaper.previousWallpaper() ? "queued" : "rejected: " + wallpaper.lastError;
+        }
+
+        function reload(): string {
+            wallpaper.refresh();
+            return "reloading";
+        }
+
+        function status(): string {
+            return wallpaper.statusText();
         }
     }
 

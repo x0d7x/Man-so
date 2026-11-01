@@ -69,6 +69,17 @@ Scope {
     property bool dashboardSeparators: true
     property bool dashboardShowTray: true
     property int dashboardTrayLimit: 3
+    property string wallpaperBackend: "awww"
+    property string wallpaperDirectory: "~/Documents/wallpaper"
+    property string wallpaperFit: "fill"
+    property string wallpaperTarget: "all"
+    property string wallpaperCommand: ""
+    property string wallpaperTransition: "fade"
+    property int wallpaperTransitionDuration: 1
+    property int wallpaperRotateMinutes: 0
+    property bool wallpaperMatugen: true
+    property bool wallpaperVeilaSync: true
+    property var wallpaperHooks: []
     property bool initialized: false
     property bool loading: false
     property string lastError: ""
@@ -199,6 +210,62 @@ Scope {
 
     function clampWorkspaceVisibility(value) {
         return value === "occupied" || value === "active" ? value : "all";
+    }
+
+    function clampWallpaperBackend(value) {
+        return value === "command" ? "command" : "awww";
+    }
+
+    function clampWallpaperDirectory(value) {
+        const fallback = "~/Documents/wallpaper";
+        if (typeof value !== "string")
+            return fallback;
+        const path = value.trim();
+        return path.length > 0 && path.length <= 255 ? path : fallback;
+    }
+
+    function clampWallpaperFit(value) {
+        return ["fill", "fit", "stretch", "center", "tile"].indexOf(value) !== -1 ? value : "fill";
+    }
+
+    function clampWallpaperTarget(value) {
+        return value === "focused" ? "focused" : "all";
+    }
+
+    function clampWallpaperCommand(value) {
+        return typeof value === "string" ? value.slice(0, 500) : "";
+    }
+
+    function clampWallpaperTransition(value) {
+        return ["none", "simple", "fade", "wipe", "grow", "random"].indexOf(value) !== -1 ? value : "fade";
+    }
+
+    function clampWallpaperTransitionDuration(value) {
+        const seconds = Number(value);
+        if (!Number.isFinite(seconds))
+            return 1;
+        return Math.max(0, Math.min(5, Math.round(seconds)));
+    }
+
+    function clampWallpaperRotateMinutes(value) {
+        const minutes = Number(value);
+        if (!Number.isFinite(minutes) || minutes <= 0)
+            return 0;
+        return Math.max(1, Math.min(1440, Math.round(minutes)));
+    }
+
+    function sanitizeWallpaperHooks(value) {
+        const result = [];
+        if (Array.isArray(value)) {
+            for (let i = 0; i < value.length && result.length < 8; ++i) {
+                if (typeof value[i] !== "string")
+                    continue;
+                const hook = value[i].trim().slice(0, 500);
+                if (hook.length > 0)
+                    result.push(hook);
+            }
+        }
+        return result;
     }
 
     function clampOverviewLabel(value) {
@@ -486,6 +553,17 @@ Scope {
         root.cpuRefreshInterval = 300;
         root.batteryWarningThreshold = 20;
         root.batteryCriticalThreshold = 10;
+        root.wallpaperBackend = "awww";
+        root.wallpaperDirectory = "~/Documents/wallpaper";
+        root.wallpaperFit = "fill";
+        root.wallpaperTarget = "all";
+        root.wallpaperCommand = "";
+        root.wallpaperTransition = "fade";
+        root.wallpaperTransitionDuration = 1;
+        root.wallpaperRotateMinutes = 0;
+        root.wallpaperMatugen = true;
+        root.wallpaperVeilaSync = true;
+        root.wallpaperHooks = [];
         root.loading = false;
         root.initialized = true;
     }
@@ -598,6 +676,17 @@ Scope {
                 root.privacyMicrophoneEnabled = parsed.privacyMicrophoneEnabled === undefined ? true : !!parsed.privacyMicrophoneEnabled;
                 root.privacyScreenEnabled = parsed.privacyScreenEnabled === undefined ? true : !!parsed.privacyScreenEnabled;
                 root.privacyShowCollapsed = parsed.privacyShowCollapsed === undefined ? true : !!parsed.privacyShowCollapsed;
+                root.wallpaperBackend = root.clampWallpaperBackend(parsed.wallpaperBackend);
+                root.wallpaperDirectory = root.clampWallpaperDirectory(parsed.wallpaperDirectory);
+                root.wallpaperFit = root.clampWallpaperFit(parsed.wallpaperFit);
+                root.wallpaperTarget = root.clampWallpaperTarget(parsed.wallpaperTarget);
+                root.wallpaperCommand = root.clampWallpaperCommand(parsed.wallpaperCommand);
+                root.wallpaperTransition = root.clampWallpaperTransition(parsed.wallpaperTransition);
+                root.wallpaperTransitionDuration = root.clampWallpaperTransitionDuration(parsed.wallpaperTransitionDuration);
+                root.wallpaperRotateMinutes = root.clampWallpaperRotateMinutes(parsed.wallpaperRotateMinutes);
+                root.wallpaperMatugen = parsed.wallpaperMatugen === undefined ? true : !!parsed.wallpaperMatugen;
+                root.wallpaperVeilaSync = parsed.wallpaperVeilaSync === undefined ? true : !!parsed.wallpaperVeilaSync;
+                root.wallpaperHooks = root.sanitizeWallpaperHooks(parsed.wallpaperHooks);
                 if (root.batteryCriticalThreshold > root.batteryWarningThreshold)
                     root.batteryCriticalThreshold = root.batteryWarningThreshold;
                 root.lastError = "";
@@ -678,7 +767,18 @@ Scope {
             "privacyShowCollapsed": root.privacyShowCollapsed,
             "cpuRefreshInterval": root.cpuRefreshInterval,
             "batteryWarningThreshold": root.batteryWarningThreshold,
-            "batteryCriticalThreshold": root.batteryCriticalThreshold
+            "batteryCriticalThreshold": root.batteryCriticalThreshold,
+            "wallpaperBackend": root.wallpaperBackend,
+            "wallpaperDirectory": root.wallpaperDirectory,
+            "wallpaperFit": root.wallpaperFit,
+            "wallpaperTarget": root.wallpaperTarget,
+            "wallpaperCommand": root.wallpaperCommand,
+            "wallpaperTransition": root.wallpaperTransition,
+            "wallpaperTransitionDuration": root.wallpaperTransitionDuration,
+            "wallpaperRotateMinutes": root.wallpaperRotateMinutes,
+            "wallpaperMatugen": root.wallpaperMatugen,
+            "wallpaperVeilaSync": root.wallpaperVeilaSync,
+            "wallpaperHooks": root.wallpaperHooks
         };
     }
 
@@ -1023,6 +1123,61 @@ Scope {
             if (!saveTimer.running)
                 saveTimer.restart();
         }
+    }
+
+    onWallpaperBackendChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onWallpaperDirectoryChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onWallpaperFitChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onWallpaperTargetChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onWallpaperCommandChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onWallpaperTransitionChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onWallpaperTransitionDurationChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onWallpaperRotateMinutesChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onWallpaperMatugenChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onWallpaperVeilaSyncChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onWallpaperHooksChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
     }
 
     Component.onCompleted: root.refresh()
