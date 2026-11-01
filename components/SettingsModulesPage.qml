@@ -14,6 +14,7 @@ Item {
 
     readonly property var clockOption: { "key": "time", "label": "Clock", "icon": "󰥔" }
     readonly property var collapsedOptions: [
+        { "key": "date", "label": "Date", "icon": "󰃭" },
         { "key": "workspace", "label": "Workspace", "icon": "󰅬" },
         { "key": "window", "label": "Window", "icon": "󰖲" },
         { "key": "layout", "label": "Layout", "icon": "󰕴" },
@@ -40,6 +41,10 @@ Item {
                 return page.collapsedOptions[i];
         }
         return { "key": key, "label": key, "icon": "" };
+    }
+
+    function dateExample(pattern) {
+        return Qt.formatDate(new Date(), pattern);
     }
 
     Flickable {
@@ -519,6 +524,145 @@ Item {
                 }
             }
 
+            Text {
+                text: "DATE"
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.5
+            }
+
+            Text {
+                Layout.fillWidth: true
+                text: "Add Date from Clock items above, then choose its format and style."
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 8
+                wrapMode: Text.Wrap
+            }
+
+            GridLayout {
+                Layout.fillWidth: true
+                columns: 2
+                columnSpacing: 6
+                rowSpacing: 6
+
+                Repeater {
+                    model: page.settings ? page.settings.dateFormatOptions : []
+
+                    delegate: Rectangle {
+                        id: dateChip
+
+                        required property var modelData
+
+                        readonly property bool active: page.settings
+                            && page.settings.dateFormat === dateChip.modelData.pattern
+
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 34
+                        radius: 7
+                        color: dateChip.active
+                            ? page.accentColor
+                            : (dateChipHover.hovered
+                                ? Qt.rgba(page.surfaceHighColor.r, page.surfaceHighColor.g, page.surfaceHighColor.b, 0.85)
+                                : Qt.rgba(page.surfaceHighColor.r, page.surfaceHighColor.g, page.surfaceHighColor.b, 0.4))
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 8
+                            spacing: 7
+
+                            Text {
+                                text: "󰃭"
+                                color: dateChip.active ? page.onAccentColor : page.accentColor
+                                font.family: page.monoFont
+                                font.pixelSize: 11
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 0
+
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: page.dateExample(dateChip.modelData.pattern)
+                                    color: dateChip.active ? page.onAccentColor : page.fgColor
+                                    font.family: page.monoFont
+                                    font.pixelSize: 9
+                                    font.weight: Font.DemiBold
+                                    elide: Text.ElideRight
+                                }
+
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: dateChip.modelData.pattern
+                                    color: dateChip.active
+                                        ? Qt.rgba(page.onAccentColor.r, page.onAccentColor.g, page.onAccentColor.b, 0.65)
+                                        : page.mutedColor
+                                    font.family: page.monoFont
+                                    font.pixelSize: 7
+                                    elide: Text.ElideRight
+                                }
+                            }
+                        }
+
+                        HoverHandler {
+                            id: dateChipHover
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: if (page.settings) page.settings.dateFormat = dateChip.modelData.pattern
+                        }
+                    }
+                }
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Uppercase"
+                description: "Render the date in capitals."
+                checked: page.settings ? page.settings.dateUppercase : false
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: if (page.settings) page.settings.dateUppercase = !page.settings.dateUppercase
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Accent color"
+                description: "Use the accent color instead of muted text."
+                checked: page.settings ? page.settings.dateAccent : false
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: if (page.settings) page.settings.dateAccent = !page.settings.dateAccent
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Pill background"
+                description: "Give the date its own subtle pill."
+                checked: page.settings ? page.settings.datePill : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: if (page.settings) page.settings.datePill = !page.settings.datePill
+            }
+
             SettingsToggleRow {
                 Layout.fillWidth: true
                 label: "Sync monitor buttons"
@@ -787,6 +931,7 @@ Item {
                         if (page.settings) {
                             page.settings.resetModules();
                             page.settings.resetCollapsedItems();
+                            page.settings.resetDate();
                         }
                     }
                 }

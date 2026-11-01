@@ -55,6 +55,10 @@ Scope {
     property var collapsedItems: ["time"]
     property int collapsedItemSpacing: 4
     property int collapsedPadding: 14
+    property string dateFormat: "dd MMM"
+    property bool dateUppercase: false
+    property bool dateAccent: false
+    property bool datePill: true
     property int dashboardWidth: 420
     property int dashboardPadding: 14
     property int dashboardSpacing: 10
@@ -251,8 +255,26 @@ Scope {
         return Math.max(1, Math.min(6, Math.round(limit)));
     }
 
+    readonly property var dateFormatOptions: [
+        { "pattern": "dd MMM", "label": "01 Nov" },
+        { "pattern": "ddd dd MMM", "label": "Sun 01 Nov" },
+        { "pattern": "dd/MM/yyyy", "label": "01/11/2026" },
+        { "pattern": "MM/dd/yyyy", "label": "11/01/2026" },
+        { "pattern": "yyyy-MM-dd", "label": "2026-11-01" },
+        { "pattern": "dd MMM yyyy", "label": "01 Nov 2026" }
+    ]
+
+    function clampDateFormat(value) {
+        if (typeof value !== "string")
+            return "dd MMM";
+        const format = value.trim();
+        if (format.length === 0 || format.length > 40)
+            return "dd MMM";
+        return format;
+    }
+
     readonly property var collapsedItemKeys: [
-        "time", "workspace", "window", "layout", "cpu", "ram", "temp", "battery",
+        "time", "date", "workspace", "window", "layout", "cpu", "ram", "temp", "battery",
         "wifi", "bluetooth", "power", "volume", "brightness", "externalBrightness", "media", "notifications", "tray"
     ]
 
@@ -301,6 +323,13 @@ Scope {
         root.collapsedItems = ["time"];
         root.collapsedItemSpacing = 4;
         root.collapsedPadding = 14;
+    }
+
+    function resetDate() {
+        root.dateFormat = "dd MMM";
+        root.dateUppercase = false;
+        root.dateAccent = false;
+        root.datePill = true;
     }
 
     function resetMango() {
@@ -417,6 +446,10 @@ Scope {
         root.collapsedItems = ["time"];
         root.collapsedItemSpacing = 4;
         root.collapsedPadding = 14;
+        root.dateFormat = "dd MMM";
+        root.dateUppercase = false;
+        root.dateAccent = false;
+        root.datePill = true;
         root.dashboardWidth = 420;
         root.dashboardPadding = 14;
         root.dashboardSpacing = 10;
@@ -494,6 +527,10 @@ Scope {
                 root.collapsedItems = root.sanitizeCollapsedItems(parsed.collapsedItems);
                 root.collapsedItemSpacing = root.clampCollapsedItemSpacing(parsed.collapsedItemSpacing);
                 root.collapsedPadding = root.clampCollapsedPadding(parsed.collapsedPadding);
+                root.dateFormat = root.clampDateFormat(parsed.dateFormat);
+                root.dateUppercase = parsed.dateUppercase === undefined ? false : !!parsed.dateUppercase;
+                root.dateAccent = parsed.dateAccent === undefined ? false : !!parsed.dateAccent;
+                root.datePill = parsed.datePill === undefined ? true : !!parsed.datePill;
                 root.dashboardWidth = root.clampDashboardWidth(parsed.dashboardWidth);
                 root.dashboardPadding = root.clampDashboardPadding(parsed.dashboardPadding);
                 root.dashboardSpacing = root.clampDashboardSpacing(parsed.dashboardSpacing);
@@ -552,7 +589,7 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 22,
+            "version": 23,
             "settingsPage": root.settingsPage,
             "expansionMode": root.expansionMode,
             "animationDuration": root.animationDuration,
@@ -577,6 +614,10 @@ Scope {
             "collapsedItems": root.collapsedItems,
             "collapsedItemSpacing": root.collapsedItemSpacing,
             "collapsedPadding": root.collapsedPadding,
+            "dateFormat": root.dateFormat,
+            "dateUppercase": root.dateUppercase,
+            "dateAccent": root.dateAccent,
+            "datePill": root.datePill,
             "dashboardWidth": root.dashboardWidth,
             "dashboardPadding": root.dashboardPadding,
             "dashboardSpacing": root.dashboardSpacing,
@@ -705,6 +746,26 @@ Scope {
     }
 
     onCollapsedPaddingChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onDateFormatChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onDateUppercaseChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onDateAccentChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onDatePillChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }

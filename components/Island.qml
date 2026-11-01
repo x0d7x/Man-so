@@ -386,6 +386,13 @@ Rectangle {
         return 34;
     }
     readonly property string timeText: island.pad(clock.hours) + ":" + island.pad(clock.minutes)
+    readonly property string dateText: {
+        if (!island.settings)
+            return Qt.formatDate(clock.date, "dd MMM");
+        const format = island.settings.dateFormat.length > 0 ? island.settings.dateFormat : "dd MMM";
+        const text = Qt.formatDate(clock.date, format);
+        return island.settings.dateUppercase ? text.toUpperCase() : text;
+    }
 
     function pad(value) {
         return value < 10 ? "0" + value : "" + value;

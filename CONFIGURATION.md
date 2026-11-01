@@ -82,10 +82,22 @@ new location. The original file is left untouched.
 | `collapsedItemSpacing` | Spacing between collapsed items                 | `4`        | 0–12 px            |
 | `collapsedPadding`     | Horizontal padding inside the collapsed pill    | `14`       | 8–24 px            |
 
-Available `collapsedItems` keys are `time`, `workspace`, `window`, `layout`,
-`cpu`, `ram`, `temp`, `battery`, `wifi`, `bluetooth`, `power`, `volume`,
-`brightness`, `externalBrightness`, `media`, `notifications`, and `tray`.
-The clock is always included and cannot be removed.
+Available `collapsedItems` keys are `time`, `date`, `workspace`, `window`,
+`layout`, `cpu`, `ram`, `temp`, `battery`, `wifi`, `bluetooth`, `power`,
+`volume`, `brightness`, `externalBrightness`, `media`, `notifications`, and
+`tray`. The clock is always included and cannot be removed.
+
+### Date
+
+| Key             | Description                              | Default    | Range / values                          |
+| --------------- | ---------------------------------------- | ---------- | --------------------------------------- |
+| `dateFormat`    | Qt date format pattern for the date item | `"dd MMM"` | Any Qt date pattern, e.g. `ddd dd MMM`  |
+| `dateUppercase` | Render the date in capitals              | `false`    | `true`, `false`                         |
+| `dateAccent`    | Use the accent color for the date        | `false`    | `true`, `false`                         |
+| `datePill`      | Give the date a subtle pill background   | `true`     | `true`, `false`                         |
+
+Add `date` to `collapsedItems` to show it; use the Date section in
+Settings → Modules to pick a format preset and style.
 
 ### Power
 

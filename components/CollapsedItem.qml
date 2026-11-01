@@ -34,6 +34,29 @@ Row {
     }
 
     Rectangle {
+        visible: item.itemType === "date"
+        implicitWidth: dateLabel.implicitWidth + (item.host && item.host.settings && item.host.settings.datePill ? 12 : 0)
+        height: item.host ? Math.round(18 * item.host.fontScale) : 18
+        radius: 5
+        color: item.host && item.host.settings && item.host.settings.datePill
+            ? Qt.rgba(item.host.surfaceHighColor.r, item.host.surfaceHighColor.g, item.host.surfaceHighColor.b, 0.5)
+            : "transparent"
+
+        Text {
+            id: dateLabel
+            anchors.centerIn: parent
+            text: item.host ? item.host.dateText : ""
+            color: item.host && item.host.settings && item.host.settings.dateAccent
+                ? item.host.accentColor
+                : (item.host ? item.host.mutedColor : "transparent")
+            font.family: item.host ? item.host.monoFont : ""
+            font.pixelSize: item.host ? Math.round(9 * item.host.fontScale) : 9
+            font.weight: Font.DemiBold
+            font.letterSpacing: 0.4
+        }
+    }
+
+    Rectangle {
         visible: item.itemType === "workspace"
         implicitWidth: workspaceText.implicitWidth + 10
         height: item.host ? Math.round(18 * item.host.fontScale) : 18
