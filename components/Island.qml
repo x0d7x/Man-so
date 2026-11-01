@@ -3225,8 +3225,8 @@ Rectangle {
                 }
 
                 Text {
-                    visible: island.privacy && island.privacy.microphoneSessionCount > 1
-                    text: island.privacy ? "×" + island.privacy.microphoneSessionCount : ""
+                    visible: island.privacy && island.privacy.microphoneApps.length > 1
+                    text: island.privacy ? "×" + island.privacy.microphoneApps.length : ""
                     color: island.mutedColor
                     font.family: island.monoFont
                     font.pixelSize: Math.round(8 * island.fontScale)
@@ -3278,8 +3278,8 @@ Rectangle {
                 }
 
                 Text {
-                    visible: island.privacy && island.privacy.screenSessionCount > 1
-                    text: island.privacy ? "×" + island.privacy.screenSessionCount : ""
+                    visible: island.privacy && island.privacy.screenApps.length > 1
+                    text: island.privacy ? "×" + island.privacy.screenApps.length : ""
                     color: island.mutedColor
                     font.family: island.monoFont
                     font.pixelSize: Math.round(8 * island.fontScale)

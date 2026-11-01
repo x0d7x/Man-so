@@ -25,6 +25,7 @@ Scope {
     function applicationName(node) {
         const properties = root.nodeProperties(node);
         return properties["application.name"]
+            || properties["application.process.binary"]
             || properties["media.name"]
             || (node ? node.name : "")
             || "Unknown application";

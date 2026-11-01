@@ -7,8 +7,8 @@ Row {
 
     readonly property bool microphoneActive: root.host && root.host.privacy && root.host.privacy.microphoneActive
     readonly property bool screenActive: root.host && root.host.privacy && root.host.privacy.screenActive
-    readonly property int microphoneSessions: root.host && root.host.privacy ? root.host.privacy.microphoneSessionCount : 0
-    readonly property int screenSessions: root.host && root.host.privacy ? root.host.privacy.screenSessionCount : 0
+    readonly property int microphoneApps: root.host && root.host.privacy ? root.host.privacy.microphoneApps.length : 0
+    readonly property int screenApps: root.host && root.host.privacy ? root.host.privacy.screenApps.length : 0
 
     visible: (root.microphoneActive || root.screenActive)
         && root.host && root.host.privacyShowCollapsed
