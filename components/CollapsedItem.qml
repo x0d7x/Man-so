@@ -295,34 +295,42 @@ Row {
         font.weight: Font.Medium
     }
 
-    Row {
+    Item {
         visible: item.itemType === "notifications"
-        spacing: 3
+        implicitWidth: notificationRow.implicitWidth
+        implicitHeight: notificationRow.implicitHeight
 
-        Text {
-            text: "󰂚"
-            color: item.host && item.host.notifications && item.host.notifications.unreadCount > 0
-                ? item.host.accentColor
-                : item.host.fgColor
-            font.family: item.host ? item.host.monoFont : ""
-            font.pixelSize: item.host ? Math.round(12 * item.host.fontScale) : 12
-            font.weight: Font.Medium
+        Row {
+            id: notificationRow
+            spacing: 3
+
+            Text {
+                text: "󰂚"
+                color: item.host && item.host.notifications && item.host.notifications.unreadCount > 0
+                    ? item.host.accentColor
+                    : item.host.fgColor
+                font.family: item.host ? item.host.monoFont : ""
+                font.pixelSize: item.host ? Math.round(12 * item.host.fontScale) : 12
+                font.weight: Font.Medium
+            }
+
+            Text {
+                visible: item.host && item.host.notifications && item.host.notifications.unreadCount > 0
+                text: item.host ? item.host.notifications.unreadCount : ""
+                color: item.host ? item.host.accentColor : "transparent"
+                font.family: item.host ? item.host.monoFont : ""
+                font.pixelSize: item.host ? Math.round(8 * item.host.fontScale) : 8
+                font.weight: Font.Bold
+            }
         }
 
-        Text {
-            visible: item.host && item.host.notifications && item.host.notifications.unreadCount > 0
-            text: item.host ? item.host.notifications.unreadCount : ""
-            color: item.host ? item.host.accentColor : "transparent"
-            font.family: item.host ? item.host.monoFont : ""
-            font.pixelSize: item.host ? Math.round(8 * item.host.fontScale) : 8
-            font.weight: Font.Bold
-        }
-
-        TapHandler {
+        MouseArea {
+            anchors.fill: parent
             acceptedButtons: Qt.LeftButton
-            onTapped: {
+            cursorShape: Qt.PointingHandCursor
+            onClicked: {
                 if (item.host)
-                    item.host.toggleNotificationCenter();
+                    item.host.openDashboard();
             }
         }
     }

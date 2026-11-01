@@ -29,6 +29,7 @@ Scope {
     property bool showBrightness: true
     property bool showExternalBrightness: true
     property bool showNotifications: true
+    property bool showUnreadBell: true
     property bool showCpuStat: true
     property bool showRamStat: true
     property bool showTempStat: true
@@ -353,6 +354,7 @@ Scope {
         root.showBrightness = true;
         root.showExternalBrightness = true;
         root.showNotifications = true;
+        root.showUnreadBell = true;
         root.volumeStep = 2;
         root.volumeOsdTimeout = 1500;
         root.brightnessOsdTimeout = 1500;
@@ -466,6 +468,7 @@ Scope {
         root.showBrightness = true;
         root.showExternalBrightness = true;
         root.showNotifications = true;
+        root.showUnreadBell = true;
         root.cpuRefreshInterval = 300;
         root.batteryWarningThreshold = 20;
         root.batteryCriticalThreshold = 10;
@@ -547,6 +550,7 @@ Scope {
                 root.showBrightness = parsed.showBrightness === undefined ? true : !!parsed.showBrightness;
                 root.showExternalBrightness = parsed.showExternalBrightness === undefined ? true : !!parsed.showExternalBrightness;
                 root.showNotifications = parsed.showNotifications === undefined ? true : !!parsed.showNotifications;
+                root.showUnreadBell = parsed.showUnreadBell === undefined ? true : !!parsed.showUnreadBell;
                 root.cpuRefreshInterval = root.clampCpuRefreshInterval(parsed.cpuRefreshInterval);
                 root.batteryWarningThreshold = root.clampBatteryWarning(parsed.batteryWarningThreshold);
                 root.batteryCriticalThreshold = root.clampBatteryCritical(parsed.batteryCriticalThreshold);
@@ -589,7 +593,7 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 23,
+            "version": 24,
             "settingsPage": root.settingsPage,
             "expansionMode": root.expansionMode,
             "animationDuration": root.animationDuration,
@@ -634,6 +638,7 @@ Scope {
             "showBrightness": root.showBrightness,
             "showExternalBrightness": root.showExternalBrightness,
             "showNotifications": root.showNotifications,
+            "showUnreadBell": root.showUnreadBell,
             "showCpuStat": root.showCpuStat,
             "showRamStat": root.showRamStat,
             "showTempStat": root.showTempStat,
@@ -851,6 +856,11 @@ Scope {
     }
 
     onShowNotificationsChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onShowUnreadBellChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }

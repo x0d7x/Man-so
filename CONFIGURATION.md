@@ -51,6 +51,7 @@ new location. The original file is left untouched.
 | `showBrightness`         | Show the internal display brightness slider                 | `true`  |
 | `showExternalBrightness` | Show the DDC/CI external monitor brightness slider          | `true`  |
 | `showNotifications`      | Show recent notifications and the notification center entry | `true`  |
+| `showUnreadBell`         | Show a bell in the collapsed island on new notifications | `true`  |
 | `showNetworkName`        | Show the active Wi-Fi network name                          | `true`  |
 | `showCpuStat`            | Show CPU usage in the statistics row                        | `true`  |
 | `showRamStat`            | Show memory usage in the statistics row                     | `true`  |

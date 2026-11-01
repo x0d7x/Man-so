@@ -187,6 +187,20 @@ Item {
                 onToggled: if (page.settings) page.settings.showNotifications = !page.settings.showNotifications
             }
 
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Unread bell"
+                description: "Show a bell in the collapsed Island when a new notification arrives."
+                checked: page.settings ? page.settings.showUnreadBell : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: if (page.settings) page.settings.showUnreadBell = !page.settings.showUnreadBell
+            }
+
             Text {
                 text: "MODULE DETAILS"
                 color: page.mutedColor
@@ -383,6 +397,20 @@ Item {
                         }
                     }
                 }
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Privacy indicator"
+                description: "Show microphone and screen activity in the collapsed Island."
+                checked: page.settings ? page.settings.privacyShowCollapsed : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: if (page.settings) page.settings.privacyShowCollapsed = !page.settings.privacyShowCollapsed
             }
 
             Text {

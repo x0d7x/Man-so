@@ -43,6 +43,7 @@ Rectangle {
     property string wifiPasswordError: ""
 
     signal pinRequested()
+    signal expandRequested()
 
     readonly property string monoFont: island.settings && island.settings.fontFamily.length > 0
         ? island.settings.fontFamily
@@ -146,6 +147,7 @@ Rectangle {
     readonly property bool showBrightness: island.settings ? island.settings.showBrightness : true
     readonly property bool showExternalBrightness: island.settings ? island.settings.showExternalBrightness : true
     readonly property bool showNotifications: island.settings ? island.settings.showNotifications : true
+    readonly property bool showUnreadBell: island.settings ? island.settings.showUnreadBell : true
     readonly property bool showCpuStat: island.settings ? island.settings.showCpuStat : true
     readonly property bool showRamStat: island.settings ? island.settings.showRamStat : true
     readonly property bool showTempStat: island.settings ? island.settings.showTempStat : true
@@ -162,7 +164,8 @@ Rectangle {
     readonly property bool includeUrgentWorkspaces: island.settings ? island.settings.includeUrgentWorkspaces : true
     readonly property var collapsedItems: island.settings ? island.settings.collapsedItems : ["time"]
     readonly property bool collapsedHasNotificationItem: island.collapsedItems.indexOf("notifications") >= 0
-    readonly property bool showCollapsedUnreadBell: island.showNotifications
+    readonly property bool showCollapsedUnreadBell: island.showUnreadBell
+        && island.showNotifications
         && !island.collapsedHasNotificationItem
         && island.notifications
         && island.notifications.unreadCount > 0
@@ -493,6 +496,16 @@ Rectangle {
 
         island.notifications.openCenter();
         notificationCenterDelay.restart();
+    }
+
+    function openDashboard() {
+        if (island.notifications && island.notifications.centerOpen)
+            island.closeNotificationCenter();
+        island.hoverDismissed = false;
+        if (!island.pinned)
+            island.expandRequested();
+        if (island.notifications)
+            island.notifications.markAllRead();
     }
 
     function releaseHoverKeyboard() {

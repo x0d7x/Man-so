@@ -165,6 +165,7 @@ ShellRoot {
             panelWindow: panel
             pinned: root.pinned
             onPinRequested: root.pinned = !root.pinned
+            onExpandRequested: root.pinned = true
         }
     }
 
