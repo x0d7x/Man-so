@@ -99,3 +99,7 @@ command instead, for example
 
 - User-facing name: **manēso**
 - ASCII identifier: **maneso**
+
+## License
+
+manēso is released under the [MIT License](LICENSE).
