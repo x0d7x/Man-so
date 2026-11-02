@@ -150,7 +150,19 @@ Scope {
         return root.apply(list[index], origin);
     }
 
+    readonly property bool usesQuickshell: root.settings ? root.settings.wallpaperBackend === "quickshell" : false
+
     function apply(path, origin) {
+        // The quickshell backend renders in-process: no command, no queue.
+        if (root.usesQuickshell) {
+            root.currentPath = path;
+            root.lastError = "";
+            root.skipAttempts = 0;
+            root.lastFailedPath = "";
+            root.saveState();
+            root.queueHooks(path);
+            return true;
+        }
         if (backendProcess.running) {
             root.pendingPath = path;
             root.pendingOrigin = origin;

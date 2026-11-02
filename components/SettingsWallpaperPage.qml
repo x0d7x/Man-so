@@ -16,11 +16,18 @@ Item {
     readonly property string backend: page.settings ? page.settings.wallpaperBackend : "awww"
     readonly property bool isAwww: page.backend === "awww"
     readonly property bool isCommand: page.backend === "command"
+    readonly property bool isLayer: page.backend === "quickshell"
+    readonly property bool showsTransition: page.isAwww || page.isLayer
     readonly property var hooks: page.settings && page.settings.wallpaperHooks ? page.settings.wallpaperHooks : []
 
     readonly property var backendOptions: [
         { "key": "awww", "label": "awww" },
-        { "key": "command", "label": "command" }
+        { "key": "command", "label": "command" },
+        { "key": "quickshell", "label": "layer" }
+    ]
+    readonly property var layerOptions: [
+        { "key": "background", "label": "Background" },
+        { "key": "bottom", "label": "Bottom" }
     ]
     readonly property var fitOptions: [
         { "key": "fill", "label": "Fill" },
@@ -126,11 +133,31 @@ Item {
                 Layout.fillWidth: true
                 text: page.isCommand
                     ? "Runs your command with {path} replaced by the selected image."
-                    : "awww draws the wallpaper in the background layer and keeps it across maneso restarts."
+                    : (page.isLayer
+                        ? "maneso draws the image itself in a background layer surface, one per screen."
+                        : "awww draws the wallpaper in the background layer and keeps it across maneso restarts.")
                 color: page.mutedColor
                 font.family: page.monoFont
                 font.pixelSize: 8
                 wrapMode: Text.Wrap
+            }
+
+            SettingsChoiceRow {
+                Layout.fillWidth: true
+                visible: page.isLayer
+                label: "Layer"
+                options: page.layerOptions
+                value: page.settings ? page.settings.wallpaperLayer : "background"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onSelected: key => {
+                    if (page.settings)
+                        page.settings.wallpaperLayer = page.settings.clampWallpaperLayer(key);
+                }
             }
 
             SettingsTextRow {
@@ -154,6 +181,7 @@ Item {
 
             SettingsChoiceRow {
                 Layout.fillWidth: true
+                visible: page.isAwww || page.isLayer
                 label: "Layout"
                 options: page.fitOptions
                 value: page.settings ? page.settings.wallpaperFit : "fill"
@@ -171,6 +199,7 @@ Item {
 
             SettingsChoiceRow {
                 Layout.fillWidth: true
+                visible: page.isAwww
                 label: "Apply to"
                 options: page.targetOptions
                 value: page.settings ? page.settings.wallpaperTarget : "all"
@@ -207,7 +236,7 @@ Item {
             }
 
             Text {
-                visible: page.isAwww
+                visible: page.showsTransition
                 text: "TRANSITION"
                 color: page.accentColor
                 font.family: page.monoFont
@@ -236,7 +265,7 @@ Item {
 
             SettingsSlider {
                 Layout.fillWidth: true
-                visible: page.isAwww
+                visible: page.showsTransition
                 label: "Transition duration"
                 value: page.settings ? page.settings.wallpaperTransitionDuration : 1
                 from: 0

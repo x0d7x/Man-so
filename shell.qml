@@ -110,6 +110,11 @@ ShellRoot {
         mango: mango
     }
 
+    WallpaperLayer {
+        wallpaper: wallpaper
+        settings: settings
+    }
+
     Colors {
         id: colors
     }

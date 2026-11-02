@@ -74,6 +74,7 @@ Scope {
     property string wallpaperFit: "fill"
     property string wallpaperTarget: "all"
     property string wallpaperCommand: ""
+    property string wallpaperLayer: "background"
     property string wallpaperTransition: "fade"
     property int wallpaperTransitionDuration: 1
     property int wallpaperRotateMinutes: 0
@@ -213,7 +214,11 @@ Scope {
     }
 
     function clampWallpaperBackend(value) {
-        return value === "command" ? "command" : "awww";
+        return value === "command" || value === "quickshell" ? value : "awww";
+    }
+
+    function clampWallpaperLayer(value) {
+        return value === "bottom" ? "bottom" : "background";
     }
 
     function clampWallpaperDirectory(value) {
@@ -434,6 +439,7 @@ Scope {
         root.wallpaperFit = "fill";
         root.wallpaperTarget = "all";
         root.wallpaperCommand = "";
+        root.wallpaperLayer = "background";
         root.wallpaperTransition = "fade";
         root.wallpaperTransitionDuration = 1;
         root.wallpaperRotateMinutes = 0;
@@ -577,6 +583,7 @@ Scope {
         root.wallpaperRotateMinutes = 0;
         root.wallpaperMatugen = true;
         root.wallpaperVeilaSync = true;
+        root.wallpaperLayer = "background";
         root.wallpaperHooks = [];
         root.loading = false;
         root.initialized = true;
@@ -698,6 +705,7 @@ Scope {
                 root.wallpaperFit = root.clampWallpaperFit(parsed.wallpaperFit);
                 root.wallpaperTarget = root.clampWallpaperTarget(parsed.wallpaperTarget);
                 root.wallpaperCommand = root.clampWallpaperCommand(parsed.wallpaperCommand);
+                root.wallpaperLayer = root.clampWallpaperLayer(parsed.wallpaperLayer);
                 root.wallpaperTransition = root.clampWallpaperTransition(parsed.wallpaperTransition);
                 root.wallpaperTransitionDuration = root.clampWallpaperTransitionDuration(parsed.wallpaperTransitionDuration);
                 root.wallpaperRotateMinutes = root.clampWallpaperRotateMinutes(parsed.wallpaperRotateMinutes);
@@ -790,6 +798,7 @@ Scope {
             "wallpaperFit": root.wallpaperFit,
             "wallpaperTarget": root.wallpaperTarget,
             "wallpaperCommand": root.wallpaperCommand,
+            "wallpaperLayer": root.wallpaperLayer,
             "wallpaperTransition": root.wallpaperTransition,
             "wallpaperTransitionDuration": root.wallpaperTransitionDuration,
             "wallpaperRotateMinutes": root.wallpaperRotateMinutes,
@@ -1163,6 +1172,11 @@ Scope {
     }
 
     onWallpaperCommandChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onWallpaperLayerChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }
