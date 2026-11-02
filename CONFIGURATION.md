@@ -233,6 +233,41 @@ Unlocking is deliberately **not** available over IPC, since anything able to
 reach the socket could otherwise bypass authentication. The password prompt is
 the only way out.
 
+#### Appearance
+
+| Key                     | Description                              | Default | Range / values |
+| ----------------------- | ---------------------------------------- | ------- | -------------- |
+| `lockBlurEnabled`       | Blur the wallpaper behind the prompt     | `true`  | `true`, `false` |
+| `lockBlurAmount`        | Blur strength                            | `45`    | 0–100%         |
+| `lockDim`               | Darkening applied over the background    | `55`    | 0–90%          |
+| `lockClockScale`        | Clock and date size                      | `100`   | 60–160%        |
+| `lockShowClock`         | Show the large clock                     | `true`  | `true`, `false` |
+| `lockShowDate`          | Show the date under the clock            | `true`  | `true`, `false` |
+| `lockShowScreenLabel`   | Show monitor name and lock state         | `false` | `true`, `false` |
+| `lockClockFormat`       | Time format                              | `"24h"` | `"24h"`, `"12h"` |
+| `lockDateFormat`        | Qt date pattern                          | `"dddd, d MMMM"` | any pattern, up to 40 chars |
+| `lockShowMedia`         | Track title and playback buttons         | `true`  | `true`, `false` |
+| `lockShowBattery`       | Battery percentage and charging state    | `true`  | `true`, `false` |
+| `lockShowAvatar`        | Account name and avatar                  | `true`  | `true`, `false` |
+| `lockShowCapsLock`      | Warn while Caps Lock is on               | `true`  | `true`, `false` |
+| `lockShowAttempts`      | Count failed attempts                    | `true`  | `true`, `false` |
+| `lockAnimateFailure`    | Shake the prompt after a wrong password  | `true`  | `true`, `false` |
+
+These live on their own **Lock** page in the settings panel, and every one of them
+can be switched off, so the lock screen can be as bare as a password field or a
+full dashboard.
+
+The Caps Lock warning reads the keyboard LED at
+`/sys/class/leds/*::capslock/brightness`. Wayland has no keyboard-state protocol,
+so on hardware without that LED the warning simply stays hidden.
+
+Media controls use the same MPRIS service as the island, so they are inactive
+when nothing is playing.
+
+The password field has an eye button that reveals what you typed; the revealed
+state is cleared as soon as the password is submitted, the field is cleared with
+Esc, or the lock ends.
+
 Authentication uses the `login` PAM stack (`/etc/pam.d/login`), the same one
 other lock screens use, so failed attempts are counted by `pam_faillock`.
 
