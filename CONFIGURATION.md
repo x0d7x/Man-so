@@ -258,3 +258,44 @@ lock, recover from a TTY by restarting the compositor.
 
 The lock background is `~/.cache/veila/wallpaper.jpg`, kept in sync by the
 wallpaper hooks, and falls back to a plain dark screen when that file is absent.
+
+### Idle
+
+| Key                       | Description                                   | Default | Range / values |
+| ------------------------- | --------------------------------------------- | ------- | -------------- |
+| `idleLockMinutes`         | Lock the session after this much idle time    | `5`     | 0–240, 0 = off |
+| `idleDisplayOffMinutes`   | Turn the screens off after this much idle     | `10`    | 0–240, 0 = off |
+| `idleSuppressOnMedia`     | Pause both timers while media is playing      | `true`  | `true`, `false` |
+| `showIdleOffIcon`         | Show an indicator when both timers are off    | `false` | `true`, `false` |
+
+Idle detection uses `ext-idle-notify-v1` with inhibitors respected, so fullscreen
+video and anything holding an idle inhibitor keep the session awake. Screens are
+turned off through MangoWM (`dispatch sleep_monitor` / `wakeup_monitor`).
+
+Locking goes through the session lock screen, so it only works while that is
+available. If you already run another idle daemon (for example
+`veila-idle.service`), disable it, or both will try to lock.
+
+### Power menu
+
+| Key                    | Description                                | Default |
+| ---------------------- | ------------------------------------------ | ------- |
+| `powerRequireConfirm`  | Ask before suspend, logout, reboot, shutdown | `true` |
+| `powerShowLock`        | Show Lock in the power menu                | `true`  |
+| `powerShowSuspend`     | Show Suspend                               | `true`  |
+| `powerShowLogout`      | Show Logout                                | `true`  |
+| `powerShowReboot`      | Show Reboot                                | `true`  |
+| `powerShowShutdown`    | Show Shutdown                              | `true`  |
+
+Suspend locks the session first and waits until the compositor reports the lock
+as secure; if that does not happen within three seconds the suspend is cancelled
+rather than sleeping with an unlocked session.
+
+Sessions are deliberately not part of the power menu. They have their own view:
+
+```sh
+qs -c maneso ipc call power menu          # open the power menu
+qs -c maneso ipc call power sessions      # show the logind session list
+qs -c maneso ipc call power sessionsList  # print id:user:class per session
+qs -c maneso ipc call power status        # idle timers, displays, pending action
+```
