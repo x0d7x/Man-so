@@ -135,6 +135,23 @@ Item {
                 font.letterSpacing: 0.4
             }
 
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Idle handling"
+                description: "Master switch for auto-lock and screen power-off. Also toggled by the power idle IPC."
+                checked: page.settings ? page.settings.idleEnabled : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: {
+                    if (page.settings)
+                        page.settings.idleEnabled = !page.settings.idleEnabled;
+                }
+            }
+
             SettingsSlider {
                 Layout.fillWidth: true
                 label: "Lock after"
@@ -204,6 +221,73 @@ Item {
                 onToggled: {
                     if (page.settings)
                         page.settings.showIdleOffIcon = !page.settings.showIdleOffIcon;
+                }
+            }
+
+            Text {
+                text: "ACTIONS PANEL"
+                color: page.accentColor
+                font.family: page.monoFont
+                font.pixelSize: 9
+                font.weight: Font.Bold
+                font.letterSpacing: 0.4
+            }
+
+            SettingsChoiceRow {
+                Layout.fillWidth: true
+                label: "Look"
+                options: [
+                    { "key": "rows", "label": "Rows" },
+                    { "key": "grid", "label": "Grid" }
+                ]
+                value: page.settings ? page.settings.powerActionsLayout : "rows"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onSelected: key => {
+                    if (page.settings)
+                        page.settings.powerActionsLayout = page.settings.clampPowerActionsLayout(key);
+                }
+            }
+
+            SettingsSlider {
+                Layout.fillWidth: true
+                label: "Panel width"
+                value: page.settings ? page.settings.powerActionsWidth : 380
+                from: 240
+                to: 640
+                step: 10
+                suffix: " px"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                surfaceHighColor: page.surfaceHighColor
+                onMoved: value => {
+                    if (page.settings)
+                        page.settings.powerActionsWidth = page.settings.clampPowerActionsWidth(value);
+                }
+            }
+
+            SettingsSlider {
+                Layout.fillWidth: true
+                label: "Panel height"
+                value: page.settings ? page.settings.powerActionsHeight : 316
+                from: 120
+                to: 640
+                step: 10
+                suffix: " px"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                surfaceHighColor: page.surfaceHighColor
+                onMoved: value => {
+                    if (page.settings)
+                        page.settings.powerActionsHeight = page.settings.clampPowerActionsHeight(value);
                 }
             }
 

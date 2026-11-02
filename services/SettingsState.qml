@@ -93,12 +93,16 @@ Scope {
     property int idleDisplayOffMinutes: 10
     property bool idleSuppressOnMedia: true
     property bool showIdleOffIcon: false
+    property bool idleEnabled: true
     property bool powerRequireConfirm: true
     property bool powerShowLock: true
     property bool powerShowSuspend: true
     property bool powerShowLogout: true
     property bool powerShowReboot: true
     property bool powerShowShutdown: true
+    property string powerActionsLayout: "rows"
+    property int powerActionsWidth: 380
+    property int powerActionsHeight: 316
     property bool initialized: false
     property bool loading: false
     property string lastError: ""
@@ -241,6 +245,24 @@ Scope {
 
     function clampWallpaperPickerLayout(value) {
         return ["carousel", "grid", "spotlight"].indexOf(value) !== -1 ? value : "carousel";
+    }
+
+    function clampPowerActionsLayout(value) {
+        return value === "grid" ? "grid" : "rows";
+    }
+
+    function clampPowerActionsWidth(value) {
+        const width = Number(value);
+        if (!Number.isFinite(width))
+            return 380;
+        return Math.max(240, Math.min(640, Math.round(width / 10) * 10));
+    }
+
+    function clampPowerActionsHeight(value) {
+        const height = Number(value);
+        if (!Number.isFinite(height))
+            return 316;
+        return Math.max(120, Math.min(640, Math.round(height / 10) * 10));
     }
 
     function clampIdleMinutes(value) {
@@ -671,12 +693,16 @@ Scope {
         root.idleDisplayOffMinutes = 10;
         root.idleSuppressOnMedia = true;
         root.showIdleOffIcon = false;
+        root.idleEnabled = true;
         root.powerRequireConfirm = true;
         root.powerShowLock = true;
         root.powerShowSuspend = true;
         root.powerShowLogout = true;
         root.powerShowReboot = true;
         root.powerShowShutdown = true;
+        root.powerActionsLayout = "rows";
+        root.powerActionsWidth = 380;
+        root.powerActionsHeight = 316;
         root.loading = false;
         root.initialized = true;
     }
@@ -816,12 +842,16 @@ Scope {
                 root.idleDisplayOffMinutes = parsed.idleDisplayOffMinutes === undefined ? 10 : root.clampIdleMinutes(parsed.idleDisplayOffMinutes);
                 root.idleSuppressOnMedia = parsed.idleSuppressOnMedia === undefined ? true : !!parsed.idleSuppressOnMedia;
                 root.showIdleOffIcon = parsed.showIdleOffIcon === undefined ? false : !!parsed.showIdleOffIcon;
+                root.idleEnabled = parsed.idleEnabled === undefined ? true : !!parsed.idleEnabled;
                 root.powerRequireConfirm = parsed.powerRequireConfirm === undefined ? true : !!parsed.powerRequireConfirm;
                 root.powerShowLock = parsed.powerShowLock === undefined ? true : !!parsed.powerShowLock;
                 root.powerShowSuspend = parsed.powerShowSuspend === undefined ? true : !!parsed.powerShowSuspend;
                 root.powerShowLogout = parsed.powerShowLogout === undefined ? true : !!parsed.powerShowLogout;
                 root.powerShowReboot = parsed.powerShowReboot === undefined ? true : !!parsed.powerShowReboot;
                 root.powerShowShutdown = parsed.powerShowShutdown === undefined ? true : !!parsed.powerShowShutdown;
+                root.powerActionsLayout = root.clampPowerActionsLayout(parsed.powerActionsLayout);
+                root.powerActionsWidth = root.clampPowerActionsWidth(parsed.powerActionsWidth);
+                root.powerActionsHeight = root.clampPowerActionsHeight(parsed.powerActionsHeight);
                 if (root.batteryCriticalThreshold > root.batteryWarningThreshold)
                     root.batteryCriticalThreshold = root.batteryWarningThreshold;
                 root.lastError = "";
@@ -927,12 +957,16 @@ Scope {
             "idleDisplayOffMinutes": root.idleDisplayOffMinutes,
             "idleSuppressOnMedia": root.idleSuppressOnMedia,
             "showIdleOffIcon": root.showIdleOffIcon,
+            "idleEnabled": root.idleEnabled,
             "powerRequireConfirm": root.powerRequireConfirm,
             "powerShowLock": root.powerShowLock,
             "powerShowSuspend": root.powerShowSuspend,
             "powerShowLogout": root.powerShowLogout,
             "powerShowReboot": root.powerShowReboot,
-            "powerShowShutdown": root.powerShowShutdown
+            "powerShowShutdown": root.powerShowShutdown,
+            "powerActionsLayout": root.powerActionsLayout,
+            "powerActionsWidth": root.powerActionsWidth,
+            "powerActionsHeight": root.powerActionsHeight
         };
     }
 
@@ -1355,6 +1389,26 @@ Scope {
     }
 
     onIdleSuppressOnMediaChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onPowerActionsLayoutChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onPowerActionsWidthChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onPowerActionsHeightChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onIdleEnabledChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }

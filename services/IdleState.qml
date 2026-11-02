@@ -19,8 +19,9 @@ Scope {
     readonly property bool mediaPlaying: root.media ? root.media.isPlaying : false
     readonly property bool suppressed: root.suppressOnMedia && root.mediaPlaying
 
-    readonly property bool lockArmed: root.lockMinutes > 0 && !root.suppressed
-    readonly property bool displayOffArmed: root.displayOffMinutes > 0 && !root.suppressed
+    readonly property bool masterEnabled: root.settings ? root.settings.idleEnabled : true
+    readonly property bool lockArmed: root.masterEnabled && root.lockMinutes > 0 && !root.suppressed
+    readonly property bool displayOffArmed: root.masterEnabled && root.displayOffMinutes > 0 && !root.suppressed
 
     property bool displaysOff: false
 

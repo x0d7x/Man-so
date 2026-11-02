@@ -21,7 +21,6 @@ Rectangle {
     property var wallpaper
     property var polkit
     property var powerActions
-    property var sessions
     property var idle
     property var bluetooth
     property var network
@@ -41,7 +40,10 @@ Rectangle {
     property bool wifiPasswordOpen: false
     property bool bluetoothMenuOpen: false
     property bool powerMenuOpen: false
-    property bool sessionsOpen: false
+    property bool powerActionsOpen: false
+    property int powerActionIndex: 0
+    property bool idleOsdActive: false
+    property bool idleOsdEnabled: true
     property bool settingsOpen: false
     property string bluetoothInput: ""
     property var wifiSelectedNetwork: null
@@ -225,7 +227,7 @@ Rectangle {
         && island.stats.batteryPercent <= island.batteryWarningThreshold
         && !island.batteryCharging
 
-    readonly property bool needsKeyboard: (island.polkit && island.polkit.isActive) || island.sessionsOpen || island.settingsOpen
+    readonly property bool needsKeyboard: (island.polkit && island.polkit.isActive) || island.powerActionsOpen || island.settingsOpen
         || island.wifiMenuOpen || island.bluetoothMenuOpen || island.powerMenuOpen
         || (island.notifications && island.notifications.centerOpen)
         || (island.pointerHovered && island.hoverExpansionEnabled && !island.suppressHoverKeyboard)
@@ -233,8 +235,8 @@ Rectangle {
     readonly property string mode: {
         if (island.polkit && island.polkit.isActive)
             return "polkit";
-        if (island.sessionsOpen)
-            return "sessions";
+        if (island.powerActionsOpen)
+            return "powerActions";
         if (island.settingsOpen)
             return "settings";
         if (island.wifiMenuOpen)
@@ -245,6 +247,8 @@ Rectangle {
             return "power";
         if (island.notificationInhibitOsdActive)
             return "notificationsOff";
+        if (island.idleOsdActive)
+            return "idleOsd";
         if (island.notifications && island.notifications.visible && island.notifications.active)
             return "notification";
         if (island.layoutOsdActive)
@@ -270,8 +274,10 @@ Rectangle {
     readonly property int targetWidth: {
         if (island.mode === "polkit")
             return 400;
-        if (island.mode === "sessions")
-            return 420;
+        if (island.mode === "powerActions")
+            return island.settings ? island.settings.powerActionsWidth : 380;
+        if (island.mode === "idleOsd")
+            return 260;
         if (island.mode === "settings")
             return 720;
         if (island.mode === "wifi")
@@ -406,8 +412,10 @@ Rectangle {
     readonly property int targetHeight: {
         if (island.mode === "polkit")
             return 236;
-        if (island.mode === "sessions")
-            return 300;
+        if (island.mode === "powerActions")
+            return island.settings ? island.settings.powerActionsHeight : 316;
+        if (island.mode === "idleOsd")
+            return 36;
         if (island.mode === "settings")
             return 560;
         if (island.mode === "wifi")
@@ -415,7 +423,7 @@ Rectangle {
         if (island.mode === "bluetooth")
             return 420;
         if (island.mode === "power")
-            return 372;
+            return 540;
         if (island.mode === "notification") {
             const actionCount = island.notifications ? island.notifications.activeActions.length : 0;
             return actionCount > 0 ? 124 : 106;
@@ -670,25 +678,62 @@ Rectangle {
         island.releaseHoverKeyboard();
     }
 
-    function openSessions() {
-        if (island.sessionsOpen)
+    function openPowerActions() {
+        if (island.powerActionsOpen)
             return;
+        Qt.callLater(() => {
+            if (island.powerActionsOpen)
+                powerActionsFocus.forceActiveFocus();
+        });
         if (island.powerMenuOpen)
             island.closePowerMenu();
-        island.sessionsOpen = true;
-        if (island.sessions)
-            island.sessions.refresh();
+        island.powerActionIndex = 0;
+        island.powerActionsOpen = true;
     }
 
-    function closeSessions() {
-        island.sessionsOpen = false;
+    function powerActionCount() {
+        return island.powerActions ? island.powerActions.visibleActions.length : 0;
     }
 
-    function toggleSessions() {
-        if (island.sessionsOpen)
-            island.closeSessions();
+    readonly property int powerActionColumns: island.settings && island.settings.powerActionsLayout === "grid" ? 3 : 1
+
+    function movePowerAction(delta) {
+        const count = island.powerActionCount();
+        if (count === 0)
+            return;
+        island.powerActionIndex = Math.max(0, Math.min(count - 1, island.powerActionIndex + delta));
+    }
+
+    function activatePowerAction() {
+        const count = island.powerActionCount();
+        if (count === 0)
+            return;
+        const index = Math.max(0, Math.min(count - 1, island.powerActionIndex));
+        const action = island.powerActions.visibleActions[index];
+        if (!action)
+            return;
+        island.powerActions.request(action.id);
+        if (action.id === "lock")
+            island.closePowerActions();
+    }
+
+    function closePowerActions() {
+        if (island.powerActions)
+            island.powerActions.cancel();
+        island.powerActionsOpen = false;
+    }
+
+    function togglePowerActions() {
+        if (island.powerActionsOpen)
+            island.closePowerActions();
         else
-            island.openSessions();
+            island.openPowerActions();
+    }
+
+    function showIdleOsd(enabled) {
+        island.idleOsdEnabled = enabled === true;
+        island.idleOsdActive = true;
+        idleOsdTimer.restart();
     }
 
     function closePowerMenu() {
@@ -926,6 +971,12 @@ Rectangle {
     }
 
     Timer {
+        id: idleOsdTimer
+        interval: 2000
+        onTriggered: island.idleOsdActive = false
+    }
+
+    Timer {
         id: notificationInhibitOsdTimer
         interval: 2000
         onTriggered: island.notificationInhibitOsdActive = false
@@ -990,11 +1041,20 @@ Rectangle {
         }
     }
 
-    Shortcut {
-        sequence: "Esc"
-        enabled: island.sessionsOpen
-        onActivated: island.closeSessions()
-    }
+    // The actions menu is driven by window-level shortcuts: they fire whenever the
+    // panel has keyboard focus, without relying on a focused child item.
+    Shortcut { sequence: "Esc"; enabled: island.powerActionsOpen; onActivated: island.closePowerActions() }
+    Shortcut { sequence: "Left"; enabled: island.powerActionsOpen; onActivated: island.movePowerAction(-1) }
+    Shortcut { sequence: "Right"; enabled: island.powerActionsOpen; onActivated: island.movePowerAction(1) }
+    Shortcut { sequence: "Up"; enabled: island.powerActionsOpen; onActivated: island.movePowerAction(-island.powerActionColumns) }
+    Shortcut { sequence: "Down"; enabled: island.powerActionsOpen; onActivated: island.movePowerAction(island.powerActionColumns) }
+    Shortcut { sequence: "H"; enabled: island.powerActionsOpen; onActivated: island.movePowerAction(-1) }
+    Shortcut { sequence: "L"; enabled: island.powerActionsOpen; onActivated: island.movePowerAction(1) }
+    Shortcut { sequence: "K"; enabled: island.powerActionsOpen; onActivated: island.movePowerAction(-island.powerActionColumns) }
+    Shortcut { sequence: "J"; enabled: island.powerActionsOpen; onActivated: island.movePowerAction(island.powerActionColumns) }
+    Shortcut { sequence: "Return"; enabled: island.powerActionsOpen; onActivated: island.activatePowerAction() }
+    Shortcut { sequence: "Enter"; enabled: island.powerActionsOpen; onActivated: island.activatePowerAction() }
+    Shortcut { sequence: "Space"; enabled: island.powerActionsOpen; onActivated: island.activatePowerAction() }
 
     Shortcut {
         sequence: "Esc"
@@ -2245,172 +2305,19 @@ Rectangle {
                     wrapMode: Text.WordWrap
                 }
 
-                Rectangle {
+                PowerActionsGrid {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 1
-                    visible: island.powerActions && island.powerActions.visibleActions.length > 0
-                    color: island.borderMutedColor
-                }
-
-                Text {
-                    Layout.fillWidth: true
-                    visible: island.powerActions && island.powerActions.visibleActions.length > 0
-                    text: "SYSTEM"
-                    color: island.accentColor
-                    font.family: island.monoFont
-                    font.pixelSize: Math.round(8 * island.fontScale)
-                    font.weight: Font.Bold
-                    font.letterSpacing: 0.4
-                }
-
-                // Inline confirmation for destructive actions.
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 44
-                    visible: island.powerActions && island.powerActions.pendingAction.length > 0
-                    radius: 8
-                    color: Qt.rgba(island.errorColor.r, island.errorColor.g, island.errorColor.b, 0.14)
-                    border.width: 1
-                    border.color: island.errorColor
-
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 10
-                        anchors.rightMargin: 10
-                        spacing: 8
-
-                        Text {
-                            Layout.fillWidth: true
-                            text: island.powerActions
-                                ? "Confirm " + island.powerActions.pendingAction + "?"
-                                : ""
-                            color: island.fgColor
-                            font.family: island.monoFont
-                            font.pixelSize: Math.round(10 * island.fontScale)
-                            elide: Text.ElideRight
-                        }
-
-                        Rectangle {
-                            Layout.preferredWidth: 54
-                            Layout.preferredHeight: 24
-                            radius: 6
-                            color: island.surfaceHighColor
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: "CANCEL"
-                                color: island.mutedColor
-                                font.family: island.monoFont
-                                font.pixelSize: Math.round(8 * island.fontScale)
-                                font.weight: Font.Bold
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: if (island.powerActions) island.powerActions.cancel()
-                            }
-                        }
-
-                        Rectangle {
-                            Layout.preferredWidth: 54
-                            Layout.preferredHeight: 24
-                            radius: 6
-                            color: island.errorColor
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: "CONFIRM"
-                                color: island.onAccentColor
-                                font.family: island.monoFont
-                                font.pixelSize: Math.round(8 * island.fontScale)
-                                font.weight: Font.Bold
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    if (island.powerActions)
-                                        island.powerActions.confirm();
-                                    island.closePowerMenu();
-                                }
-                            }
-                        }
-                    }
-                }
-
-                GridLayout {
-                    Layout.fillWidth: true
-                    visible: island.powerActions && island.powerActions.visibleActions.length > 0
-                    columns: 3
-                    columnSpacing: 6
-                    rowSpacing: 6
-
-                    Repeater {
-                        model: island.powerActions ? island.powerActions.visibleActions : []
-
-                        delegate: Rectangle {
-                            id: powerActionButton
-
-                            required property var modelData
-
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 46
-                            radius: 8
-                            color: actionHover.hovered
-                                ? Qt.rgba(island.accentColor.r, island.accentColor.g, island.accentColor.b, 0.16)
-                                : island.surfaceHighColor
-
-                            ColumnLayout {
-                                anchors.centerIn: parent
-                                spacing: 2
-
-                                Text {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    text: powerActionButton.modelData.icon
-                                    color: actionHover.hovered ? island.accentColor : island.fgColor
-                                    font.family: island.monoFont
-                                    font.pixelSize: Math.round(14 * island.fontScale)
-                                }
-
-                                Text {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    text: powerActionButton.modelData.label
-                                    color: island.mutedColor
-                                    font.family: island.monoFont
-                                    font.pixelSize: Math.round(8 * island.fontScale)
-                                }
-                            }
-
-                            HoverHandler {
-                                id: actionHover
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    if (!island.powerActions)
-                                        return;
-                                    island.powerActions.request(powerActionButton.modelData.id);
-                                    // Lock is immediate; the others ask for confirmation in place.
-                                    if (powerActionButton.modelData.id === "lock")
-                                        island.closePowerMenu();
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Text {
-                    Layout.fillWidth: true
-                    visible: island.powerActions && island.powerActions.lastError.length > 0
-                    text: island.powerActions ? island.powerActions.lastError : ""
-                    color: island.errorColor
-                    font.family: island.monoFont
-                    font.pixelSize: Math.round(8 * island.fontScale)
-                    wrapMode: Text.WordWrap
+                    powerActions: island.powerActions
+                    selectedIndex: island.powerActionIndex
+                    layoutMode: island.settings ? island.settings.powerActionsLayout : "rows"
+                    monoFont: island.monoFont
+                    fontScale: island.fontScale
+                    fgColor: island.fgColor
+                    mutedColor: island.mutedColor
+                    accentColor: island.accentColor
+                    onAccentColor: island.onAccentColor
+                    surfaceHighColor: island.surfaceHighColor
+                    errorColor: island.errorColor
                 }
 
                 Item {
@@ -2955,6 +2862,33 @@ Rectangle {
             text: island.notificationInhibitOsdInhibited
                 ? "NOTIFICATIONS OFF"
                 : "NOTIFICATIONS ON"
+            color: island.fgColor
+            font.family: island.monoFont
+            font.pixelSize: Math.round(10 * island.fontScale)
+            font.weight: Font.DemiBold
+            horizontalAlignment: Text.AlignRight
+        }
+    }
+
+    RowLayout {
+        id: idleOsdRow
+        anchors.fill: parent
+        anchors.leftMargin: 14
+        anchors.rightMargin: 14
+        spacing: 9
+        visible: island.mode === "idleOsd"
+
+        Text {
+            text: "󰒲"
+            color: island.idleOsdEnabled ? island.accentColor : island.mutedColor
+            font.family: island.monoFont
+            font.pixelSize: Math.round(16 * island.fontScale)
+            font.weight: Font.Medium
+        }
+
+        Text {
+            Layout.fillWidth: true
+            text: island.idleOsdEnabled ? "IDLE ON" : "IDLE OFF"
             color: island.fgColor
             font.family: island.monoFont
             font.pixelSize: Math.round(10 * island.fontScale)
@@ -4074,19 +4008,108 @@ Rectangle {
 
     Loader {
         anchors.fill: parent
-        active: island.mode === "sessions"
+        active: island.mode === "powerActions"
+        onLoaded: Qt.callLater(() => item.forceActiveFocus())
         sourceComponent: Component {
-            SessionsPanel {
+            FocusScope {
+                id: powerActionsFocus
+
                 anchors.fill: parent
-                sessions: island.sessions
-                monoFont: island.monoFont
-                fontScale: island.fontScale
-                fgColor: island.fgColor
-                mutedColor: island.mutedColor
-                accentColor: island.accentColor
-                surfaceHighColor: island.surfaceHighColor
-                borderMutedColor: island.borderMutedColor
-                onCloseRequested: island.closeSessions()
+                focus: island.powerActionsOpen
+
+                Keys.onEscapePressed: island.closePowerActions()
+                Keys.onLeftPressed: island.movePowerAction(-1)
+                Keys.onRightPressed: island.movePowerAction(1)
+                Keys.onUpPressed: island.movePowerAction(-island.powerActionColumns)
+                Keys.onDownPressed: island.movePowerAction(island.powerActionColumns)
+                Keys.onReturnPressed: island.activatePowerAction()
+                Keys.onEnterPressed: island.activatePowerAction()
+                Keys.onPressed: event => {
+                    if (event.key === Qt.Key_H) {
+                        island.movePowerAction(-1);
+                    } else if (event.key === Qt.Key_L) {
+                        island.movePowerAction(1);
+                    } else if (event.key === Qt.Key_K) {
+                        island.movePowerAction(-island.powerActionColumns);
+                    } else if (event.key === Qt.Key_J) {
+                        island.movePowerAction(island.powerActionColumns);
+                    } else {
+                        return;
+                    }
+                    event.accepted = true;
+                }
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 14
+                    spacing: 8
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        Text {
+                            text: "󰐥"
+                            color: island.accentColor
+                            font.family: island.monoFont
+                            font.pixelSize: Math.round(13 * island.fontScale)
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: "Power"
+                            color: island.fgColor
+                            font.family: island.monoFont
+                            font.pixelSize: Math.round(12 * island.fontScale)
+                            font.weight: Font.DemiBold
+                        }
+
+                        Rectangle {
+                            Layout.preferredWidth: 26
+                            Layout.preferredHeight: 22
+                            radius: 6
+                            color: closeActionsHover.hovered
+                                ? Qt.rgba(island.accentColor.r, island.accentColor.g, island.accentColor.b, 0.2)
+                                : island.surfaceHighColor
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "󰅖"
+                                color: island.mutedColor
+                                font.family: island.monoFont
+                                font.pixelSize: Math.round(10 * island.fontScale)
+                            }
+
+                            HoverHandler {
+                                id: closeActionsHover
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: island.closePowerActions()
+                            }
+                        }
+                    }
+
+                    PowerActionsGrid {
+                        Layout.fillWidth: true
+                        powerActions: island.powerActions
+                        selectedIndex: island.powerActionIndex
+                        layoutMode: island.settings ? island.settings.powerActionsLayout : "rows"
+                        monoFont: island.monoFont
+                        fontScale: island.fontScale
+                        fgColor: island.fgColor
+                        mutedColor: island.mutedColor
+                        accentColor: island.accentColor
+                        onAccentColor: island.onAccentColor
+                        surfaceHighColor: island.surfaceHighColor
+                        errorColor: island.errorColor
+                        onActionTriggered: island.closePowerActions()
+                    }
+
+                    Item { Layout.fillHeight: true }
+                }
             }
         }
     }

@@ -220,10 +220,6 @@ ShellRoot {
         }
     }
 
-    SessionsState {
-        id: sessions
-    }
-
     PowerActions {
         id: powerActions
         settings: settings
@@ -258,7 +254,7 @@ ShellRoot {
         aboveWindows: true
         WlrLayershell.namespace: "maneso"
         WlrLayershell.keyboardFocus: (polkit.isActive || island.settingsOpen || island.wifiMenuOpen
-            || island.bluetoothMenuOpen || island.powerMenuOpen || island.pinned)
+            || island.bluetoothMenuOpen || island.powerMenuOpen || island.powerActionsOpen || island.pinned)
             ? WlrKeyboardFocus.Exclusive
             : (island.needsKeyboard ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None)
 
@@ -288,7 +284,6 @@ ShellRoot {
             wallpaper: wallpaper
             polkit: polkit
             powerActions: powerActions
-            sessions: sessions
             idle: idle
             bluetooth: bluetooth
             network: network
@@ -308,25 +303,36 @@ ShellRoot {
             return [
                 "maneso power IPC",
                 "",
-                "  menu                    Open the island power menu",
-                "  sessions                Show the logind session list in the island",
-                "  sessionsList            Print the sessions (id:user:class)",
+                "  menu                    Open the island power menu (profiles + actions)",
+                "  actions                 Open the actions-only menu (no profiles)",
+                "  idle                    Toggle idle handling on/off (shows an OSD)",
+                "  idleStatus              Print idle state",
                 "  status                  Print idle and power state",
                 "  help                    Show this help"
             ].join("\n");
         }
 
-        function sessionsPanel(): string {
-            island.toggleSessions();
-            return island.sessionsOpen ? "open" : "closed";
+        function actions(): string {
+            island.togglePowerActions();
+            return island.powerActionsOpen ? "open" : "closed";
         }
 
-        function sessionsList(): string {
-            // The list is fetched asynchronously; call again if this says refreshing.
-            sessions.refresh();
-            if (sessions.sessions.length === 0 && sessions.loading)
-                return "refreshing";
-            return sessions.summary();
+        function idle(): string {
+            if (!settings.initialized)
+                return "settings not ready";
+            settings.idleEnabled = !settings.idleEnabled;
+            island.showIdleOsd(settings.idleEnabled);
+            return settings.idleEnabled ? "on" : "off";
+        }
+
+        function idleStatus(): string {
+            return "enabled=" + settings.idleEnabled
+                + " lock=" + settings.idleLockMinutes + "m"
+                + " displayOff=" + settings.idleDisplayOffMinutes + "m"
+                + " lockArmed=" + idle.lockArmed
+                + " displayArmed=" + idle.displayOffArmed
+                + " suppressed=" + idle.suppressed
+                + " displaysOff=" + idle.displaysOff;
         }
 
         function menu(): string {
