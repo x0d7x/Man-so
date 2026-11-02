@@ -197,3 +197,23 @@ the quoted image path. At most eight hooks are kept.
 Thumbnails are generated on demand with `ffmpeg` and cached in
 `$XDG_CACHE_HOME/maneso/wallpaper-thumbs`, capped at 600 files (oldest removed
 first).
+
+### Polkit
+
+| Key                   | Description                                          | Default |
+| --------------------- | ---------------------------------------------------- | ------- |
+| `polkitAgentEnabled`  | Register manēso as the polkit authentication agent   | `false` |
+
+When enabled, privilege requests (`pkexec`, graphical package installs, and
+anything else that needs `org.freedesktop.policykit.exec` style authorisation)
+prompt for a password inside the island instead of a separate dialog.
+
+Only one agent should be registered per session. If another agent is started
+(for example `polkit-gnome-authentication-agent-1` from your compositor's
+autostart), remove it, otherwise the two compete and the request may be handled
+by the wrong one.
+
+The password is passed straight to polkit, is never written to disk, and is
+cleared from memory when the request is submitted, cancelled, or closed. Failed
+attempts are counted by `pam_faillock`, so repeated wrong passwords can lock
+the account for a while, exactly as with any other polkit agent.

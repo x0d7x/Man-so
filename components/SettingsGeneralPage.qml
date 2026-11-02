@@ -133,6 +133,32 @@ Item {
 
             Item { implicitHeight: 2 }
 
+            Text {
+                text: "SECURITY"
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.5
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Polkit agent"
+                description: "Ask for privileged passwords inside the island. Remove any other polkit agent from autostart first, or two agents will compete."
+                checked: page.settings ? page.settings.polkitAgentEnabled : false
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: {
+                    if (page.settings)
+                        page.settings.polkitAgentEnabled = !page.settings.polkitAgentEnabled;
+                }
+            }
+
             Rectangle {
                 Layout.preferredWidth: 128
                 Layout.preferredHeight: 28

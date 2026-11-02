@@ -88,6 +88,7 @@ Scope {
     property int wallpaperZoomPercent: 8
     property int wallpaperPickerOpacity: 97
     property bool wallpaperPickerVimKeys: false
+    property bool polkitAgentEnabled: false
     property bool initialized: false
     property bool loading: false
     property string lastError: ""
@@ -648,6 +649,7 @@ Scope {
         root.wallpaperTileBorderColor = "";
         root.wallpaperZoomPercent = 8;
         root.wallpaperHooks = [];
+        root.polkitAgentEnabled = false;
         root.loading = false;
         root.initialized = true;
     }
@@ -782,6 +784,7 @@ Scope {
                 root.wallpaperMatugen = parsed.wallpaperMatugen === undefined ? true : !!parsed.wallpaperMatugen;
                 root.wallpaperVeilaSync = parsed.wallpaperVeilaSync === undefined ? true : !!parsed.wallpaperVeilaSync;
                 root.wallpaperHooks = root.sanitizeWallpaperHooks(parsed.wallpaperHooks);
+                root.polkitAgentEnabled = parsed.polkitAgentEnabled === undefined ? false : !!parsed.polkitAgentEnabled;
                 if (root.batteryCriticalThreshold > root.batteryWarningThreshold)
                     root.batteryCriticalThreshold = root.batteryWarningThreshold;
                 root.lastError = "";
@@ -881,7 +884,8 @@ Scope {
             "wallpaperRotateMinutes": root.wallpaperRotateMinutes,
             "wallpaperMatugen": root.wallpaperMatugen,
             "wallpaperVeilaSync": root.wallpaperVeilaSync,
-            "wallpaperHooks": root.wallpaperHooks
+            "wallpaperHooks": root.wallpaperHooks,
+            "polkitAgentEnabled": root.polkitAgentEnabled
         };
     }
 
@@ -1289,6 +1293,11 @@ Scope {
     }
 
     onWallpaperZoomPercentChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onPolkitAgentEnabledChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }

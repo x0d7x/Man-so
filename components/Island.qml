@@ -19,6 +19,7 @@ Rectangle {
     property var privacy
     property var keyboardLayout
     property var wallpaper
+    property var polkit
     property var bluetooth
     property var network
     property var power
@@ -216,12 +217,14 @@ Rectangle {
         && island.stats.batteryPercent <= island.batteryWarningThreshold
         && !island.batteryCharging
 
-    readonly property bool needsKeyboard: island.settingsOpen
+    readonly property bool needsKeyboard: (island.polkit && island.polkit.isActive) || island.settingsOpen
         || island.wifiMenuOpen || island.bluetoothMenuOpen || island.powerMenuOpen
         || (island.notifications && island.notifications.centerOpen)
         || (island.pointerHovered && island.hoverExpansionEnabled && !island.suppressHoverKeyboard)
 
     readonly property string mode: {
+        if (island.polkit && island.polkit.isActive)
+            return "polkit";
         if (island.settingsOpen)
             return "settings";
         if (island.wifiMenuOpen)
@@ -255,6 +258,8 @@ Rectangle {
     }
 
     readonly property int targetWidth: {
+        if (island.mode === "polkit")
+            return 400;
         if (island.mode === "settings")
             return 720;
         if (island.mode === "wifi")
@@ -387,6 +392,8 @@ Rectangle {
     }
 
     readonly property int targetHeight: {
+        if (island.mode === "polkit")
+            return 236;
         if (island.mode === "settings")
             return 560;
         if (island.mode === "wifi")
@@ -920,6 +927,12 @@ Rectangle {
     // Window-level Esc handling: the panel surface only receives keyboard input
     // while a menu is open (see WlrLayershell.keyboardFocus in shell.qml), so
     // these shortcuts do not need an active focus item to fire.
+    Shortcut {
+        sequence: "Esc"
+        enabled: island.polkit !== undefined && island.polkit !== null && island.polkit.isActive
+        onActivated: island.polkit.cancel()
+    }
+
     Shortcut {
         sequence: "Esc"
         enabled: island.wifiMenuOpen
@@ -3833,6 +3846,26 @@ Rectangle {
             visible: !island.dashboardNotificationsVisible
             Layout.fillWidth: true
             Layout.fillHeight: true
+        }
+    }
+
+    Loader {
+        anchors.fill: parent
+        active: island.mode === "polkit"
+        sourceComponent: Component {
+            PolkitPrompt {
+                anchors.fill: parent
+                polkit: island.polkit
+                monoFont: island.monoFont
+                fontScale: island.fontScale
+                fgColor: island.fgColor
+                mutedColor: island.mutedColor
+                accentColor: island.accentColor
+                onAccentColor: island.onAccentColor
+                errorColor: island.errorColor
+                surfaceHighColor: island.surfaceHighColor
+                borderMutedColor: island.borderMutedColor
+            }
         }
     }
 

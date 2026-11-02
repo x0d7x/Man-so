@@ -24,6 +24,7 @@
 - System tray, privacy indicators, and system statistics
 - Bluetooth, network, and power status
 - Built-in settings panel
+- Optional polkit authentication agent that prompts inside the island
 - Wallpaper manager: awww, command or in-process layer backend, rotation,
   Matugen and Veila hooks, and a picker with carousel, grid and spotlight layouts
 - Matugen color integration
@@ -95,6 +96,7 @@ qs -c maneso ipc call island status
 qs -c maneso ipc call island workspaces  # workspace index or overview state
 qs -c maneso ipc call island toggleNotifications
 qs -c maneso ipc call island toggleSettings
+qs -c maneso ipc call island polkitStatus  # agent registration and active request
 ```
 
 The wallpaper manager has its own target:

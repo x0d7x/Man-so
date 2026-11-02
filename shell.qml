@@ -126,6 +126,11 @@ ShellRoot {
         colors: colors
     }
 
+    PolkitState {
+        id: polkit
+        enabled: settings.polkitAgentEnabled
+    }
+
     Colors {
         id: colors
     }
@@ -152,7 +157,7 @@ ShellRoot {
         exclusiveZone: 34
         aboveWindows: true
         WlrLayershell.namespace: "maneso"
-        WlrLayershell.keyboardFocus: (island.settingsOpen || island.wifiMenuOpen
+        WlrLayershell.keyboardFocus: (polkit.isActive || island.settingsOpen || island.wifiMenuOpen
             || island.bluetoothMenuOpen || island.powerMenuOpen || island.pinned)
             ? WlrKeyboardFocus.Exclusive
             : (island.needsKeyboard ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None)
@@ -181,6 +186,7 @@ ShellRoot {
             privacy: privacy
             keyboardLayout: keyboardLayout
             wallpaper: wallpaper
+            polkit: polkit
             bluetooth: bluetooth
             network: network
             power: power
@@ -276,6 +282,7 @@ ShellRoot {
                 "SETTINGS & PRIVACY",
                 "  toggleSettings          Toggle the settings panel",
                 "  privacyStatus           Print privacy session diagnostics",
+                "  polkitStatus            Print polkit agent registration state",
                 "",
                 "HELP",
                 "  help                    Show this help"
@@ -359,6 +366,13 @@ ShellRoot {
 
         function toggleSettings(): void {
             island.toggleSettings();
+        }
+
+        function polkitStatus(): string {
+            return "enabled=" + polkit.enabled
+                + " registered=" + polkit.registered
+                + " active=" + polkit.isActive
+                + " action=" + polkit.actionId;
         }
 
         function privacyStatus(): string {
