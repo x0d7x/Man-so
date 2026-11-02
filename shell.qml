@@ -2,6 +2,7 @@
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
+import Quickshell.Wayland._IdleNotify
 import QtQuick
 
 import "components"
@@ -137,6 +138,99 @@ ShellRoot {
         settings: settings
     }
 
+    IdleState {
+        id: idle
+        settings: settings
+        lockScreen: lockScreen
+        mangoIpc: mangoIpc
+        media: media
+    }
+
+    // Idle monitors are created imperatively once settings are loaded: the idle
+    // notification keeps the timeout it was created with, and monitors living in a
+    // reload scope (Scope/Variants) never report idle. Creating them as direct
+    // children of the shell root with the final timeout is what works.
+    property var lockIdleMonitor: null
+    property var displayIdleMonitor: null
+
+    Component {
+        id: lockIdleComponent
+
+        IdleMonitor {
+            enabled: true
+            respectInhibitors: true
+
+            onIsIdleChanged: {
+                if (isIdle && idle.lockArmed)
+                    idle.onLockIdle();
+            }
+        }
+    }
+
+    Component {
+        id: displayIdleComponent
+
+        IdleMonitor {
+            enabled: true
+            respectInhibitors: true
+
+            onIsIdleChanged: {
+                if (isIdle) {
+                    if (idle.displayOffArmed)
+                        idle.sleepDisplays();
+                } else {
+                    idle.wakeDisplays();
+                }
+            }
+        }
+    }
+
+    function rearmIdle() {
+        if (root.lockIdleMonitor) {
+            root.lockIdleMonitor.destroy();
+            root.lockIdleMonitor = null;
+        }
+        if (root.displayIdleMonitor) {
+            root.displayIdleMonitor.destroy();
+            root.displayIdleMonitor = null;
+        }
+        if (!settings.initialized)
+            return;
+        const lockMinutes = settings.idleLockMinutes;
+        if (lockMinutes > 0)
+            root.lockIdleMonitor = lockIdleComponent.createObject(root, { "timeout": lockMinutes * 60 });
+        const offMinutes = settings.idleDisplayOffMinutes;
+        if (offMinutes > 0)
+            root.displayIdleMonitor = displayIdleComponent.createObject(root, { "timeout": offMinutes * 60 });
+    }
+
+    Connections {
+        target: settings
+
+        function onInitializedChanged() {
+            root.rearmIdle();
+        }
+
+        function onIdleLockMinutesChanged() {
+            root.rearmIdle();
+        }
+
+        function onIdleDisplayOffMinutesChanged() {
+            root.rearmIdle();
+        }
+    }
+
+    SessionsState {
+        id: sessions
+    }
+
+    PowerActions {
+        id: powerActions
+        settings: settings
+        lockScreen: lockScreen
+        mangoIpc: mangoIpc
+    }
+
     Colors {
         id: colors
     }
@@ -193,6 +287,9 @@ ShellRoot {
             keyboardLayout: keyboardLayout
             wallpaper: wallpaper
             polkit: polkit
+            powerActions: powerActions
+            sessions: sessions
+            idle: idle
             bluetooth: bluetooth
             network: network
             power: power
@@ -201,6 +298,52 @@ ShellRoot {
             pinned: root.pinned
             onPinRequested: root.pinned = !root.pinned
             onExpandRequested: root.pinned = true
+        }
+    }
+
+    IpcHandler {
+        target: "power"
+
+        function help(): string {
+            return [
+                "maneso power IPC",
+                "",
+                "  menu                    Open the island power menu",
+                "  sessions                Show the logind session list in the island",
+                "  sessionsList            Print the sessions (id:user:class)",
+                "  status                  Print idle and power state",
+                "  help                    Show this help"
+            ].join("\n");
+        }
+
+        function sessionsPanel(): string {
+            island.toggleSessions();
+            return island.sessionsOpen ? "open" : "closed";
+        }
+
+        function sessionsList(): string {
+            // The list is fetched asynchronously; call again if this says refreshing.
+            sessions.refresh();
+            if (sessions.sessions.length === 0 && sessions.loading)
+                return "refreshing";
+            return sessions.summary();
+        }
+
+        function menu(): string {
+            island.togglePowerMenu();
+            return island.powerMenuOpen ? "open" : "closed";
+        }
+
+        function status(): string {
+            return "lock=" + settings.idleLockMinutes + "m"
+                + " displayOff=" + settings.idleDisplayOffMinutes + "m"
+                + " suppressed=" + idle.suppressed
+                + " displaysOff=" + idle.displaysOff
+                + " lockArmed=" + idle.lockArmed
+                + " displayArmed=" + idle.displayOffArmed
+                + " pending=" + powerActions.pendingAction
+                + " busy=" + powerActions.busy
+                + " error=" + JSON.stringify(powerActions.lastError);
         }
     }
 

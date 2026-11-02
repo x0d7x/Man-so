@@ -89,6 +89,16 @@ Scope {
     property int wallpaperPickerOpacity: 97
     property bool wallpaperPickerVimKeys: false
     property bool polkitAgentEnabled: false
+    property int idleLockMinutes: 5
+    property int idleDisplayOffMinutes: 10
+    property bool idleSuppressOnMedia: true
+    property bool showIdleOffIcon: false
+    property bool powerRequireConfirm: true
+    property bool powerShowLock: true
+    property bool powerShowSuspend: true
+    property bool powerShowLogout: true
+    property bool powerShowReboot: true
+    property bool powerShowShutdown: true
     property bool initialized: false
     property bool loading: false
     property string lastError: ""
@@ -231,6 +241,13 @@ Scope {
 
     function clampWallpaperPickerLayout(value) {
         return ["carousel", "grid", "spotlight"].indexOf(value) !== -1 ? value : "carousel";
+    }
+
+    function clampIdleMinutes(value) {
+        const minutes = Number(value);
+        if (!Number.isFinite(minutes) || minutes <= 0)
+            return 0;
+        return Math.max(1, Math.min(240, Math.round(minutes)));
     }
 
     function clampWallpaperTileRadius(value) {
@@ -650,6 +667,16 @@ Scope {
         root.wallpaperZoomPercent = 8;
         root.wallpaperHooks = [];
         root.polkitAgentEnabled = false;
+        root.idleLockMinutes = 5;
+        root.idleDisplayOffMinutes = 10;
+        root.idleSuppressOnMedia = true;
+        root.showIdleOffIcon = false;
+        root.powerRequireConfirm = true;
+        root.powerShowLock = true;
+        root.powerShowSuspend = true;
+        root.powerShowLogout = true;
+        root.powerShowReboot = true;
+        root.powerShowShutdown = true;
         root.loading = false;
         root.initialized = true;
     }
@@ -785,6 +812,16 @@ Scope {
                 root.wallpaperVeilaSync = parsed.wallpaperVeilaSync === undefined ? true : !!parsed.wallpaperVeilaSync;
                 root.wallpaperHooks = root.sanitizeWallpaperHooks(parsed.wallpaperHooks);
                 root.polkitAgentEnabled = parsed.polkitAgentEnabled === undefined ? false : !!parsed.polkitAgentEnabled;
+                root.idleLockMinutes = parsed.idleLockMinutes === undefined ? 5 : root.clampIdleMinutes(parsed.idleLockMinutes);
+                root.idleDisplayOffMinutes = parsed.idleDisplayOffMinutes === undefined ? 10 : root.clampIdleMinutes(parsed.idleDisplayOffMinutes);
+                root.idleSuppressOnMedia = parsed.idleSuppressOnMedia === undefined ? true : !!parsed.idleSuppressOnMedia;
+                root.showIdleOffIcon = parsed.showIdleOffIcon === undefined ? false : !!parsed.showIdleOffIcon;
+                root.powerRequireConfirm = parsed.powerRequireConfirm === undefined ? true : !!parsed.powerRequireConfirm;
+                root.powerShowLock = parsed.powerShowLock === undefined ? true : !!parsed.powerShowLock;
+                root.powerShowSuspend = parsed.powerShowSuspend === undefined ? true : !!parsed.powerShowSuspend;
+                root.powerShowLogout = parsed.powerShowLogout === undefined ? true : !!parsed.powerShowLogout;
+                root.powerShowReboot = parsed.powerShowReboot === undefined ? true : !!parsed.powerShowReboot;
+                root.powerShowShutdown = parsed.powerShowShutdown === undefined ? true : !!parsed.powerShowShutdown;
                 if (root.batteryCriticalThreshold > root.batteryWarningThreshold)
                     root.batteryCriticalThreshold = root.batteryWarningThreshold;
                 root.lastError = "";
@@ -885,7 +922,17 @@ Scope {
             "wallpaperMatugen": root.wallpaperMatugen,
             "wallpaperVeilaSync": root.wallpaperVeilaSync,
             "wallpaperHooks": root.wallpaperHooks,
-            "polkitAgentEnabled": root.polkitAgentEnabled
+            "polkitAgentEnabled": root.polkitAgentEnabled,
+            "idleLockMinutes": root.idleLockMinutes,
+            "idleDisplayOffMinutes": root.idleDisplayOffMinutes,
+            "idleSuppressOnMedia": root.idleSuppressOnMedia,
+            "showIdleOffIcon": root.showIdleOffIcon,
+            "powerRequireConfirm": root.powerRequireConfirm,
+            "powerShowLock": root.powerShowLock,
+            "powerShowSuspend": root.powerShowSuspend,
+            "powerShowLogout": root.powerShowLogout,
+            "powerShowReboot": root.powerShowReboot,
+            "powerShowShutdown": root.powerShowShutdown
         };
     }
 
@@ -1293,6 +1340,56 @@ Scope {
     }
 
     onWallpaperZoomPercentChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onIdleLockMinutesChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onIdleDisplayOffMinutesChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onIdleSuppressOnMediaChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onShowIdleOffIconChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onPowerRequireConfirmChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onPowerShowLockChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onPowerShowSuspendChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onPowerShowLogoutChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onPowerShowRebootChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onPowerShowShutdownChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }

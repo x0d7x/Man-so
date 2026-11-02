@@ -126,6 +126,198 @@ Item {
 
             Item { implicitHeight: 2 }
 
+            Text {
+                text: "IDLE"
+                color: page.accentColor
+                font.family: page.monoFont
+                font.pixelSize: 9
+                font.weight: Font.Bold
+                font.letterSpacing: 0.4
+            }
+
+            SettingsSlider {
+                Layout.fillWidth: true
+                label: "Lock after"
+                value: page.settings ? page.settings.idleLockMinutes : 5
+                from: 0
+                to: 60
+                step: 1
+                suffix: page.settings && page.settings.idleLockMinutes === 0 ? " (off)" : " min"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                surfaceHighColor: page.surfaceHighColor
+                onMoved: value => {
+                    if (page.settings)
+                        page.settings.idleLockMinutes = page.settings.clampIdleMinutes(value);
+                }
+            }
+
+            SettingsSlider {
+                Layout.fillWidth: true
+                label: "Screens off after"
+                value: page.settings ? page.settings.idleDisplayOffMinutes : 10
+                from: 0
+                to: 120
+                step: 1
+                suffix: page.settings && page.settings.idleDisplayOffMinutes === 0 ? " (off)" : " min"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                surfaceHighColor: page.surfaceHighColor
+                onMoved: value => {
+                    if (page.settings)
+                        page.settings.idleDisplayOffMinutes = page.settings.clampIdleMinutes(value);
+                }
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Pause idle while media plays"
+                description: "Keep the session awake while something is playing."
+                checked: page.settings ? page.settings.idleSuppressOnMedia : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: {
+                    if (page.settings)
+                        page.settings.idleSuppressOnMedia = !page.settings.idleSuppressOnMedia;
+                }
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Show icon when idle is off"
+                description: "Show a small indicator in the collapsed island when both idle timers are off."
+                checked: page.settings ? page.settings.showIdleOffIcon : false
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: {
+                    if (page.settings)
+                        page.settings.showIdleOffIcon = !page.settings.showIdleOffIcon;
+                }
+            }
+
+            Text {
+                text: "POWER MENU"
+                color: page.accentColor
+                font.family: page.monoFont
+                font.pixelSize: 9
+                font.weight: Font.Bold
+                font.letterSpacing: 0.4
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Confirm destructive actions"
+                description: "Ask before suspend, logout, reboot or shutdown."
+                checked: page.settings ? page.settings.powerRequireConfirm : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: {
+                    if (page.settings)
+                        page.settings.powerRequireConfirm = !page.settings.powerRequireConfirm;
+                }
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Show Lock"
+                description: "Lock the session from the power menu."
+                checked: page.settings ? page.settings.powerShowLock : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: {
+                    if (page.settings)
+                        page.settings.powerShowLock = !page.settings.powerShowLock;
+                }
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Show Suspend"
+                description: "Suspend to RAM from the power menu."
+                checked: page.settings ? page.settings.powerShowSuspend : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: {
+                    if (page.settings)
+                        page.settings.powerShowSuspend = !page.settings.powerShowSuspend;
+                }
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Show Logout"
+                description: "End the MangoWM session."
+                checked: page.settings ? page.settings.powerShowLogout : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: {
+                    if (page.settings)
+                        page.settings.powerShowLogout = !page.settings.powerShowLogout;
+                }
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Show Reboot"
+                description: "Restart the machine."
+                checked: page.settings ? page.settings.powerShowReboot : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: {
+                    if (page.settings)
+                        page.settings.powerShowReboot = !page.settings.powerShowReboot;
+                }
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Show Shutdown"
+                description: "Power the machine off."
+                checked: page.settings ? page.settings.powerShowShutdown : true
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: {
+                    if (page.settings)
+                        page.settings.powerShowShutdown = !page.settings.powerShowShutdown;
+                }
+            }
+
             Rectangle {
                 Layout.preferredWidth: 128
                 Layout.preferredHeight: 28
