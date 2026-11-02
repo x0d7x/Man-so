@@ -27,7 +27,8 @@
 - Optional polkit authentication agent that prompts inside the island
 - Session lock screen on `ext-session-lock-v1` with PAM authentication
 - Idle handling: auto-lock, screen power-off and media-aware inhibition
-- Power menu with configurable lock, suspend, logout, reboot and shutdown
+- Power menu with configurable lock, suspend, logout, reboot and shutdown,
+  navigable with arrows or vim keys
 - Wallpaper manager: awww, command or in-process layer backend, rotation,
   Matugen and Veila hooks, and a picker with carousel, grid and spotlight layouts
 - Matugen color integration
@@ -110,12 +111,13 @@ qs -c maneso ipc call lock lock      # lock now
 qs -c maneso ipc call lock status    # locked, secure, authenticating, error
 ```
 
-Idle, power and sessions:
+Idle and power:
 
 ```sh
-qs -c maneso ipc call power menu          # open the island power menu
-qs -c maneso ipc call power sessions      # logind session list in the island
-qs -c maneso ipc call power sessionsList  # print the sessions
+qs -c maneso ipc call power menu          # power menu (profiles + actions)
+qs -c maneso ipc call power actions       # actions only, no power profiles
+qs -c maneso ipc call power idle          # toggle idle handling (OSD)
+qs -c maneso ipc call power idleStatus    # idle timers and armed state
 qs -c maneso ipc call power status        # idle timers and power state
 ```
 

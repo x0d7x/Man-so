@@ -286,16 +286,34 @@ available. If you already run another idle daemon (for example
 | `powerShowLogout`      | Show Logout                                | `true`  |
 | `powerShowReboot`      | Show Reboot                                | `true`  |
 | `powerShowShutdown`    | Show Shutdown                              | `true`  |
+| `powerActionsLayout`   | Look of the actions list                   | `"rows"` | `"rows"`, `"grid"` |
+| `powerActionsWidth`    | Actions panel width                        | `380`   | 240–640 px, step 10 |
+| `powerActionsHeight`   | Actions panel height                       | `316`   | 120–640 px, step 10 |
 
 Suspend locks the session first and waits until the compositor reports the lock
 as secure; if that does not happen within three seconds the suspend is cancelled
 rather than sleeping with an unlocked session.
 
-Sessions are deliberately not part of the power menu. They have their own view:
+The actions-only menu has keyboard navigation: arrows or `h`/`l` move one entry,
+`j`/`k` and up/down move one row (three entries per row in grid mode), Enter or
+Space runs the selected action, and Esc closes the menu. The panel takes
+exclusive keyboard focus while it is open.
 
 ```sh
-qs -c maneso ipc call power menu          # open the power menu
-qs -c maneso ipc call power sessions      # show the logind session list
-qs -c maneso ipc call power sessionsList  # print id:user:class per session
-qs -c maneso ipc call power status        # idle timers, displays, pending action
+qs -c maneso ipc call power menu     # power menu (profiles + actions)
+qs -c maneso ipc call power actions  # actions only, no profiles
+qs -c maneso ipc call power status   # idle timers, displays, pending action
 ```
+
+The actions-only menu (no power profiles) and the idle switch are also available
+over IPC:
+
+```sh
+qs -c maneso ipc call power actions     # lock/suspend/logout/reboot/shutdown only
+qs -c maneso ipc call power idle        # toggle idle handling, shows an OSD
+qs -c maneso ipc call power idleStatus  # timers, armed state, display state
+```
+
+`power idle` flips `idleEnabled` and shows an "IDLE ON"/"IDLE OFF" OSD in the
+island. While idle is disabled the settings entries stay as they are, so turning
+it back on restores the previous timers.
