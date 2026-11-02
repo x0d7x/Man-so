@@ -131,6 +131,12 @@ ShellRoot {
         enabled: settings.polkitAgentEnabled
     }
 
+    LockState {
+        id: lockScreen
+        colors: colors
+        settings: settings
+    }
+
     Colors {
         id: colors
     }
@@ -195,6 +201,34 @@ ShellRoot {
             pinned: root.pinned
             onPinRequested: root.pinned = !root.pinned
             onExpandRequested: root.pinned = true
+        }
+    }
+
+    IpcHandler {
+        target: "lock"
+
+        function help(): string {
+            return [
+                "maneso lock IPC",
+                "",
+                "  lock                    Lock the session now",
+                "  status                  Print lock state",
+                "  help                    Show this help",
+                "",
+                "Unlocking is deliberately not exposed: it requires the password"
+            ].join("\n");
+        }
+
+        function lock(): string {
+            lockScreen.lock();
+            return "locking";
+        }
+
+        function status(): string {
+            return "locked=" + lockScreen.locked
+                + " secure=" + lockScreen.secure
+                + " authenticating=" + lockScreen.authenticating
+                + " error=" + JSON.stringify(lockScreen.errorText);
         }
     }
 
