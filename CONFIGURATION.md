@@ -132,3 +132,68 @@ Settings → Island to pick a format preset and style.
 | `privacyMicrophoneEnabled` | Show microphone capture activity                      | `true`  |
 | `privacyScreenEnabled`     | Show screen-sharing and recording activity            | `true`  |
 | `privacyShowCollapsed`     | Show the microphone indicator in the collapsed island | `true`  |
+
+### Wallpaper
+
+The wallpaper section covers the backend, the folder to scan, transitions,
+rotation, post-apply hooks, and the picker. It is not a replacement for
+matuwall: matuwall keeps working, and its `on_apply` hooks should be removed if
+manēso owns the apply pipeline, so Matugen does not run twice.
+
+#### Backend and layout
+
+| Key                     | Description                                              | Default                    | Range / values                              |
+| ----------------------- | -------------------------------------------------------- | -------------------------- | ------------------------------------------- |
+| `wallpaperBackend`      | How the wallpaper is drawn                               | `"awww"`                   | `"awww"`, `"command"`, `"quickshell"`       |
+| `wallpaperDirectory`    | Folder scanned for images (one level, no recursion)      | `"~/Documents/wallpaper"`  | absolute or `~/…` path                      |
+| `wallpaperFit`          | How the image fills the screen                           | `"fill"`                   | `"fill"`, `"fit"`, `"stretch"`, `"center"`, `"tile"` |
+| `wallpaperTarget`       | Apply to every output or only the focused one (awww)     | `"all"`                    | `"all"`, `"focused"`                        |
+| `wallpaperCommand`      | Command template for the `command` backend               | `""`                       | text containing `{path}`                    |
+| `wallpaperLayer`        | Layer used by the `quickshell` backend                   | `"background"`             | `"background"`, `"bottom"`                  |
+
+`awww` renders through the running awww daemon and survives manēso restarts.
+`command` runs your template with `{path}` replaced by the quoted image path;
+exit code 0 means success. `quickshell` draws the image in a click-through layer
+surface per screen, inside manēso itself.
+
+`tile` is only exact for the `quickshell` backend; awww has no tile mode, so it
+centres the image at native size instead.
+
+#### Transitions and rotation
+
+| Key                             | Description                                       | Default  | Range / values                                          |
+| ------------------------------- | ------------------------------------------------- | -------- | ------------------------------------------------------- |
+| `wallpaperTransition`           | awww transition effect                            | `"fade"` | `"none"`, `"simple"`, `"fade"`, `"wipe"`, `"grow"`, `"random"` |
+| `wallpaperTransitionDuration`   | Transition length in seconds                      | `1`      | 0–5                                                     |
+| `wallpaperRotateMinutes`        | Shuffle interval; `0` disables rotation           | `0`      | 0–1440                                                  |
+
+Rotation picks a random image and skips unreadable files. Stepping with
+`next`/`previous` also skips unreadable files, up to ten in a row, then stops
+with the last error instead of looping.
+
+#### Hooks
+
+| Key                     | Description                                                | Default |
+| ----------------------- | ---------------------------------------------------------- | ------- |
+| `wallpaperMatugen`      | Run `matugen image <path>` after each change               | `true`  |
+| `wallpaperVeilaSync`    | Copy the image to `~/.cache/veila/wallpaper.jpg` for Veila | `true`  |
+| `wallpaperHooks`        | Extra commands run after each change                       | `[]`    |
+
+Each entry in `wallpaperHooks` is run through `sh -c` with `{path}` replaced by
+the quoted image path. At most eight hooks are kept.
+
+#### Picker
+
+| Key                        | Description                                        | Default      | Range / values                          |
+| -------------------------- | -------------------------------------------------- | ------------ | --------------------------------------- |
+| `wallpaperPickerLayout`    | Layout used by the picker                          | `"carousel"` | `"carousel"`, `"grid"`, `"spotlight"`   |
+| `wallpaperPickerOpacity`   | Picker panel background opacity                    | `97`         | 40–100%                                 |
+| `wallpaperPickerVimKeys`   | Add `h`/`j`/`k`/`l`, `g`/`G` and `q` bindings      | `false`      | `true`, `false`                         |
+| `wallpaperTileRadius`      | Tile corner radius                                 | `18`         | 0–64 px                                 |
+| `wallpaperTileBorderWidth` | Border width of the focused tile                   | `2`          | 0–6 px                                  |
+| `wallpaperTileBorderColor` | Border colour; empty follows the theme accent      | `""`         | `#rgb`, `#rrggbb`, `#rrggbbaa`, or empty |
+| `wallpaperZoomPercent`     | How much the focused tile grows in the carousel    | `8`          | 0–30%                                   |
+
+Thumbnails are generated on demand with `ffmpeg` and cached in
+`$XDG_CACHE_HOME/maneso/wallpaper-thumbs`, capped at 600 files (oldest removed
+first).

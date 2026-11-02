@@ -24,6 +24,8 @@
 - System tray, privacy indicators, and system statistics
 - Bluetooth, network, and power status
 - Built-in settings panel
+- Wallpaper manager: awww, command or in-process layer backend, rotation,
+  Matugen and Veila hooks, and a picker with carousel, grid and spotlight layouts
 - Matugen color integration
 - IPC commands for scripting and keybindings
 
@@ -34,7 +36,8 @@
 - `wpctl` for PipeWire volume control
 - `brightnessctl` for internal display brightness
 - `ddcutil` for external display brightness
-- `ffmpeg` for extracting MPD artwork
+- `ffmpeg` for extracting MPD artwork and picker thumbnails
+- `awww` (optional) for the awww wallpaper backend
 
 These tools are only needed for the features that use them. The diagnostics page
 reports any missing tools, including `notify-send` if it is not installed.
@@ -92,6 +95,18 @@ qs -c maneso ipc call island status
 qs -c maneso ipc call island workspaces  # workspace index or overview state
 qs -c maneso ipc call island toggleNotifications
 qs -c maneso ipc call island toggleSettings
+```
+
+The wallpaper manager has its own target:
+
+```sh
+qs -c maneso ipc call wallpaper help
+qs -c maneso ipc call wallpaper status     # backend, folder, count, current image
+qs -c maneso ipc call wallpaper set /path/to/image.png
+qs -c maneso ipc call wallpaper random
+qs -c maneso ipc call wallpaper next       # also: previous
+qs -c maneso ipc call wallpaper reload     # rescan the folder
+qs -c maneso ipc call wallpaper picker     # open or close the picker
 ```
 
 If you launch the configuration with `qs -p`, pass the same path to the IPC

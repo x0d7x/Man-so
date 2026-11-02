@@ -302,7 +302,7 @@ Item {
                 label: "Shuffle every"
                 value: page.settings ? page.settings.wallpaperRotateMinutes : 0
                 from: 0
-                to: 120
+                to: 1440
                 step: 5
                 suffix: page.settings && page.settings.wallpaperRotateMinutes === 0 ? " (off)" : " min"
                 monoFont: page.monoFont
