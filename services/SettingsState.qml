@@ -89,6 +89,21 @@ Scope {
     property int wallpaperPickerOpacity: 97
     property bool wallpaperPickerVimKeys: false
     property bool polkitAgentEnabled: false
+    property bool lockBlurEnabled: true
+    property int lockBlurAmount: 45
+    property int lockDim: 55
+    property bool lockShowClock: true
+    property bool lockShowDate: true
+    property int lockClockScale: 100
+    property bool lockShowScreenLabel: false
+    property string lockClockFormat: "24h"
+    property string lockDateFormat: "dddd, d MMMM"
+    property bool lockShowMedia: true
+    property bool lockShowBattery: true
+    property bool lockShowAvatar: true
+    property bool lockShowCapsLock: true
+    property bool lockShowAttempts: true
+    property bool lockAnimateFailure: true
     property int idleLockMinutes: 5
     property int idleDisplayOffMinutes: 10
     property bool idleSuppressOnMedia: true
@@ -122,7 +137,7 @@ Scope {
         const page = Number(value);
         if (!Number.isFinite(page))
             return 0;
-        return Math.max(0, Math.min(12, Math.round(page)));
+        return Math.max(0, Math.min(13, Math.round(page)));
     }
 
     function clampAnimationDuration(value) {
@@ -263,6 +278,40 @@ Scope {
         if (!Number.isFinite(height))
             return 316;
         return Math.max(120, Math.min(640, Math.round(height / 10) * 10));
+    }
+
+    function clampLockClockFormat(value) {
+        return value === "12h" ? "12h" : "24h";
+    }
+
+    function clampLockDateFormat(value) {
+        if (typeof value !== "string")
+            return "dddd, d MMMM";
+        const format = value.trim();
+        if (format.length === 0 || format.length > 40)
+            return "dddd, d MMMM";
+        return format;
+    }
+
+    function clampLockBlurAmount(value) {
+        const amount = Number(value);
+        if (!Number.isFinite(amount))
+            return 45;
+        return Math.max(0, Math.min(100, Math.round(amount)));
+    }
+
+    function clampLockDim(value) {
+        const dim = Number(value);
+        if (!Number.isFinite(dim))
+            return 55;
+        return Math.max(0, Math.min(90, Math.round(dim)));
+    }
+
+    function clampLockClockScale(value) {
+        const scale = Number(value);
+        if (!Number.isFinite(scale))
+            return 100;
+        return Math.max(60, Math.min(160, Math.round(scale / 5) * 5));
     }
 
     function clampIdleMinutes(value) {
@@ -689,6 +738,21 @@ Scope {
         root.wallpaperZoomPercent = 8;
         root.wallpaperHooks = [];
         root.polkitAgentEnabled = false;
+        root.lockBlurEnabled = true;
+        root.lockBlurAmount = 45;
+        root.lockDim = 55;
+        root.lockShowClock = true;
+        root.lockShowDate = true;
+        root.lockClockScale = 100;
+        root.lockShowScreenLabel = false;
+        root.lockClockFormat = "24h";
+        root.lockDateFormat = "dddd, d MMMM";
+        root.lockShowMedia = true;
+        root.lockShowBattery = true;
+        root.lockShowAvatar = true;
+        root.lockShowCapsLock = true;
+        root.lockShowAttempts = true;
+        root.lockAnimateFailure = true;
         root.idleLockMinutes = 5;
         root.idleDisplayOffMinutes = 10;
         root.idleSuppressOnMedia = true;
@@ -745,6 +809,9 @@ Scope {
                 }
                 // 26 inserted the Wallpaper page at index 8.
                 if (version < 26 && migratedPage >= 8)
+                    migratedPage += 1;
+                // 27 inserted the Lock page at index 8.
+                if (version < 27 && migratedPage >= 8)
                     migratedPage += 1;
                 root.settingsPage = root.clampPage(migratedPage);
                 root.expansionMode = parsed.expansionMode === "click" || parsed.expansionMode === "hover"
@@ -838,6 +905,21 @@ Scope {
                 root.wallpaperVeilaSync = parsed.wallpaperVeilaSync === undefined ? true : !!parsed.wallpaperVeilaSync;
                 root.wallpaperHooks = root.sanitizeWallpaperHooks(parsed.wallpaperHooks);
                 root.polkitAgentEnabled = parsed.polkitAgentEnabled === undefined ? false : !!parsed.polkitAgentEnabled;
+                root.lockBlurEnabled = parsed.lockBlurEnabled === undefined ? true : !!parsed.lockBlurEnabled;
+                root.lockBlurAmount = root.clampLockBlurAmount(parsed.lockBlurAmount);
+                root.lockDim = root.clampLockDim(parsed.lockDim);
+                root.lockShowClock = parsed.lockShowClock === undefined ? true : !!parsed.lockShowClock;
+                root.lockShowDate = parsed.lockShowDate === undefined ? true : !!parsed.lockShowDate;
+                root.lockClockScale = root.clampLockClockScale(parsed.lockClockScale);
+                root.lockShowScreenLabel = parsed.lockShowScreenLabel === undefined ? false : !!parsed.lockShowScreenLabel;
+                root.lockClockFormat = root.clampLockClockFormat(parsed.lockClockFormat);
+                root.lockDateFormat = root.clampLockDateFormat(parsed.lockDateFormat);
+                root.lockShowMedia = parsed.lockShowMedia === undefined ? true : !!parsed.lockShowMedia;
+                root.lockShowBattery = parsed.lockShowBattery === undefined ? true : !!parsed.lockShowBattery;
+                root.lockShowAvatar = parsed.lockShowAvatar === undefined ? true : !!parsed.lockShowAvatar;
+                root.lockShowCapsLock = parsed.lockShowCapsLock === undefined ? true : !!parsed.lockShowCapsLock;
+                root.lockShowAttempts = parsed.lockShowAttempts === undefined ? true : !!parsed.lockShowAttempts;
+                root.lockAnimateFailure = parsed.lockAnimateFailure === undefined ? true : !!parsed.lockAnimateFailure;
                 root.idleLockMinutes = parsed.idleLockMinutes === undefined ? 5 : root.clampIdleMinutes(parsed.idleLockMinutes);
                 root.idleDisplayOffMinutes = parsed.idleDisplayOffMinutes === undefined ? 10 : root.clampIdleMinutes(parsed.idleDisplayOffMinutes);
                 root.idleSuppressOnMedia = parsed.idleSuppressOnMedia === undefined ? true : !!parsed.idleSuppressOnMedia;
@@ -868,7 +950,7 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 26,
+            "version": 27,
             "settingsPage": root.settingsPage,
             "expansionMode": root.expansionMode,
             "animationDuration": root.animationDuration,
@@ -953,6 +1035,21 @@ Scope {
             "wallpaperVeilaSync": root.wallpaperVeilaSync,
             "wallpaperHooks": root.wallpaperHooks,
             "polkitAgentEnabled": root.polkitAgentEnabled,
+            "lockBlurEnabled": root.lockBlurEnabled,
+            "lockBlurAmount": root.lockBlurAmount,
+            "lockDim": root.lockDim,
+            "lockShowClock": root.lockShowClock,
+            "lockShowDate": root.lockShowDate,
+            "lockClockScale": root.lockClockScale,
+            "lockShowScreenLabel": root.lockShowScreenLabel,
+            "lockClockFormat": root.lockClockFormat,
+            "lockDateFormat": root.lockDateFormat,
+            "lockShowMedia": root.lockShowMedia,
+            "lockShowBattery": root.lockShowBattery,
+            "lockShowAvatar": root.lockShowAvatar,
+            "lockShowCapsLock": root.lockShowCapsLock,
+            "lockShowAttempts": root.lockShowAttempts,
+            "lockAnimateFailure": root.lockAnimateFailure,
             "idleLockMinutes": root.idleLockMinutes,
             "idleDisplayOffMinutes": root.idleDisplayOffMinutes,
             "idleSuppressOnMedia": root.idleSuppressOnMedia,
@@ -1404,6 +1501,81 @@ Scope {
     }
 
     onPowerActionsHeightChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onLockClockFormatChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onLockDateFormatChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onLockShowMediaChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onLockShowBatteryChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onLockShowAvatarChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onLockShowCapsLockChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onLockShowAttemptsChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onLockAnimateFailureChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onLockBlurEnabledChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onLockBlurAmountChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onLockDimChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onLockShowClockChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onLockShowDateChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onLockClockScaleChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onLockShowScreenLabelChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }

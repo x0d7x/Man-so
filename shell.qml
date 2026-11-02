@@ -136,6 +136,8 @@ ShellRoot {
         id: lockScreen
         colors: colors
         settings: settings
+        media: media
+        stats: stats
     }
 
     IdleState {

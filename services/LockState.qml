@@ -23,10 +23,15 @@ Scope {
 
     property var colors
     property var settings
+    property var media
+    property var stats
+
+    property int attempts: 0
 
     readonly property bool secure: lock.secure
 
     function lock() {
+        root.attempts = 0;
         root.errorText = "";
         root.pending = "";
         root.authenticating = false;
@@ -100,6 +105,8 @@ Scope {
                 lockState: root
                 colors: root.colors
                 settings: root.settings
+                media: root.media
+                stats: root.stats
             }
         }
     }
@@ -121,8 +128,10 @@ Scope {
             if (result === PamResult.Success) {
                 root.unlock();
             } else if (result === PamResult.MaxTries) {
+                root.attempts += 1;
                 root.errorText = "Too many attempts. Try again later.";
             } else if (result === PamResult.Failed) {
+                root.attempts += 1;
                 root.errorText = "Authentication failed";
             } else {
                 root.errorText = "Authentication error";
