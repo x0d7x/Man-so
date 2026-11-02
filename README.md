@@ -25,6 +25,7 @@
 - Bluetooth, network, and power status
 - Built-in settings panel
 - Optional polkit authentication agent that prompts inside the island
+- Session lock screen on `ext-session-lock-v1` with PAM authentication
 - Wallpaper manager: awww, command or in-process layer backend, rotation,
   Matugen and Veila hooks, and a picker with carousel, grid and spotlight layouts
 - Matugen color integration
@@ -97,6 +98,14 @@ qs -c maneso ipc call island workspaces  # workspace index or overview state
 qs -c maneso ipc call island toggleNotifications
 qs -c maneso ipc call island toggleSettings
 qs -c maneso ipc call island polkitStatus  # agent registration and active request
+```
+
+The lock screen has its own target. Unlocking is intentionally not exposed, as
+that would bypass authentication:
+
+```sh
+qs -c maneso ipc call lock lock      # lock now
+qs -c maneso ipc call lock status    # locked, secure, authenticating, error
 ```
 
 The wallpaper manager has its own target:

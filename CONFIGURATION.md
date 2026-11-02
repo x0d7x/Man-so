@@ -217,3 +217,44 @@ The password is passed straight to polkit, is never written to disk, and is
 cleared from memory when the request is submitted, cancelled, or closed. Failed
 attempts are counted by `pam_faillock`, so repeated wrong passwords can lock
 the account for a while, exactly as with any other polkit agent.
+
+### Lock screen
+
+The lock screen has no settings of its own. It uses `ext-session-lock-v1`, so the
+compositor owns the lock: while it is active the session is covered on every
+output, and only a successful PAM authentication clears it.
+
+| Command                                  | Effect                    |
+| ---------------------------------------- | ------------------------- |
+| `qs -c maneso ipc call lock lock`        | Lock the session now      |
+| `qs -c maneso ipc call lock status`      | Print lock state          |
+
+Unlocking is deliberately **not** available over IPC, since anything able to
+reach the socket could otherwise bypass authentication. The password prompt is
+the only way out.
+
+Authentication uses the `login` PAM stack (`/etc/pam.d/login`), the same one
+other lock screens use, so failed attempts are counted by `pam_faillock`.
+
+#### Replacing another locker
+
+Only one session lock can be held at a time. If you already run a locker such as
+Veila, stop its lock and idle services before using this one, otherwise the
+second lock request is ignored:
+
+```sh
+systemctl --user disable --now veila-idle.service
+```
+
+Veila's idle service is also what locks on suspend; if you want manēso to take
+over that role, point the idle trigger at `qs -c maneso ipc call lock lock`.
+
+#### If manēso dies while locked
+
+The compositor keeps the session covered with a blank screen, so nothing is
+exposed. The dead client's lock is released, which means a restarted manēso can
+take the lock again and unlock normally. If the compositor does not allow a new
+lock, recover from a TTY by restarting the compositor.
+
+The lock background is `~/.cache/veila/wallpaper.jpg`, kept in sync by the
+wallpaper hooks, and falls back to a plain dark screen when that file is absent.
