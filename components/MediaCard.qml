@@ -48,7 +48,7 @@ Rectangle {
                 sourceSize.height: 64
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
-                cache: true
+                cache: false
                 visible: card.media && card.media.artwork.length > 0 && status === Image.Ready
             }
 

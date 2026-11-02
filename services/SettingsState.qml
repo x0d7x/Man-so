@@ -81,6 +81,13 @@ Scope {
     property bool wallpaperMatugen: true
     property bool wallpaperVeilaSync: true
     property var wallpaperHooks: []
+    property string wallpaperPickerLayout: "carousel"
+    property int wallpaperTileRadius: 18
+    property int wallpaperTileBorderWidth: 2
+    property string wallpaperTileBorderColor: ""
+    property int wallpaperZoomPercent: 8
+    property int wallpaperPickerOpacity: 97
+    property bool wallpaperPickerVimKeys: false
     property bool initialized: false
     property bool loading: false
     property string lastError: ""
@@ -219,6 +226,48 @@ Scope {
 
     function clampWallpaperLayer(value) {
         return value === "bottom" ? "bottom" : "background";
+    }
+
+    function clampWallpaperPickerLayout(value) {
+        return ["carousel", "grid", "spotlight"].indexOf(value) !== -1 ? value : "carousel";
+    }
+
+    function clampWallpaperTileRadius(value) {
+        const radius = Number(value);
+        if (!Number.isFinite(radius))
+            return 18;
+        return Math.max(0, Math.min(64, Math.round(radius)));
+    }
+
+    function clampWallpaperTileBorderWidth(value) {
+        const width = Number(value);
+        if (!Number.isFinite(width))
+            return 2;
+        return Math.max(0, Math.min(6, Math.round(width)));
+    }
+
+    // Empty means "use the theme accent". Anything else must look like a hex colour.
+    function clampWallpaperTileBorderColor(value) {
+        if (typeof value !== "string")
+            return "";
+        const color = value.trim();
+        if (color.length === 0)
+            return "";
+        return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(color) ? color : "";
+    }
+
+    function clampWallpaperZoomPercent(value) {
+        const zoom = Number(value);
+        if (!Number.isFinite(zoom))
+            return 8;
+        return Math.max(0, Math.min(30, Math.round(zoom)));
+    }
+
+    function clampWallpaperPickerOpacity(value) {
+        const opacity = Number(value);
+        if (!Number.isFinite(opacity))
+            return 97;
+        return Math.max(40, Math.min(100, Math.round(opacity)));
     }
 
     function clampWallpaperDirectory(value) {
@@ -445,6 +494,13 @@ Scope {
         root.wallpaperRotateMinutes = 0;
         root.wallpaperMatugen = true;
         root.wallpaperVeilaSync = true;
+        root.wallpaperPickerLayout = "carousel";
+        root.wallpaperPickerOpacity = 97;
+        root.wallpaperPickerVimKeys = false;
+        root.wallpaperTileRadius = 18;
+        root.wallpaperTileBorderWidth = 2;
+        root.wallpaperTileBorderColor = "";
+        root.wallpaperZoomPercent = 8;
         root.wallpaperHooks = [];
     }
 
@@ -584,6 +640,13 @@ Scope {
         root.wallpaperMatugen = true;
         root.wallpaperVeilaSync = true;
         root.wallpaperLayer = "background";
+        root.wallpaperPickerLayout = "carousel";
+        root.wallpaperPickerOpacity = 97;
+        root.wallpaperPickerVimKeys = false;
+        root.wallpaperTileRadius = 18;
+        root.wallpaperTileBorderWidth = 2;
+        root.wallpaperTileBorderColor = "";
+        root.wallpaperZoomPercent = 8;
         root.wallpaperHooks = [];
         root.loading = false;
         root.initialized = true;
@@ -706,6 +769,13 @@ Scope {
                 root.wallpaperTarget = root.clampWallpaperTarget(parsed.wallpaperTarget);
                 root.wallpaperCommand = root.clampWallpaperCommand(parsed.wallpaperCommand);
                 root.wallpaperLayer = root.clampWallpaperLayer(parsed.wallpaperLayer);
+                root.wallpaperPickerLayout = root.clampWallpaperPickerLayout(parsed.wallpaperPickerLayout);
+                root.wallpaperTileRadius = root.clampWallpaperTileRadius(parsed.wallpaperTileRadius);
+                root.wallpaperTileBorderWidth = root.clampWallpaperTileBorderWidth(parsed.wallpaperTileBorderWidth);
+                root.wallpaperTileBorderColor = root.clampWallpaperTileBorderColor(parsed.wallpaperTileBorderColor);
+                root.wallpaperZoomPercent = root.clampWallpaperZoomPercent(parsed.wallpaperZoomPercent);
+                root.wallpaperPickerOpacity = root.clampWallpaperPickerOpacity(parsed.wallpaperPickerOpacity);
+                root.wallpaperPickerVimKeys = parsed.wallpaperPickerVimKeys === undefined ? false : !!parsed.wallpaperPickerVimKeys;
                 root.wallpaperTransition = root.clampWallpaperTransition(parsed.wallpaperTransition);
                 root.wallpaperTransitionDuration = root.clampWallpaperTransitionDuration(parsed.wallpaperTransitionDuration);
                 root.wallpaperRotateMinutes = root.clampWallpaperRotateMinutes(parsed.wallpaperRotateMinutes);
@@ -799,6 +869,13 @@ Scope {
             "wallpaperTarget": root.wallpaperTarget,
             "wallpaperCommand": root.wallpaperCommand,
             "wallpaperLayer": root.wallpaperLayer,
+            "wallpaperPickerLayout": root.wallpaperPickerLayout,
+            "wallpaperTileRadius": root.wallpaperTileRadius,
+            "wallpaperTileBorderWidth": root.wallpaperTileBorderWidth,
+            "wallpaperTileBorderColor": root.wallpaperTileBorderColor,
+            "wallpaperZoomPercent": root.wallpaperZoomPercent,
+            "wallpaperPickerOpacity": root.wallpaperPickerOpacity,
+            "wallpaperPickerVimKeys": root.wallpaperPickerVimKeys,
             "wallpaperTransition": root.wallpaperTransition,
             "wallpaperTransitionDuration": root.wallpaperTransitionDuration,
             "wallpaperRotateMinutes": root.wallpaperRotateMinutes,
@@ -1177,6 +1254,41 @@ Scope {
     }
 
     onWallpaperLayerChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onWallpaperPickerLayoutChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onWallpaperPickerOpacityChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onWallpaperPickerVimKeysChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onWallpaperTileRadiusChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onWallpaperTileBorderWidthChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onWallpaperTileBorderColorChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onWallpaperZoomPercentChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }

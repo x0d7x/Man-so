@@ -36,6 +36,10 @@ Scope {
     property var newOutputs: []
     property int restoreAttempts: 0
     property var hookQueue: []
+    property bool pickerOpen: false
+    property int pickerIndex: 0
+
+    readonly property string focusedMonitor: root.mango ? root.mango.focusedMonitor : ""
 
     // Veila reads its lock background from this file; keep it in sync.
     readonly property string veilaSyncScript: "mkdir -p \"$HOME/.cache/veila\" && "
@@ -297,6 +301,25 @@ Scope {
         }
     }
 
+    function openPicker() {
+        if (root.files.length === 0)
+            root.refresh();
+        const index = root.files.indexOf(root.currentPath);
+        root.pickerIndex = index >= 0 ? index : 0;
+        root.pickerOpen = true;
+    }
+
+    function closePicker() {
+        root.pickerOpen = false;
+    }
+
+    function togglePicker() {
+        if (root.pickerOpen)
+            root.closePicker();
+        else
+            root.openPicker();
+    }
+
     function statusText() {
         const parts = [
             "backend=" + (root.settings ? root.settings.wallpaperBackend : "unknown"),
@@ -304,6 +327,7 @@ Scope {
             "images=" + root.files.length,
             "current=" + (root.currentPath.length > 0 ? root.currentPath : "none"),
             "rotate=" + root.rotateMinutes + "m",
+            "picker=" + (root.pickerOpen ? "open" : "closed"),
             "busy=" + (backendProcess.running ? "true" : "false")
         ];
         if (root.lastError.length > 0)

@@ -29,6 +29,11 @@ Item {
         { "key": "background", "label": "Background" },
         { "key": "bottom", "label": "Bottom" }
     ]
+    readonly property var pickerOptions: [
+        { "key": "carousel", "label": "Carousel" },
+        { "key": "grid", "label": "Grid" },
+        { "key": "spotlight", "label": "Spotlight" }
+    ]
     readonly property var fitOptions: [
         { "key": "fill", "label": "Fill" },
         { "key": "fit", "label": "Fit" },
@@ -312,6 +317,153 @@ Item {
             }
 
             Text {
+                text: "PICKER"
+                color: page.accentColor
+                font.family: page.monoFont
+                font.pixelSize: 9
+                font.weight: Font.Bold
+                font.letterSpacing: 0.4
+            }
+
+            SettingsChoiceRow {
+                Layout.fillWidth: true
+                label: "Layout"
+                options: page.pickerOptions
+                value: page.settings ? page.settings.wallpaperPickerLayout : "carousel"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onSelected: key => {
+                    if (page.settings)
+                        page.settings.wallpaperPickerLayout = page.settings.clampWallpaperPickerLayout(key);
+                }
+            }
+
+            SettingsSlider {
+                Layout.fillWidth: true
+                label: "Background opacity"
+                value: page.settings ? page.settings.wallpaperPickerOpacity : 97
+                from: 40
+                to: 100
+                step: 1
+                suffix: " %"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                surfaceHighColor: page.surfaceHighColor
+                onMoved: value => {
+                    if (page.settings)
+                        page.settings.wallpaperPickerOpacity = page.settings.clampWallpaperPickerOpacity(value);
+                }
+            }
+
+            SettingsToggleRow {
+                Layout.fillWidth: true
+                label: "Vim keys"
+                description: "h/l step, j/k move a row, g/G jump to the first or last image, q closes."
+                checked: page.settings ? page.settings.wallpaperPickerVimKeys : false
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onToggled: {
+                    if (page.settings)
+                        page.settings.wallpaperPickerVimKeys = !page.settings.wallpaperPickerVimKeys;
+                }
+            }
+
+            Text {
+                text: "TILES"
+                color: page.accentColor
+                font.family: page.monoFont
+                font.pixelSize: 9
+                font.weight: Font.Bold
+                font.letterSpacing: 0.4
+            }
+
+            SettingsSlider {
+                Layout.fillWidth: true
+                label: "Tile radius"
+                value: page.settings ? page.settings.wallpaperTileRadius : 18
+                from: 0
+                to: 64
+                step: 1
+                suffix: " px"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                surfaceHighColor: page.surfaceHighColor
+                onMoved: value => {
+                    if (page.settings)
+                        page.settings.wallpaperTileRadius = page.settings.clampWallpaperTileRadius(value);
+                }
+            }
+
+            SettingsSlider {
+                Layout.fillWidth: true
+                label: "Border width"
+                value: page.settings ? page.settings.wallpaperTileBorderWidth : 2
+                from: 0
+                to: 6
+                step: 1
+                suffix: " px"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                surfaceHighColor: page.surfaceHighColor
+                onMoved: value => {
+                    if (page.settings)
+                        page.settings.wallpaperTileBorderWidth = page.settings.clampWallpaperTileBorderWidth(value);
+                }
+            }
+
+            SettingsTextRow {
+                Layout.fillWidth: true
+                label: "Border colour"
+                description: "#rgb, #rrggbb or #rrggbbaa. Leave empty to follow the theme accent."
+                value: page.settings ? page.settings.wallpaperTileBorderColor : ""
+                placeholder: "accent"
+                maximumLength: 9
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                onAccentColor: page.onAccentColor
+                surfaceHighColor: page.surfaceHighColor
+                onCommitted: text => {
+                    if (page.settings)
+                        page.settings.wallpaperTileBorderColor = page.settings.clampWallpaperTileBorderColor(text);
+                }
+            }
+
+            SettingsSlider {
+                Layout.fillWidth: true
+                label: "Zoom"
+                value: page.settings ? page.settings.wallpaperZoomPercent : 8
+                from: 0
+                to: 30
+                step: 1
+                suffix: " %"
+                monoFont: page.monoFont
+                fgColor: page.fgColor
+                mutedColor: page.mutedColor
+                accentColor: page.accentColor
+                surfaceHighColor: page.surfaceHighColor
+                onMoved: value => {
+                    if (page.settings)
+                        page.settings.wallpaperZoomPercent = page.settings.clampWallpaperZoomPercent(value);
+                }
+            }
+
+            Text {
                 text: "HOOKS"
                 color: page.accentColor
                 font.family: page.monoFont
@@ -490,6 +642,34 @@ Item {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         onClicked: if (page.wallpaper) page.wallpaper.randomWallpaper()
+                    }
+                }
+
+                Rectangle {
+                    Layout.preferredWidth: 76
+                    Layout.preferredHeight: 28
+                    radius: 7
+                    color: pickHover.hovered
+                        ? Qt.rgba(page.accentColor.r, page.accentColor.g, page.accentColor.b, 0.2)
+                        : Qt.rgba(page.surfaceHighColor.r, page.surfaceHighColor.g, page.surfaceHighColor.b, 0.5)
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "PICK…"
+                        color: pickHover.hovered ? page.accentColor : page.mutedColor
+                        font.family: page.monoFont
+                        font.pixelSize: 7
+                        font.weight: Font.Bold
+                    }
+
+                    HoverHandler {
+                        id: pickHover
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: if (page.wallpaper) page.wallpaper.openPicker()
                     }
                 }
 

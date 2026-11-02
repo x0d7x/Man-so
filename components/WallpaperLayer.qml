@@ -54,6 +54,9 @@ Scope {
                     right: true
                 }
                 color: "black"
+                // The surface is always fully painted (image plus black bars), so it can be
+                // opaque: cheaper buffers and no blending in the compositor.
+                surfaceFormat.opaque: true
                 // -1 asks wlr-layer-shell to ignore other surfaces' exclusive zones,
                 // otherwise the island's reserved strip stays unpainted.
                 exclusiveZone: -1
@@ -96,7 +99,8 @@ Scope {
 
                     anchors.fill: parent
                     // Only a fade needs the outgoing image; otherwise it would show
-                    // through the transparent area of Pad/Fit.
+                    // through the transparent area of Pad/Fit and waste a full-screen
+                    // texture for nothing.
                     visible: fade.running
                     source: surface.underSource
                     fillMode: root.fillModeFor(root.fit)

@@ -115,6 +115,17 @@ ShellRoot {
         settings: settings
     }
 
+    WallpaperThumbnails {
+        id: wallpaperThumbnails
+    }
+
+    WallpaperPicker {
+        wallpaper: wallpaper
+        settings: settings
+        thumbnails: wallpaperThumbnails
+        colors: colors
+    }
+
     Colors {
         id: colors
     }
@@ -195,6 +206,7 @@ ShellRoot {
                 "  next                    Apply the next image in sorted order",
                 "  previous                Apply the previous image in sorted order",
                 "  reload                  Rescan the wallpaper directory",
+                "  picker                  Open or close the wallpaper picker",
                 "  status                  Print backend, directory, current image and errors",
                 "  help                    Show this help"
             ].join("\n");
@@ -219,6 +231,11 @@ ShellRoot {
         function reload(): string {
             wallpaper.refresh();
             return "reloading";
+        }
+
+        function picker(): string {
+            wallpaper.togglePicker();
+            return wallpaper.pickerOpen ? "open" : "closed";
         }
 
         function status(): string {

@@ -130,7 +130,8 @@ Rectangle {
                 sourceSize.height: 54
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
-                cache: true
+                // Transient: keep decoded copies out of Qt's pixmap cache.
+                cache: false
                 visible: card.showImages && source.toString().length > 0
                     && status === Image.Ready
             }
