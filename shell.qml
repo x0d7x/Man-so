@@ -164,6 +164,7 @@ ShellRoot {
             settings: settings
             privacy: privacy
             keyboardLayout: keyboardLayout
+            wallpaper: wallpaper
             bluetooth: bluetooth
             network: network
             power: power

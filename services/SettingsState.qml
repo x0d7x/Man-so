@@ -99,7 +99,7 @@ Scope {
         const page = Number(value);
         if (!Number.isFinite(page))
             return 0;
-        return Math.max(0, Math.min(11, Math.round(page)));
+        return Math.max(0, Math.min(12, Math.round(page)));
     }
 
     function clampAnimationDuration(value) {
@@ -428,6 +428,20 @@ Scope {
         root.includeUrgentWorkspaces = true;
     }
 
+    function resetWallpaper() {
+        root.wallpaperBackend = "awww";
+        root.wallpaperDirectory = "~/Documents/wallpaper";
+        root.wallpaperFit = "fill";
+        root.wallpaperTarget = "all";
+        root.wallpaperCommand = "";
+        root.wallpaperTransition = "fade";
+        root.wallpaperTransitionDuration = 1;
+        root.wallpaperRotateMinutes = 0;
+        root.wallpaperMatugen = true;
+        root.wallpaperVeilaSync = true;
+        root.wallpaperHooks = [];
+    }
+
     function resetPower() {
         root.cpuRefreshInterval = 300;
         root.batteryWarningThreshold = 20;
@@ -604,6 +618,9 @@ Scope {
                     if (migratedPage >= 4)
                         migratedPage += 1;
                 }
+                // 26 inserted the Wallpaper page at index 8.
+                if (version < 26 && migratedPage >= 8)
+                    migratedPage += 1;
                 root.settingsPage = root.clampPage(migratedPage);
                 root.expansionMode = parsed.expansionMode === "click" || parsed.expansionMode === "hover"
                     ? parsed.expansionMode
@@ -703,7 +720,7 @@ Scope {
 
     function snapshot() {
         return {
-            "version": 25,
+            "version": 26,
             "settingsPage": root.settingsPage,
             "expansionMode": root.expansionMode,
             "animationDuration": root.animationDuration,

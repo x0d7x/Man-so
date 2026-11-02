@@ -18,6 +18,7 @@ Rectangle {
     property var settings
     property var privacy
     property var keyboardLayout
+    property var wallpaper
     property var bluetooth
     property var network
     property var power
@@ -3855,6 +3856,7 @@ Rectangle {
                 settings: island.settings
                 privacy: island.privacy
                 keyboardLayout: island.keyboardLayout
+                wallpaper: island.wallpaper
                 onCloseRequested: island.closeSettings()
             }
         }

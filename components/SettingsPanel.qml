@@ -19,6 +19,7 @@ FocusScope {
     property var settings
     property var privacy
     property var keyboardLayout
+    property var wallpaper
     property bool fontSelectorOpen: false
 
     property int currentPage: 0
@@ -31,6 +32,7 @@ FocusScope {
         { "label": "Modules", "icon": "󰍜", "group": "SYSTEM" },
         { "label": "Power", "icon": "󰾅", "group": "SYSTEM" },
         { "label": "MangoWM", "icon": "󰖯", "group": "SYSTEM" },
+        { "label": "Wallpaper", "icon": "󰸉", "group": "SYSTEM" },
         { "label": "Keyboard", "icon": "󰌌", "group": "SYSTEM" },
         { "label": "Privacy", "icon": "󰍬", "group": "INFO" },
         { "label": "About", "icon": "󰋼", "group": "INFO" },
@@ -406,6 +408,24 @@ FocusScope {
                     anchors.fill: parent
                     active: panel.visible && panel.currentPage === 8
                     sourceComponent: Component {
+                        SettingsWallpaperPage {
+                            anchors.fill: parent
+                            settings: panel.settings
+                            wallpaper: panel.wallpaper
+                            monoFont: panel.monoFont
+                            fgColor: panel.fgColor
+                            mutedColor: panel.mutedColor
+                            accentColor: panel.accentColor
+                            onAccentColor: panel.onAccentColor
+                            surfaceHighColor: panel.surfaceHighColor
+                        }
+                    }
+                }
+
+                Loader {
+                    anchors.fill: parent
+                    active: panel.visible && panel.currentPage === 9
+                    sourceComponent: Component {
                         SettingsKeyboardPage {
                             anchors.fill: parent
                             settings: panel.settings
@@ -422,7 +442,7 @@ FocusScope {
 
                 Loader {
                     anchors.fill: parent
-                    active: panel.visible && panel.currentPage === 9
+                    active: panel.visible && panel.currentPage === 10
                     sourceComponent: Component {
                         SettingsPrivacyPage {
                             anchors.fill: parent
@@ -441,7 +461,7 @@ FocusScope {
 
                 Loader {
                     anchors.fill: parent
-                    active: panel.visible && panel.currentPage === 10
+                    active: panel.visible && panel.currentPage === 11
                     sourceComponent: Component {
                         SettingsAboutPage {
                             anchors.fill: parent
@@ -457,7 +477,7 @@ FocusScope {
 
                 Loader {
                     anchors.fill: parent
-                    active: panel.visible && panel.currentPage === 11
+                    active: panel.visible && panel.currentPage === 12
                     sourceComponent: Component {
                         SettingsDiagnosticsPage {
                             anchors.fill: parent
