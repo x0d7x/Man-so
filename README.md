@@ -1,7 +1,7 @@
 <table>
   <tr>
-    <td width="132" valign="middle">
-      <img src="logo.png" alt="manēso logo" width="112">
+    <td width="148" valign="middle">
+      <img src="docs/logo.jpeg" alt="manēso logo" width="128">
     </td>
     <td valign="middle">
       <h1>manēso</h1>
