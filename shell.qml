@@ -189,6 +189,7 @@ ShellRoot {
                 "  mode                    Print the current island mode",
                 "  hovered                 Print pointer hover state",
                 "  geometry                Print island and panel geometry",
+                "  workspaces              Print workspace and overview state",
                 "  reloadTheme             Reload Matugen colors",
                 "",
                 "NOTIFICATIONS",
@@ -249,6 +250,13 @@ ShellRoot {
                 + " window=" + Math.round(panel.width) + "x" + Math.round(panel.height)
                 + " island=" + Math.round(island.x) + "," + Math.round(island.y)
                 + " dpr=" + panel.devicePixelRatio;
+        }
+
+        function workspaces(): string {
+            return "overview=" + (island.overviewActive ? "true" : "false")
+                + " label=" + island.overviewLabel
+                + " text=" + island.workspaceText
+                + " active=" + island.activeTags.join(",");
         }
 
         function reloadTheme(): void {

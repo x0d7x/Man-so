@@ -110,11 +110,12 @@ Settings → Island to pick a format preset and style.
 
 ### MangoWM
 
-| Key                       | Description                                                 | Default | Range / values                    |
-| ------------------------- | ----------------------------------------------------------- | ------- | --------------------------------- |
-| `workspaceVisibility`     | Which workspaces appear in the island                       | `"all"` | `"all"`, `"occupied"`, `"active"` |
-| `showOccupiedIndicator`   | Show a dot under workspaces containing clients              | `true`  | `true`, `false`                   |
-| `includeUrgentWorkspaces` | Keep urgent workspaces visible in Occupied and Active modes | `true`  | `true`, `false`                   |
+| Key                       | Description                                                                   | Default      | Range / values                    |
+| ------------------------- | ----------------------------------------------------------------------------- | ------------ | --------------------------------- |
+| `workspaceVisibility`     | Which workspaces appear in the island                                         | `"all"`      | `"all"`, `"occupied"`, `"active"` |
+| `overviewLabel`           | Text shown instead of the workspace index while MangoWM's overview is open     | `"overview"` | any text, up to 24 characters     |
+| `showOccupiedIndicator`   | Show a dot under workspaces containing clients                                | `true`       | `true`, `false`                   |
+| `includeUrgentWorkspaces` | Keep urgent workspaces visible in Occupied and Active modes                   | `true`       | `true`, `false`                   |
 
 ### Keyboard
 

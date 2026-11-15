@@ -51,6 +51,7 @@ Scope {
     property int fontSize: 11
     property int uiScale: 100
     property string workspaceVisibility: "all"
+    property string overviewLabel: "overview"
     property bool showOccupiedIndicator: true
     property bool includeUrgentWorkspaces: true
     property var collapsedItems: ["time"]
@@ -198,6 +199,13 @@ Scope {
 
     function clampWorkspaceVisibility(value) {
         return value === "occupied" || value === "active" ? value : "all";
+    }
+
+    function clampOverviewLabel(value) {
+        if (typeof value !== "string")
+            return "overview";
+        const label = value.trim().slice(0, 24);
+        return label.length > 0 ? label : "overview";
     }
 
     function clampCollapsedItemSpacing(value) {
@@ -348,6 +356,7 @@ Scope {
 
     function resetMango() {
         root.workspaceVisibility = "all";
+        root.overviewLabel = "overview";
         root.showOccupiedIndicator = true;
         root.includeUrgentWorkspaces = true;
     }
@@ -536,6 +545,7 @@ Scope {
                     ? 100
                     : Math.max(85, Math.min(115, Math.round(Number(parsed.uiScale) / 5) * 5));
                 root.workspaceVisibility = root.clampWorkspaceVisibility(parsed.workspaceVisibility);
+                root.overviewLabel = root.clampOverviewLabel(parsed.overviewLabel);
                 root.showOccupiedIndicator = parsed.showOccupiedIndicator === undefined ? true : !!parsed.showOccupiedIndicator;
                 root.includeUrgentWorkspaces = parsed.includeUrgentWorkspaces === undefined ? true : !!parsed.includeUrgentWorkspaces;
                 root.collapsedItems = root.sanitizeCollapsedItems(parsed.collapsedItems);
@@ -624,6 +634,7 @@ Scope {
             "fontSize": root.fontSize,
             "uiScale": root.uiScale,
             "workspaceVisibility": root.workspaceVisibility,
+            "overviewLabel": root.overviewLabel,
             "showOccupiedIndicator": root.showOccupiedIndicator,
             "includeUrgentWorkspaces": root.includeUrgentWorkspaces,
             "collapsedItems": root.collapsedItems,
@@ -737,6 +748,11 @@ Scope {
     }
 
     onWorkspaceVisibilityChanged: {
+        if (root.initialized && !root.loading && !saveTimer.running)
+            saveTimer.restart();
+    }
+
+    onOverviewLabelChanged: {
         if (root.initialized && !root.loading && !saveTimer.running)
             saveTimer.restart();
     }

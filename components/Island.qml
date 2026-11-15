@@ -52,11 +52,29 @@ Rectangle {
     readonly property var tags: island.monitorState && island.monitorState.tags ? island.monitorState.tags : []
     readonly property var activeClient: island.monitorState ? island.monitorState.active_client : null
     readonly property var activeTags: island.monitorState && island.monitorState.active_tags ? island.monitorState.active_tags : []
+    // MangoWM reports active_tags [0] while the overview is open; tag indexes are 1-based.
+    readonly property bool overviewActive: {
+        if (island.mango && island.mango.overviewActive)
+            return true;
+        for (let i = 0; i < island.activeTags.length; ++i) {
+            if (Number(island.activeTags[i]) === 0)
+                return true;
+        }
+        return false;
+    }
+    readonly property string overviewLabel: {
+        const label = island.settings && island.settings.overviewLabel
+            ? String(island.settings.overviewLabel).trim()
+            : "";
+        return label.length > 0 ? label : "overview";
+    }
     readonly property var currentTag: {
         if (island.activeTags.length === 0)
             return null;
         const index = Number(island.activeTags[0]) - 1;
-        return island.tags.length > index ? island.tags[index] : null;
+        if (index < 0 || index >= island.tags.length)
+            return null;
+        return island.tags[index];
     }
 
     readonly property color bgColor: island.colors ? island.colors.surface : "#282828"
@@ -80,7 +98,9 @@ Rectangle {
         return "Desktop";
     }
 
-    readonly property string workspaceText: island.activeTags.length > 0 ? island.activeTags.join(" · ") : "1"
+    readonly property string workspaceText: island.overviewActive
+        ? island.overviewLabel
+        : (island.activeTags.length > 0 ? island.activeTags.join(" · ") : "1")
     readonly property string layoutSymbol: {
         if (island.currentTag && island.currentTag.layout)
             return island.currentTag.layout;
@@ -2751,12 +2771,13 @@ Rectangle {
         }
 
         Rectangle {
-            Layout.preferredWidth: 24
+            Layout.preferredWidth: Math.max(24, transientWorkspaceLabel.implicitWidth + 12)
             Layout.preferredHeight: 24
             radius: 7
             color: island.accentColor
 
             Text {
+                id: transientWorkspaceLabel
                 anchors.centerIn: parent
                 text: island.workspaceText
                 color: island.onAccentColor
@@ -2811,6 +2832,26 @@ Rectangle {
                     visible: island.showWorkspaceTags
                     spacing: 4
 
+                    Rectangle {
+                        id: dashboardOverviewChip
+
+                        visible: island.overviewActive
+                        width: Math.max(22, overviewChipLabel.implicitWidth + 12)
+                        height: 22
+                        radius: 7
+                        color: island.accentColor
+
+                        Text {
+                            id: overviewChipLabel
+                            anchors.centerIn: parent
+                            text: island.overviewLabel
+                            color: island.onAccentColor
+                            font.family: island.monoFont
+                            font.pixelSize: Math.round(9 * island.fontScale)
+                            font.weight: Font.Bold
+                        }
+                    }
+
                     Repeater {
                         model: island.visibleTags
 
@@ -2820,7 +2861,11 @@ Rectangle {
                             required property var modelData
 
                             readonly property var tag: dashboardTag.modelData
-                            readonly property bool active: dashboardTag.tag ? dashboardTag.tag.is_active : false
+                            // Every tag reports is_active while the overview is open;
+                            // the overview chip already represents that state.
+                            readonly property bool active: island.overviewActive
+                                ? false
+                                : (dashboardTag.tag ? dashboardTag.tag.is_active : false)
                             readonly property bool occupied: dashboardTag.tag ? dashboardTag.tag.client_count > 0 : false
                             readonly property bool urgent: dashboardTag.tag ? dashboardTag.tag.is_urgent : false
                             property bool hovered: false

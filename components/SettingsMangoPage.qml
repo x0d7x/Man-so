@@ -18,6 +18,13 @@ Item {
         { "key": "active", "label": "Active" }
     ]
 
+    function commitOverviewLabel() {
+        if (!page.settings)
+            return;
+        page.settings.overviewLabel = page.settings.clampOverviewLabel(overviewInput.text);
+        overviewInput.text = page.settings.overviewLabel;
+    }
+
     Flickable {
         anchors.fill: parent
         clip: true
@@ -101,6 +108,68 @@ Item {
                         }
                     }
                 }
+            }
+
+            Text {
+                text: "OVERVIEW LABEL"
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.5
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 30
+                radius: 7
+                color: Qt.rgba(page.surfaceHighColor.r, page.surfaceHighColor.g, page.surfaceHighColor.b, 0.5)
+                border.width: 1
+                border.color: overviewInput.activeFocus ? page.accentColor : page.surfaceHighColor
+
+                TextInput {
+                    id: overviewInput
+
+                    anchors.fill: parent
+                    anchors.leftMargin: 9
+                    anchors.rightMargin: 9
+                    verticalAlignment: TextInput.AlignVCenter
+                    text: page.settings ? page.settings.overviewLabel : ""
+                    color: page.fgColor
+                    selectionColor: page.accentColor
+                    selectedTextColor: page.onAccentColor
+                    font.family: page.monoFont
+                    font.pixelSize: 10
+                    selectByMouse: true
+                    maximumLength: 24
+                    onEditingFinished: page.commitOverviewLabel()
+                    Keys.onReturnPressed: {
+                        page.commitOverviewLabel();
+                        overviewInput.focus = false;
+                    }
+                    Keys.onEscapePressed: {
+                        text = page.settings ? page.settings.overviewLabel : "";
+                        overviewInput.focus = false;
+                    }
+                }
+            }
+
+            Connections {
+                target: page.settings
+
+                function onOverviewLabelChanged() {
+                    if (page.settings && !overviewInput.activeFocus)
+                        overviewInput.text = page.settings.overviewLabel;
+                }
+            }
+
+            Text {
+                Layout.fillWidth: true
+                text: "Shown in place of the workspace while MangoWM's overview is open."
+                color: page.mutedColor
+                font.family: page.monoFont
+                font.pixelSize: 8
+                wrapMode: Text.Wrap
             }
 
             SettingsToggleRow {

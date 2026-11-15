@@ -11,6 +11,7 @@ Scope {
     property var mangoIpc
 
     readonly property var focusedState: root.monitors[root.focusedMonitor] || null
+    readonly property bool overviewActive: root.isOverview(root.focusedState)
 
     signal workspaceChanged(string monitor, var tags)
     signal layoutChanged(string monitor, string layout)
@@ -102,6 +103,18 @@ Scope {
 
         root.focusedMonitor = name;
         root.monitorFocused(name);
+    }
+
+    function isOverview(monitor) {
+        // MangoWM reports active_tags [0] while the overview is open (tag indexes are 1-based).
+        if (!monitor || !monitor.active_tags)
+            return false;
+
+        for (let i = 0; i < monitor.active_tags.length; ++i) {
+            if (Number(monitor.active_tags[i]) === 0)
+                return true;
+        }
+        return false;
     }
 
     function switchTag(index) {

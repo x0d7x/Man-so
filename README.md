@@ -17,7 +17,7 @@
 ## Features
 
 - Animated island with hover or click expansion
-- Workspace tags, focused window, and keyboard layout indicators
+- Workspace tags, MangoWM overview awareness, focused window, and keyboard layout indicators
 - Media controls via MPRIS and MPD
 - Volume, brightness, and keyboard-layout on-screen displays
 - Notification center with history and grouping
@@ -89,6 +89,7 @@ qs -c maneso ipc show                    # list registered functions
 qs -c maneso ipc call island help        # human-readable command list
 qs -c maneso ipc call island toggle
 qs -c maneso ipc call island status
+qs -c maneso ipc call island workspaces  # workspace index or overview state
 qs -c maneso ipc call island toggleNotifications
 qs -c maneso ipc call island toggleSettings
 ```
